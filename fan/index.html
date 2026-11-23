@@ -248,6 +248,7 @@ function vertical(e,dt){
 // weight: 1 dust, 2 paper, 3 bottles/cans, 4 small things, 5 furniture & people
 const items=[];
 const WOBS=new Map(); // furniture item -> its static obstacles
+const OBS2IT=new Map();
 function newItem(kind,weight,x,z,y,r,lift,g,o={}){
   const it=Object.assign({kind,weight,x,z,y,vx:0,vz:0,vy:0,r,lift,g,rest:0.3,ground:true,step:0.12,out:false,static:false,
     roll:false,count:weight>=2,battery:weight<=4,moved:false,expo:0,windT:0,spin:0,ox:x,oz:z,tall:1.2},o);
@@ -266,6 +267,18 @@ function dust(x,z,size=rand(1.8,3.8)){
 }
 function paper(x,z,y=0){const g=grp();mesh(new THREE.IcosahedronGeometry(0.32,0),phongFlat(pick([0xf4f4f0,0xe8e2d0,0xdfe9f2])),0,0,0,g,false);return newItem('paper',2,x,z,y,0.32,0.3,g,{roll:true,battery:Math.random()<0.5})}
 function tissue(x,z,y=0){const g=grp();const m=mesh(new THREE.IcosahedronGeometry(0.24,0),TISM,0,0,0,g,false);m.scale.set(1,0.8,1.1);m.rotation.set(rand(0,3),rand(0,3),0);return newItem('tissue',2,x,z,y,0.24,0.2,g,{roll:true,battery:Math.random()<0.5})}
+function extra(kind,x,z,y=0){
+  const g=grp();let w=2,r=0.35,lift=0.1,roll=false;
+  if(kind==='sock'){mesh(new THREE.BoxGeometry(0.7,0.12,0.25),lam(pick([0xffffff,0x4f9fb8,0xff9ab0,0x9aa7b5])),0,0,0,g,false);mesh(new THREE.BoxGeometry(0.25,0.12,0.45),lam(0xdddddd),0.3,0,0.1,g,false);lift=0.06}
+  else if(kind==='rejibag'){const m=mesh(new THREE.IcosahedronGeometry(0.45,1),new THREE.MeshLambertMaterial({color:0xf8f8f8,transparent:true,opacity:0.85}),0,0,0,g,false);m.scale.set(1,0.7,0.9);r=0.45;lift=0.3}
+  else if(kind==='magazine'){mesh(new THREE.BoxGeometry(0.9,0.06,1.2),lam(pick([0xff6fae,0xffd23a,0x6fd6ff])),0,0,0,g,false);mesh(new THREE.BoxGeometry(0.6,0.07,0.4),lam(0xffffff),0,0,-0.2,g,false);r=0.55;lift=0.03}
+  else if(kind==='flyer'){mesh(new THREE.BoxGeometry(0.8,0.02,1.0),lam(pick([0xfff3b0,0xffd9a8,0xd9f0ff])),0,0,0,g,false);r=0.45;lift=0.02}
+  else if(kind==='roll'){w=3;mesh(new THREE.CylinderGeometry(0.3,0.3,0.45,14),lam(0xffffff),0,0,0,g);r=0.32;lift=0.22}
+  else if(kind==='snack'){w=3;mesh(new THREE.BoxGeometry(0.8,0.5,0.25),lam(pick([0xe9402a,0xffcc33,0x3f8fe0])),0,0,0,g);r=0.42;lift=0.25}
+  else if(kind==='cupmen'){w=3;mesh(new THREE.CylinderGeometry(0.33,0.24,0.5,14),lam(0xfafafa),0,0,0,g);mesh(new THREE.CylinderGeometry(0.34,0.34,0.03,14),lam(0xe9402a),0,0.26,0,g);r=0.34;lift=0.25}
+  else if(kind==='slipper'){w=3;mesh(new THREE.BoxGeometry(0.85,0.16,0.4),lam(pick([0xf3a5b5,0x7fd0ff])),0,0,0,g);mesh(new THREE.BoxGeometry(0.35,0.2,0.42),lam(0xffffff),0.2,0.08,0,g);r=0.42;lift=0.08}
+  return newItem(kind,w,x,z,y,r,lift,g,{roll});
+}
 function wrap(x,z,y=0){const g=grp();const c=pick([0xff6fae,0x6fd6ff,0xffd23a,0x9dff6f]);mesh(new THREE.BoxGeometry(1.0,0.04,0.8),lam(c),0,0,0,g);mesh(new THREE.BoxGeometry(1.02,0.05,0.12),lam(0xffffff),0,0.01,0,g);return newItem('wrap',2,x,z,y,0.5,0.03,g)}
 function bottle(x,z,y=0){const g=grp();mesh(new THREE.CylinderGeometry(0.18,0.19,0.75,12),new THREE.MeshLambertMaterial({color:0xbfe8ff,transparent:true,opacity:0.8}),0,0,0,g);mesh(new THREE.CylinderGeometry(0.08,0.08,0.14,8),lam(0x3f8fe0),0,0.44,0,g);return newItem('bottle',3,x,z,y,0.25,0.38,g)}
 function can(x,z,y=0){const g=grp();mesh(new THREE.CylinderGeometry(0.18,0.18,0.48,12),lam(pick([0xe9402a,0x3f8fe0,0xf2c14e,0x6fbf5a])),0,0,0,g);return newItem('can',3,x,z,y,0.22,0.24,g)}
@@ -290,7 +303,7 @@ function small(kind,x,z,y=0){
 function furniture(kind,x,z,build,obsList,r,tall){
   const g=grp();g.position.set(x,0,z);build(g);
   const it=newItem(kind,5,x,z,0,r,0,g,{static:true,battery:false,tall,rest:0.2});
-  WOBS.set(it,obsList);return it;
+  WOBS.set(it,obsList);for(const o of obsList)OBS2IT.set(o,it);return it;
 }
 const T=(g,geo,c,x,y,z)=>mesh(geo,lam(c),x,y,z,g);
 function buildHouse(){
@@ -323,6 +336,9 @@ function buildHouse(){
   scatter((x,z)=>dust(x,z),9,1.6);
   scatter((x,z)=>paper(x,z),14,0.3);
   scatter((x,z)=>tissue(x,z),22,0.25);
+  for(const k of['sock','sock','sock','sock','sock','sock','rejibag','rejibag','rejibag','rejibag','rejibag','magazine','magazine','magazine','magazine','magazine','flyer','flyer','flyer','flyer','flyer','flyer'])scatter((x,z)=>extra(k,x,z),1,0.4);
+  for(const k of['roll','roll','roll','roll','roll','snack','snack','snack','snack','snack','cupmen','cupmen','cupmen','cupmen','cupmen','slipper','slipper','slipper','slipper'])scatter((x,z)=>extra(k,x,z),1,0.45);
+  scatter((x,z)=>bottle(x,z),3,0.3);scatter((x,z)=>can(x,z),3,0.3);
   onTop(tissue,4,-6,-9.4,3.5,0.8,1.4);onTop(paper,2,-6,-9.4,3.5,0.8,1.4);   // sofa
   onTop(tissue,3,-6,-5,1.8,0.9,1.4);                                       // coffee table
   onTop(tissue,3,6,-5,2.5,1.3,2.5);onTop(paper,2,6,-5,2.5,1.3,2.5);         // dining table
@@ -635,7 +651,7 @@ function updateHud(){
   $('left').textContent='のこり '+remaining();
 }
 function resetWorld(){
-  for(const it of items)scene.remove(it.g);items.length=0;WOBS.clear();obs.length=0;people.length=0;
+  for(const it of items)scene.remove(it.g);items.length=0;WOBS.clear();OBS2IT.clear();obs.length=0;people.length=0;
   for(const p of pickups)scene.remove(p.g);pickups.length=0;
   buildHouse();
   addPerson('dad',-6,-9.3);addPerson('mom',6,-1);
@@ -810,12 +826,19 @@ function update(dt){
   const k=Math.min(1,dt*(il>0.05?3.2:2.2));
   fan.vx+=(tx*L.speed-fan.vx)*k;fan.vz+=(tz*L.speed-fan.vz)*k;
   fan.x+=fan.vx*dt;fan.z+=fan.vz*dt;
-  collide(fan,null);
+  collide(fan,(sp,o)=>{const f=o&&OBS2IT.get(o);if(f&&f.static&&level===f.weight-1)makeDynamic(f)});
   // heavy things the fan can't move yet block it
   for(const it of items){
-    if(it.out||it.static||it.weight<=level||it.kind==='dust')continue;
+    if(it.out||it.static||it.gone||it.weight<=level||it.kind==='dust')continue;
     const dx=fan.x-it.x,dz=fan.z-it.z,d=Math.hypot(dx,dz),m=fan.r+it.r;
-    if(d<m&&d>0){fan.x=it.x+dx/d*m;fan.z=it.z+dz/d*m}
+    if(d<m&&d>0){
+      if(level>=2&&it.weight===level+1&&!it.human){ // one rank heavier: it slides out of the way
+        const nx=-dx/d,nz=-dz/d,pen=m-d,k=it.weight>=5?0.35:0.75;
+        it.x+=nx*pen*k;it.z+=nz*pen*k;fan.x-=nx*pen*(1-k);fan.z-=nz*pen*(1-k);
+        it.vx=nx*0.8;it.vz=nz*0.8;
+        if(!it.moved){it.moved=true;if(it.weight<5)addBlow()}
+      }else{fan.x=it.x+dx/d*m;fan.z=it.z+dz/d*m}
+    }
   }
   // turn toward where it rolls
   const sp=Math.hypot(fan.vx,fan.vz);
