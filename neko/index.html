@@ -1252,7 +1252,11 @@ function update(dt){
   vertical(ball,dt);
   // rolling through water: a little slower, with splashes
   {const wz=inWater(ball);splashT-=dt;
-   if(wz){const f=Math.pow(0.7,dt);ball.vx*=f;ball.vz*=f;const sp=Math.hypot(ball.vx,ball.vz);
+   if(wz){
+     // the ball floats: about a third of it under the surface, bobbing gently
+     const fy=wz.y-BALL_R*0.5+Math.sin(time*3)*0.04;
+     if(ball.y<fy){ball.y+=(fy-ball.y)*Math.min(1,dt*14);if(ball.vy<0)ball.vy*=0.5;ball.ground=true}
+     const f=Math.pow(0.7,dt);ball.vx*=f;ball.vz*=f;const sp=Math.hypot(ball.vx,ball.vz);
      if(sp>1.5&&splashT<=0){splash(ball.x,wz.y+0.1,ball.z,Math.min(8,2+Math.round(sp)),3+sp*0.3);if(Math.random()<0.5)waterSound();splashT=0.18}
      if(!ball.wasWet){ball.wasWet=true;toast('ぱしゃっ！',0.7);splash(ball.x,wz.y+0.1,ball.z,10,5);waterSound()}}
    else ball.wasWet=false}
@@ -1491,6 +1495,7 @@ function updateProps(dt){
     if(!p.onLand)p.onLand=(land)=>{if(land<-8){tone(220,.08,'triangle',.06,-80)}};
     p.bounceLand=true;
     vertical(p,dt);
+    {const wz=WATERS.length&&inWater(p);if(wz&&wz.y>0.2&&p.y<wz.y-0.15){p.y=wz.y-0.15;p.vy=0;p.ground=true}} // toys float in the tub
     if(p.windT>0)p.windT-=dt;
     if(p.ground){const f=Math.pow(p.windT>0?0.7:(p.roll?0.45:0.03),dt);p.vx*=f;p.vz*=f;if(Math.abs(p.vx)+Math.abs(p.vz)<0.05){p.vx=p.vz=0}}
   }
