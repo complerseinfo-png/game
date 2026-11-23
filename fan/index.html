@@ -623,7 +623,7 @@ function resetWorld(){
   if(!chanceS){chanceS=makeLabel('いまだ！','#e0560a');scene.add(chanceS)}chanceS.visible=false;dad.chance=chanceS;
   cats.forEach((c,i)=>Object.assign(c,{x:[-3,1,9][i],z:[6,-3,8][i],y:0,vx:0,vz:0,vy:0,state:'idle',t:rand(1,4),out:false}));
   Object.assign(fan,{x:0,z:9,vx:0,vz:0});camA=0;
-  level=1;batt=0;buildFan(1);time=0;shake=0;total=remaining();camSnap=true;
+  level=1;batt=0;buildFan(1);camS=LV[1].size;time=0;shake=0;total=remaining();camSnap=true;
   updateHud();
 }
 function start(){
@@ -866,6 +866,7 @@ function update(dt){
 // ---------- render sync ----------
 const _axis=new THREE.Vector3();
 const camPos=new THREE.Vector3(0,10,20),camLook=new THREE.Vector3();
+let camS=0.5;
 function sync(dt){
   const now=performance.now()/1000;
   // fan
@@ -943,11 +944,14 @@ function sync(dt){
     }
   }
   // camera behind the fan
-  const portrait=innerWidth<innerHeight,s=LV[level].size;
-  const dist=(portrait?7.5:6.5)+s*3,hgt=(portrait?4.5:3.5)+s*2.2;
+  // the camera distance grows with the fan, so the fan keeps its size on screen while the room shrinks around it
+  const portrait=innerWidth<innerHeight;
+  camS+=(LV[level].size-camS)*Math.min(1,dt*1.6);
+  const s=camS;
+  const dist=s*(portrait?6.8:5.6)+0.6,hgt=s*(portrait?3.4:2.7)+0.4;
   const cx=clamp(fan.x-fx*dist,-W+0.8,W-0.8),cz=clamp(fan.z-fz*dist,-D+0.8,D-0.8);
   const short=dist-Math.hypot(cx-fan.x,cz-fan.z);
-  const tp=new THREE.Vector3(cx,hgt+short*0.8,cz),tl=new THREE.Vector3(fan.x+fx*4,0.8+s*0.6,fan.z+fz*4);
+  const tp=new THREE.Vector3(cx,hgt+short*0.9,cz),tl=new THREE.Vector3(fan.x+fx*s*3,s*0.9,fan.z+fz*s*3);
   if(state==='menu'){tp.set(Math.sin(camA)*-20,14,-Math.cos(camA)*-20+2);tl.set(0,1,0)}
   if(camSnap){camPos.copy(tp);camLook.copy(tl);camSnap=false}
   camPos.lerp(tp,Math.min(1,dt*4));camLook.lerp(tl,Math.min(1,dt*5));
