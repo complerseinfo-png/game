@@ -34,6 +34,9 @@ a.game:focus-visible{outline:4px solid #2b7bff;outline-offset:3px}
 .fanicon{background:#3fb6ff}
 .fanicon::before{left:12px;top:12px;width:48px;height:48px;border-radius:50%;background:#fff;border:3px solid #24324a}
 .fanicon::after{left:30px;top:16px;width:12px;height:40px;border-radius:50%;border:0;background:#3fb6ff;box-shadow:none}
+.acicon{background:#f4f1ea}
+.acicon::before{left:8px;top:14px;width:52px;height:24px;border-radius:6px;background:#fff;border:3px solid #24324a}
+.acicon::after{left:14px;top:44px;width:40px;height:16px;border-radius:0;border:0;background:repeating-linear-gradient(90deg,#78c8ff 0 4px,transparent 4px 10px);box-shadow:none}
 .name{font-size:24px;font-weight:800;margin:0}
 .desc{margin:4px 0 0;font-size:15px;line-height:1.5}
 </style>
@@ -48,6 +51,10 @@ a.game:focus-visible{outline:4px solid #2b7bff;outline-offset:3px}
   <a class="game" href="fan/">
     <span class="icon fanicon" aria-hidden="true"></span>
     <span><p class="name">ふきとばせ！せんぷうき</p><p class="desc">せんぷうきを パワーアップして いえの なかを ぜんぶ ふきとばそう</p></span>
+  </a>
+  <a class="game" href="aircon/">
+    <span class="icon acicon" aria-hidden="true"></span>
+    <span><p class="name">エアコン リモコン ごっこ</p><p class="desc">いろんな メーカーの エアコンを リモコンで うごかそう</p></span>
   </a>
 </div>
 <script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
