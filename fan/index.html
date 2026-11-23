@@ -26,12 +26,14 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
 .bar{width:clamp(120px,34vw,200px);height:16px;border:3px solid var(--ink);border-radius:999px;background:#fff;overflow:hidden;box-shadow:0 3px 0 var(--ink)}
 .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7be04a,#ffd23a);transition:width .3s}
 .mute{pointer-events:auto;font:inherit;cursor:pointer;color:var(--ink)}
+#joy{position:fixed;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;border:3px solid rgba(255,255,255,.9);background:rgba(255,255,255,.22);pointer-events:none}
+#knob{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(255,255,255,.95);box-shadow:0 2px 6px rgba(0,0,0,.25)}
 #trail{position:fixed;height:10px;margin-top:-5px;border-radius:5px;background:rgba(255,255,255,.9);transform-origin:0 50%;
   pointer-events:none;opacity:0;transition:opacity .15s;box-shadow:0 0 0 3px rgba(36,50,74,.35)}
 .mk{position:fixed;margin:-16px 0 0 -30px;width:60px;height:32px;border-radius:10px;border:3px solid var(--ink);background:var(--sky);
   pointer-events:none;font-weight:800;font-size:14px;display:grid;place-items:center;box-shadow:0 2px 0 var(--ink)}
-#toast{position:fixed;left:50%;top:30%;transform:translate(-50%,-50%);font-weight:800;font-size:clamp(22px,7vw,40px);color:#fff;
-  -webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:0 4px 0 var(--ink);pointer-events:none;white-space:nowrap;transition:opacity .3s;text-align:center}
+#toast{position:fixed;left:50%;top:30%;transform:translate(-50%,-50%);font-weight:800;font-size:clamp(20px,6vw,40px);width:max-content;max-width:92vw;color:#fff;
+  -webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:0 4px 0 var(--ink);pointer-events:none;white-space:normal;line-height:1.25;transition:opacity .3s;text-align:center}
 .overlay{position:fixed;inset:0;display:grid;place-items:center;padding:20px max(16px,env(safe-area-inset-left,0px));background:rgba(36,50,74,.3);overflow:auto}
 .card{background:var(--paper);border:4px solid var(--ink);border-radius:28px;box-shadow:0 8px 0 var(--ink);
   padding:22px 20px;max-width:460px;width:100%;text-align:center;display:grid;gap:12px}
@@ -65,7 +67,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
   <div class="mid"><div class="pill" id="left">のこり 0</div></div>
   <button class="pill mute" id="mute">おと ON</button>
 </div>
-<div id="trail"></div>
+<div id="joy" hidden><div id="knob"></div></div>
 <div class="mk" id="mkWin" hidden>まど</div>
 <div id="toast" style="opacity:0"></div>
 
@@ -80,7 +82,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
     <button class="btn" id="startBtn">スタート</button>
     <p class="small" id="bestLine"></p>
     <div class="ladder"><span>ハンディ</span>→<span>たくじょう</span>→<span>かていよう</span>→<span>ぎょうむよう</span>→<span>ちょうきょだい</span></div>
-    <p><b>スワイプ</b>で うごく。せんぷうきは むいている ほうに かぜを だすよ。<br>ほこりを ふきとばして <b>でんち</b>を あつめると パワーアップ！<br>ゴミや ものは ひらいた <b>まど</b>から そとへ ふきとばそう。</p>
+    <p>がめんを <b>おしたまま ゆびを うごかす</b> と すすむよ。せんぷうきは むいている ほうに かぜを だすよ。<br>ほこりを ふきとばして <b>でんち</b>を あつめると パワーアップ！<br>ゴミや ものは ひらいた <b>まど</b>から そとへ ふきとばそう。</p>
     <p class="small">いえの なかを ぜんぶ そとに だしたら クリア！ ねこは もどってくるよ<br>パソコンは やじるしキー でも うごかせます</p>
   </div>
 </div>
@@ -512,11 +514,11 @@ $('mute').addEventListener('click',e=>{e.stopPropagation();muted=!muted;$('mute'
 
 // ---------- the fan (player) ----------
 const LV=[null,
-  {name:'ハンディせんぷうき',size:0.5,len:5,spread:0.25,w0:0.6,power:14,speed:5.5,need:6,battName:'でんち'},
-  {name:'たくじょうせんぷうき',size:0.9,len:7.5,spread:0.28,w0:0.9,power:20,speed:6,need:7,battName:'おおきい でんち'},
-  {name:'かていよう せんぷうき',size:1.5,len:10,spread:0.3,w0:1.2,power:28,speed:6.5,need:5,battName:'でんち'},
-  {name:'ぎょうむよう せんぷうき',size:2.4,len:13,spread:0.32,w0:1.8,power:38,speed:7,need:6,battName:'バッテリー'},
-  {name:'ちょうきょだい せんぷうき',size:4.2,len:22,spread:0.38,w0:3,power:60,speed:7.5,need:0,battName:''},
+  {name:'ハンディせんぷうき',size:0.5,cam:0.5,len:5,spread:0.25,w0:0.6,power:14,speed:5.5,need:6,battName:'でんち'},
+  {name:'たくじょうせんぷうき',size:0.7,cam:0.85,len:7.5,spread:0.28,w0:0.9,power:20,speed:6,need:7,battName:'おおきい でんち'},
+  {name:'かていよう せんぷうき',size:0.95,cam:1.3,len:10,spread:0.3,w0:1.2,power:28,speed:6.5,need:5,battName:'でんち'},
+  {name:'ぎょうむよう せんぷうき',size:1.25,cam:1.9,len:13,spread:0.32,w0:1.8,power:38,speed:7,need:6,battName:'バッテリー'},
+  {name:'ちょうきょだい せんぷうき',size:1.6,cam:2.8,len:22,spread:0.38,w0:3,power:60,speed:7.5,need:0,battName:''},
 ];
 const fan={x:0,z:6,y:0,vx:0,vz:0,vy:0,r:0.5,rest:0.2,ground:true,noExit:true};
 let level=1,batt=0,fanG=null,blades=null,fanHeadH=1;
@@ -534,10 +536,10 @@ function buildFan(lv){
   }else if(lv===3){ // living room fan
     mesh(new THREE.CylinderGeometry(0.8,0.9,0.2,16),lam(bodyC),0,0.1,0,g);mesh(new THREE.CylinderGeometry(0.08,0.08,1.7,8),lam(0xdddddd),0,0.95,0,g);headY=1.9;
   }else if(lv===4){ // industrial fan on a stand
-    mesh(new THREE.BoxGeometry(1.6,0.2,1.4),lam(0x555555),0,0.1,0,g);for(const sx of[-0.6,0.6])mesh(new THREE.BoxGeometry(0.12,1.6,0.12),lam(0x555555),sx,0.9,0,g);headY=1.6;
+    mesh(new THREE.BoxGeometry(1.2,0.2,1.0),lam(0x555555),0,0.1,0,g);for(const sx of[-0.6,0.6])mesh(new THREE.BoxGeometry(0.12,1.6,0.12),lam(0x555555),sx,0.9,0,g);headY=1.6;
   }else{ // giant
-    mesh(new THREE.BoxGeometry(2.2,0.4,2),lam(0x444444),0,0.2,0,g);mesh(new THREE.CylinderGeometry(0.25,0.3,1.6,10),lam(0x444444),0,1.1,0,g);headY=2.1;
-    for(const sx of[-0.8,0.8])for(const sz of[-0.7,0.7])mesh(new THREE.CylinderGeometry(0.2,0.2,0.15,10),lam(0x222222),sx,0.08,sz,g).rotation.z=Math.PI/2;
+    mesh(new THREE.CylinderGeometry(0.9,1.0,0.35,20),lam(0x444444),0,0.18,0,g);mesh(new THREE.CylinderGeometry(0.22,0.28,1.8,10),lam(0x444444),0,1.2,0,g);headY=2.2;
+    for(const sx of[-0.6,0.6])for(const sz of[-0.5,0.5])mesh(new THREE.CylinderGeometry(0.2,0.2,0.15,10),lam(0x222222),sx,0.08,sz,g).rotation.z=Math.PI/2;
   }
   const head=new THREE.Group();head.position.set(0,headY,0);g.add(head);
   mesh(new THREE.SphereGeometry(0.28,12,8),lam(bodyC),0,0,-0.3,head);
@@ -546,7 +548,7 @@ function buildFan(lv){
   mesh(new THREE.SphereGeometry(0.12,10,8),lam(0x3fa9f5),0,0,0.04,blades);
   const cage=mesh(new THREE.TorusGeometry(0.98,0.04,6,32),lam(lv>=4?0x777777:0xcccccc),0,0,0.08,head);
   mesh(new THREE.TorusGeometry(0.55,0.03,6,24),lam(lv>=4?0x777777:0xcccccc),0,0,0.16,head);
-  fan.r=Math.max(0.45,s*0.9);fanHeadH=headY*s;
+  fan.r=Math.max(0.4,s*0.6);fanHeadH=headY*s;
 }
 
 // ---------- wind streaks, dust clouds, sparkles ----------
@@ -582,28 +584,32 @@ function spawnBattery(x,z,tier){
   const p={x,z,y:0,vy:6,tier,g,t:0};g.position.set(x,0.6,z);pickups.push(p);
 }
 
-// ---------- input: swipe like the cat game ----------
+// ---------- input: press anywhere and drag; the fan glides that way ----------
 const keys={};
-let pendX=0,pendZ=0,camA=Math.PI*0.5,sw=null;
+let camA=Math.PI*0.5;
+const stick={on:false,id:null,ox:0,oy:0,dx:0,dy:0};
 function toWorld(sx,sy){const fx=Math.sin(camA),fz=-Math.cos(camA),rx=-fz,rz=fx;return [rx*sx-fx*sy, rz*sx-fz*sy]}
-const trail=$('trail');
-function push(dx,dy,dtMs){
-  const L=Math.hypot(dx,dy);if(L<12)return;
-  const speed=L/Math.max(16,dtMs)*1000,power=clamp(1.4+speed/1000,1.4,3.4);
-  const [wx,wz]=toWorld(dx/L,dy/L);pendX+=wx*power;pendZ+=wz*power;
-  if(sw){trail.style.left=sw.x+'px';trail.style.top=sw.y+'px';trail.style.width=Math.min(160,L)+'px';trail.style.transform=`rotate(${Math.atan2(dy,dx)}rad)`;
-    trail.style.opacity=1;clearTimeout(push.t);push.t=setTimeout(()=>trail.style.opacity=0,180)}
-  startWind();
-}
-canvas.addEventListener('pointerdown',e=>{if(state!=='play')return;sw={id:e.pointerId,x:e.clientX,y:e.clientY,t:performance.now()};try{canvas.setPointerCapture(e.pointerId)}catch(_){}});
-canvas.addEventListener('pointermove',e=>{if(!sw||e.pointerId!==sw.id)return;const dx=e.clientX-sw.x,dy=e.clientY-sw.y;
-  if(Math.hypot(dx,dy)>70){const now=performance.now();push(dx,dy,now-sw.t);sw={id:sw.id,x:e.clientX,y:e.clientY,t:now}}});
-canvas.addEventListener('pointerup',e=>{if(!sw||e.pointerId!==sw.id)return;push(e.clientX-sw.x,e.clientY-sw.y,performance.now()-sw.t);sw=null});
-canvas.addEventListener('pointercancel',()=>{sw=null});
+const joy=$('joy'),knob=$('knob');
+canvas.addEventListener('pointerdown',e=>{
+  if(state!=='play')return;
+  Object.assign(stick,{on:true,id:e.pointerId,ox:e.clientX,oy:e.clientY,dx:0,dy:0});
+  try{canvas.setPointerCapture(e.pointerId)}catch(_){}
+  joy.style.left=e.clientX+'px';joy.style.top=e.clientY+'px';joy.hidden=false;knob.style.transform='';startWind();
+});
+canvas.addEventListener('pointermove',e=>{
+  if(!stick.on||e.pointerId!==stick.id)return;
+  let dx=e.clientX-stick.ox,dy=e.clientY-stick.oy;const L=Math.hypot(dx,dy),M=60;
+  if(L>M){ // the stick base follows the finger so long drags keep working
+    stick.ox+=dx*(1-M/L);stick.oy+=dy*(1-M/L);dx*=M/L;dy*=M/L;
+    joy.style.left=stick.ox+'px';joy.style.top=stick.oy+'px';
+  }
+  stick.dx=dx/M;stick.dy=dy/M;knob.style.transform=`translate(${dx}px,${dy}px)`;
+});
+function endStick(e){if(e.pointerId===stick.id){stick.on=false;stick.dx=stick.dy=0;joy.hidden=true}}
+canvas.addEventListener('pointerup',endStick);canvas.addEventListener('pointercancel',endStick);
 addEventListener('keydown',e=>{
   keys[e.code]=true;if(e.code.startsWith('Arrow'))e.preventDefault();
-  if(state==='play'&&!e.repeat){const k={ArrowLeft:[-1,0],KeyA:[-1,0],ArrowRight:[1,0],KeyD:[1,0],ArrowUp:[0,-1],KeyW:[0,-1],ArrowDown:[0,1],KeyS:[0,1]}[e.code];
-    if(k){const [wx,wz]=toWorld(k[0],k[1]);pendX+=wx*2.2;pendZ+=wz*2.2;startWind()}}
+  if(state==='play')startWind();
   if((e.code==='Space'||e.code==='Enter')&&!e.repeat){if(state==='menu')start();else if(state==='over'&&performance.now()-overAt>700)start()}
 });
 addEventListener('keyup',e=>{keys[e.code]=false});
@@ -632,7 +638,7 @@ function resetWorld(){
   if(!chanceS){chanceS=makeLabel('いまだ！','#e0560a');scene.add(chanceS)}chanceS.visible=false;dad.chance=chanceS;
   cats.forEach((c,i)=>Object.assign(c,{x:[-3,1,9][i],z:[6,-3,8][i],y:0,vx:0,vz:0,vy:0,state:'idle',t:rand(1,4),out:false}));
   Object.assign(fan,{x:0,z:9,vx:0,vz:0});camA=0;
-  level=1;batt=0;buildFan(1);camS=LV[1].size;time=0;shake=0;total=remaining();camSnap=true;
+  level=1;batt=0;buildFan(1);camS=LV[1].cam;time=0;shake=0;total=remaining();camSnap=true;
   updateHud();
 }
 function start(){
@@ -791,18 +797,13 @@ function update(dt){
   if(state!=='play')return;
   time+=dt;
   const L=LV[level];
-  // move the fan
-  if(pendX||pendZ){
-    const vl=Math.hypot(fan.vx,fan.vz),ox=fan.vx,oz=fan.vz;
-    const against=vl>0.5&&(pendX*fan.vx+pendZ*fan.vz)<0;
-    fan.vx+=pendX*(against?1.35:1);fan.vz+=pendZ*(against?1.35:1);
-    if(against){const ux=ox/vl,uz=oz/vl,al=fan.vx*ux+fan.vz*uz;if(al<0){fan.vx-=al*ux;fan.vz-=al*uz}}
-    pendX=pendZ=0;
-  }
-  let kx=0,kz=0;if(keys.ArrowLeft||keys.KeyA)kx--;if(keys.ArrowRight||keys.KeyD)kx++;if(keys.ArrowUp||keys.KeyW)kz--;if(keys.ArrowDown||keys.KeyS)kz++;
-  if(kx||kz){[kx,kz]=toWorld(kx,kz);fan.vx+=kx*6*dt;fan.vz+=kz*6*dt}
-  const v=Math.hypot(fan.vx,fan.vz);if(v>L.speed){fan.vx*=L.speed/v;fan.vz*=L.speed/v}
-  fan.vx*=Math.pow(0.4,dt);fan.vz*=Math.pow(0.4,dt);
+  // move the fan: ease toward the stick direction, glide to a stop on release
+  let ix=stick.dx,iy=stick.dy;
+  if(keys.ArrowLeft||keys.KeyA)ix-=1;if(keys.ArrowRight||keys.KeyD)ix+=1;if(keys.ArrowUp||keys.KeyW)iy-=1;if(keys.ArrowDown||keys.KeyS)iy+=1;
+  const il=Math.hypot(ix,iy);if(il>1){ix/=il;iy/=il}
+  const [tx,tz]=toWorld(ix,iy);
+  const k=Math.min(1,dt*(il>0.05?3.2:2.2));
+  fan.vx+=(tx*L.speed-fan.vx)*k;fan.vz+=(tz*L.speed-fan.vz)*k;
   fan.x+=fan.vx*dt;fan.z+=fan.vz*dt;
   collide(fan,null);
   // heavy things the fan can't move yet block it
@@ -813,7 +814,7 @@ function update(dt){
   }
   // turn toward where it rolls
   const sp=Math.hypot(fan.vx,fan.vz);
-  if(sp>1){let dA=Math.atan2(fan.vx,-fan.vz)-camA;while(dA>Math.PI)dA-=Math.PI*2;while(dA<-Math.PI)dA+=Math.PI*2;camA+=dA*Math.min(1,dt*2.5*Math.min(1,sp/4))}
+  if(sp>0.6){let dA=Math.atan2(fan.vx,-fan.vz)-camA;while(dA>Math.PI)dA-=Math.PI*2;while(dA<-Math.PI)dA+=Math.PI*2;camA+=dA*Math.min(1,dt*2.2*Math.min(1,sp/3))}
 
   // wind on things
   for(const it of items){
@@ -863,7 +864,7 @@ function update(dt){
   for(let i=pickups.length-1;i>=0;i--){
     const p=pickups[i];p.t+=dt;
     p.vy-=20*dt;p.y+=p.vy*dt;if(p.y<0){p.y=0;p.vy=0}
-    if(p.t>0.4&&Math.hypot(p.x-fan.x,p.z-fan.z)<fan.r+0.9){
+    if(p.t>0.4&&Math.hypot(p.x-fan.x,p.z-fan.z)<fan.r+0.55){
       scene.remove(p.g);pickups.splice(i,1);chime();
       if(level<5){batt++;if(batt>=LV[level].need)levelUp();else updateHud()}
     }
@@ -967,7 +968,7 @@ function sync(dt){
   // camera behind the fan
   // the camera distance grows with the fan, so the fan keeps its size on screen while the room shrinks around it
   const portrait=innerWidth<innerHeight;
-  camS+=(LV[level].size-camS)*Math.min(1,dt*1.6);
+  camS+=(LV[level].cam-camS)*Math.min(1,dt*1.6);
   const s=camS;
   const dist=s*(portrait?6.8:5.6)+0.6,hgt=s*(portrait?3.4:2.7)+0.4;
   const cx=clamp(fan.x-fx*dist,-W+0.8,W-0.8),cz=clamp(fan.z-fz*dist,-D+0.8,D-0.8);
