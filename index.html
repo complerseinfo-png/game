@@ -23,6 +23,9 @@ a.game:focus-visible{outline:4px solid #2b7bff;outline-offset:3px}
 .icon::before{content:"";position:absolute;left:14px;top:22px;width:44px;height:38px;border-radius:50% 50% 46% 46%;background:#26262c}
 .icon::after{content:"";position:absolute;left:46px;top:42px;width:20px;height:20px;border-radius:50%;border:3px solid var(--ink);
   background:linear-gradient(var(--red) 0 40%,#fff 40% 60%,var(--red) 60%)}
+.fanicon{background:#3fb6ff}
+.fanicon::before{left:12px;top:12px;width:48px;height:48px;border-radius:50%;background:#fff;border:3px solid #24324a}
+.fanicon::after{left:30px;top:16px;width:12px;height:40px;border-radius:50%;border:0;background:#3fb6ff;box-shadow:none}
 .name{font-size:24px;font-weight:800;margin:0}
 .desc{margin:4px 0 0;font-size:15px;line-height:1.5}
 </style>
@@ -33,6 +36,10 @@ a.game:focus-visible{outline:4px solid #2b7bff;outline-offset:3px}
   <a class="game" href="neko/">
     <span class="icon" aria-hidden="true"></span>
     <span><p class="name">ねこから にげろ！</p><p class="desc">ボールになって 3びきの ねこと おにごっこ</p></span>
+  </a>
+  <a class="game" href="fan/">
+    <span class="icon fanicon" aria-hidden="true"></span>
+    <span><p class="name">ふきとばせ！せんぷうき</p><p class="desc">せんぷうきを パワーアップして いえの なかを ぜんぶ ふきとばそう</p></span>
   </a>
 </div>
 </body>
