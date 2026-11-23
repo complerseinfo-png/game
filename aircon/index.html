@@ -42,35 +42,50 @@ body{display:flex;flex-direction:column;overflow-x:hidden}
 .remoteWrap{flex:1;display:flex;justify-content:center;align-items:flex-start;min-width:0;overflow:auto;padding-top:4px}
 .mute{order:99;margin-left:auto;flex:none;font:inherit;font-weight:800;border:3px solid var(--ink);border-radius:999px;background:#fff;padding:4px 12px;cursor:pointer}
 
-/* ---------- remotes ---------- */
-.remote{position:relative;width:min(240px,86vw);}
-@media (orientation:landscape) and (min-height:600px){.remote{width:280px}.b{font-size:15px;padding:11px 4px}}
-.remote{border:3px solid var(--ink);padding:14px 14px 18px;display:grid;gap:10px;box-shadow:0 8px 0 rgba(0,0,0,.18);user-select:none;-webkit-user-select:none;touch-action:manipulation}
-.lcd{background:#c9d7b8;border:3px solid #55604a;border-radius:8px;padding:6px 8px;font-family:var(--lcd);color:#26301f;min-height:86px;display:grid;grid-template-columns:1fr auto;gap:2px 6px;align-items:center;transition:opacity .2s}
-.lcd.off{opacity:.25}
-.lcd .md{font-family:var(--font);font-weight:800;font-size:15px}
-.lcd .tp{font-size:40px;line-height:1;grid-row:span 2;text-align:right}
-.lcd .tp small{font-size:16px}
-.lcd .sub{font-size:13px;font-family:var(--font);font-weight:800}
-.lcd .row{grid-column:1/-1;display:flex;justify-content:space-between;font-size:12px;font-family:var(--font);font-weight:800}
-.bars{display:inline-flex;gap:2px;align-items:flex-end;height:14px;vertical-align:middle}
-.bars i{width:4px;background:#26301f;opacity:.2}.bars i.on{opacity:1}
+/* ---------- remotes: white plastic, rubber keys, glassy LCD ---------- */
+.remote{position:relative;grid-template-columns:minmax(0,1fr);width:min(250px,88vw);padding:18px 16px 20px;display:grid;gap:10px;user-select:none;-webkit-user-select:none;touch-action:manipulation;
+  background:linear-gradient(115deg,#ffffff 0%,var(--rb) 45%,#e1e3e4 100%);border:1px solid rgba(0,0,0,.28);border-radius:28px;
+  box-shadow:inset 0 2px 1px rgba(255,255,255,.95),inset 0 -8px 14px rgba(0,0,0,.08),inset 6px 0 10px rgba(255,255,255,.6),0 14px 24px rgba(0,0,0,.28),0 3px 6px rgba(0,0,0,.15)}
+@media (orientation:landscape) and (min-height:600px){.remote{width:290px}}
+.remote.r-slide{border-radius:30px 30px 44px 44px}
+.remote.r-screen{border-radius:20px;background:linear-gradient(115deg,#fbfcfe,#e7ecf3 50%,#cfd6df)}
+.remote.r-flip{border-radius:34px 34px 22px 22px}
+.remote.r-simple{border-radius:34px}
+.ir{justify-self:center;width:46px;height:12px;border-radius:6px;background:linear-gradient(#3a2230,#120a10);box-shadow:inset 0 2px 2px rgba(255,255,255,.25)}
+.lcd{position:relative;overflow:hidden;background:linear-gradient(#d4e0c6,#b8c7a6);border-radius:10px;padding:8px 10px;font-family:var(--lcd);color:#26301f;min-height:96px;
+  display:grid;grid-template-columns:auto 1fr;gap:4px 8px;align-items:center;box-shadow:inset 0 2px 5px rgba(0,0,0,.35),0 1px 0 #fff;border:2px solid #8f9a85;transition:opacity .2s}
+.lcd::after{content:"";position:absolute;inset:0 0 55% 0;background:linear-gradient(rgba(255,255,255,.35),rgba(255,255,255,0));pointer-events:none}
+.lcd.dark{background:linear-gradient(#18263c,#0b1422);color:#8fd0ff;border-color:#0a1220;min-height:150px}
+.lcd.off>*{opacity:.15}
+.lcd-mode{display:flex;gap:4px;align-items:center}
+.lcd-temp{font-size:44px;line-height:1;text-align:right}
+.lcd-temp small{font-size:18px}
+.lcd-row{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:4px;font-size:13px}
+.lcd-row span{display:inline-flex;align-items:center;gap:2px}
+.lcd .sel{outline:2px solid currentColor;border-radius:4px;padding:0 2px}
+.bars{display:inline-flex;gap:2px;align-items:flex-end;height:14px}
+.bars i{width:4px;opacity:.2}.bars i.on{opacity:1}
 .grid{display:grid;gap:8px}
-.b{font:inherit;font-weight:800;font-size:13px;border:2px solid var(--ink);border-radius:10px;background:#fff;color:var(--ink);padding:9px 4px;cursor:pointer;box-shadow:0 3px 0 var(--ink);line-height:1.1}
-.b:active,.b.press{transform:translateY(3px);box-shadow:0 0 0 var(--ink)}
+.b{font:inherit;display:grid;justify-items:center;align-content:center;gap:1px;min-height:46px;border:1px solid rgba(0,0,0,.22);border-radius:14px;
+  background:linear-gradient(#ffffff,#e6e8eb);color:#2b2f3a;padding:6px 2px;cursor:pointer;line-height:1.1;
+  box-shadow:0 3px 0 #b5bac2,0 5px 6px rgba(0,0,0,.18),inset 0 1px 0 #fff}
+.b:active,.b.press{transform:translateY(3px);box-shadow:0 0 0 #b5bac2,0 1px 2px rgba(0,0,0,.2),inset 0 2px 3px rgba(0,0,0,.12)}
 .b:focus-visible{outline:3px solid #2b7bff;outline-offset:2px}
-.b.pw{font-size:15px}
-.b small{display:block;font-size:10px;font-weight:500}
-.logo{text-align:center;font-weight:800;letter-spacing:.06em;font-size:13px}
-/* slide cover (Polar style) */
-.coverBox{position:relative;overflow:hidden;border-radius:12px}
-.cover{position:absolute;inset:0;border:2px solid rgba(0,0,0,.25);border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:13px;cursor:pointer;transition:transform .45s cubic-bezier(.3,.7,.3,1);z-index:2}
-.cover.open{transform:translateY(calc(100% - 22px))}
-/* flip lid (Soyokaze style) */
-.lid{position:absolute;left:-3px;right:-3px;top:-3px;border:3px solid var(--ink);border-radius:30px 30px 18px 18px;transform-origin:50% 0;transition:transform .5s;z-index:3;padding:14px;display:grid;gap:10px;backface-visibility:hidden}
-.lid.open{transform:perspective(600px) rotateX(-178deg)}
+.b small{font-size:9px;font-weight:500;color:#6a707a}
+.b.pw small{color:rgba(255,255,255,.9)}
+.b.pw{min-height:56px;border-color:rgba(0,0,0,.3);box-shadow:0 3px 0 rgba(0,0,0,.35),0 5px 8px rgba(0,0,0,.25),inset 0 1px 0 rgba(255,255,255,.5)}
+.b.round{width:132px;height:132px;border-radius:50%;justify-self:center;margin-top:16px}
+.ic{display:grid;place-items:center;line-height:0}
+.logo{text-align:center;font-weight:800;letter-spacing:.06em;font-size:12px;opacity:.85}
+.coverBox{position:relative;overflow:hidden;border-radius:16px;padding:4px}
+.cover{position:absolute;inset:0;border-radius:16px;display:grid;place-items:center;cursor:pointer;z-index:2;
+  background:linear-gradient(115deg,#fdfdfd,#e8e9ea 60%,#d4d6d8);border:1px solid rgba(0,0,0,.2);box-shadow:inset 0 2px 1px #fff,0 -2px 4px rgba(0,0,0,.08);transition:transform .45s cubic-bezier(.3,.7,.3,1)}
+.cover .grip{position:absolute;top:10px;left:30%;right:30%;height:6px;border-radius:3px;background:repeating-linear-gradient(90deg,#c4c7cb 0 3px,transparent 3px 6px)}
+.cover.open{transform:translateY(calc(100% - 26px))}
+.lid{position:absolute;left:-1px;right:-1px;top:-1px;bottom:-1px;align-content:start;border-radius:34px 34px 22px 22px;transform-origin:50% 0;transition:transform .5s;z-index:3;padding:18px 16px;display:grid;gap:12px;backface-visibility:hidden;
+  background:linear-gradient(115deg,#ffffff,var(--rb) 45%,#d8e8eb);border:1px solid rgba(0,0,0,.28);box-shadow:inset 0 2px 1px #fff,0 6px 10px rgba(0,0,0,.2)}
+.lid.open{transform:perspective(700px) rotateX(-178deg)}
 .hint{font-size:11px;text-align:center;opacity:.75}
-.menuSel{outline:3px solid #26301f;border-radius:4px;padding:0 3px}
 </style>
 </head>
 <body>
@@ -165,139 +180,207 @@ function menuStep(d){
 }
 function press(name,arg){audio();startHum();ACT[name](arg);renderLCD()}
 
+// ---------- icons (so the remote reads without words) ----------
+function I(n,c='#2b2f3a',sz=26){
+  const S=(b)=>`<svg viewBox="0 0 24 24" width="${sz}" height="${sz}" fill="none" stroke="${c}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${b}</svg>`;
+  switch(n){
+    case 'power':return S('<path d="M7.5 6.5a7 7 0 1 0 9 0"/><path d="M12 3v8"/>');
+    case 'up':return S(`<path d="M5 15l7-8 7 8z" fill="${c}"/>`);
+    case 'down':return S(`<path d="M5 9l7 8 7-8z" fill="${c}"/>`);
+    case 'cool':return S('<path d="M12 2v20M4 7l16 10M20 7L4 17"/><path d="M9.5 3.5L12 6l2.5-2.5M9.5 20.5L12 18l2.5 2.5"/>');
+    case 'heat':return S(`<circle cx="12" cy="12" r="4" fill="${c}"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>`);
+    case 'dry':return S(`<path d="M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11z" fill="${c}" fill-opacity=".25"/>`);
+    case 'fan':return S('<circle cx="12" cy="12" r="1.5"/><path d="M12 10.5C11 6 13 3 16 4.5s0 5-4 6zM13.3 12.8c4.3 1.4 6.2 4.4 3.5 6.4s-4.6-1.6-3.5-6.4zM10.7 12.7c-3.4 3-7 2.9-7.3-.4s3.6-3.7 7.3.4z"/>');
+    case 'auto':return S('<path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v4h-4"/><path d="M9 15l3-7 3 7M10 13h4"/>');
+    case 'mode':return S('<path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3"/><path d="M18 3v4h-4M6 21v-4h4"/>');
+    case 'speed':return S(`<circle cx="7" cy="12" r="1.2"/><path d="M7 10.8C6.4 8 7.6 6.2 9.4 7.1s0 3-2.4 3.7zM7.9 12.6c2.6.8 3.7 2.6 2.1 3.8s-2.8-1-2.1-3.8zM6.2 12.5c-2 1.8-4.2 1.7-4.4-.2s2.2-2.2 4.4.2z"/><path d="M14 17v-3M17.5 17v-6M21 17V8"/>`);
+    case 'vane':return S('<path d="M3 6h12"/><path d="M15 6c4 1 5 5 3 9"/><path d="M15 13l3 3 3-3"/>');
+    case 'swing':return S('<path d="M8 4c-4 4-4 12 0 16M16 4c4 4 4 12 0 16"/><path d="M6 7l2-3 3 1M18 17l-2 3-3-1"/>');
+    case 'side':return S('<path d="M3 12h18M7 8l-4 4 4 4M17 8l4 4-4 4"/>');
+    case 'timerOn':return S('<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/><circle cx="19" cy="6" r="3" fill="#2fb34a" stroke="#2fb34a"/>');
+    case 'timerOff':return S('<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/><circle cx="19" cy="6" r="3" fill="#e5484d" stroke="#e5484d"/>');
+    case 'timer':return S('<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 2h6"/>');
+    case 'sleep':return S(`<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="${c}" fill-opacity=".25"/><path d="M16 3h3l-3 3h3"/>`);
+    case 'powerful':return S(`<path d="M13 2L4 14h7l-1 8 9-12h-7z" fill="#ffcc33"/>`);
+    case 'quiet':return S('<path d="M5 19c0-8 6-14 15-15-1 9-7 15-15 15z"/><path d="M5 19l8-8"/>');
+    case 'clean':return S('<path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>');
+    case 'menu':return S('<path d="M4 6h16M4 12h16M4 18h16"/>');
+    case 'stop':return S(`<rect x="6" y="6" width="12" height="12" rx="2" fill="${c}"/>`);
+    case 'bear':return S(`<circle cx="6" cy="6" r="2.5" fill="#fff"/><circle cx="18" cy="6" r="2.5" fill="#fff"/><circle cx="12" cy="13" r="8" fill="#fff"/><circle cx="9" cy="11" r="1" fill="${c}"/><circle cx="15" cy="11" r="1" fill="${c}"/><ellipse cx="12" cy="15" rx="2.5" ry="1.8" fill="${c}"/>`);
+    case 'eye':return S(`<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3" fill="${c}"/>`);
+    case 'sparkle':return S(`<path d="M12 2l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" fill="${c}" fill-opacity=".3"/><circle cx="19" cy="19" r="1.5" fill="${c}"/><circle cx="5" cy="19" r="1" fill="${c}"/>`);
+    case 'foot':return S(`<ellipse cx="9" cy="15" rx="3.5" ry="5" fill="${c}" fill-opacity=".3"/><circle cx="7" cy="7" r="1.2" fill="${c}"/><circle cx="10" cy="6" r="1.2" fill="${c}"/><circle cx="13" cy="7" r="1.1" fill="${c}"/><path d="M17 9c2 2-1 3 1 5s-1 3 1 5"/>`);
+    case 'slide':return S('<path d="M4 5h16M4 9h16"/><path d="M12 12v8M8 16l4 4 4-4"/>');
+    case 'unslide':return S('<path d="M4 15h16M4 19h16"/><path d="M12 12V4M8 8l4-4 4 4"/>');
+  }
+  return '';
+}
+const MODE_ICON={auto:'auto',cool:'cool',dry:'dry',heat:'heat',fan:'fan'};
+const SPECIAL_ICON={polar:'bear',aozora:'eye',soyo:'sparkle',mikan:'foot'};
+
 // ---------- remotes ----------
-function btn(label,act,o={}){
-  const b=document.createElement('button');b.className='b'+(o.cls?' '+o.cls:'');b.innerHTML=label;
+function btn(icon,label,act,o={}){
+  const b=document.createElement('button');b.className='b'+(o.cls?' '+o.cls:'');
+  b.setAttribute('aria-label',label);
+  b.innerHTML=`<span class="ic">${icon?I(icon,o.ic||'#2b2f3a',o.sz||26):''}</span>${o.txt?`<span class="tx">${o.txt}</span>`:''}<small>${label}</small>`;
+  if(o.dyn)b.dataset.dyn=o.dyn;
   if(o.style)b.style.cssText=o.style;
   b.addEventListener('click',e=>{e.stopPropagation();press(act,o.arg)});return b;
 }
 function grid(cols,items,gap){const g=document.createElement('div');g.className='grid';g.style.gridTemplateColumns=`repeat(${cols},1fr)`;if(gap)g.style.gap=gap;items.forEach(i=>g.appendChild(i));return g}
 function el(tag,cls,html){const e=document.createElement(tag);if(cls)e.className=cls;if(html!==undefined)e.innerHTML=html;return e}
-function lcdBox(){const l=el('div','lcd');l.id='lcd';return l}
+function lcdBox(dark){const l=el('div','lcd'+(dark?' dark':''));l.id='lcd';return l}
+function powerKey(C,extra=''){return btn('power','うんてん','power',{cls:'pw',ic:'#fff',sz:30,style:`background:linear-gradient(${C},${shade(C,-25)});${extra}`})}
+function shade(hex,p){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;const f=v=>clamp(Math.round(v+(p/100)*255),0,255);return `rgb(${f(r)},${f(g)},${f(b)})`}
 function buildRemote(){
   const host=$('remote');host.innerHTML='';
-  const r=el('div','remote');r.style.background=brand.remoteBg;host.appendChild(r);
-  const C=brand.color;
-  if(brand.remote==='slide'){ // tall remote; slide the lower cover down for detailed buttons
-    r.style.borderRadius='26px 26px 36px 36px';
+  const r=el('div','remote r-'+brand.remote);r.style.setProperty('--rb',brand.remoteBg);host.appendChild(r);
+  const C=brand.color,warm='#e5484d',cold='#2f80ed';
+  const tempKeys=()=>[btn('up','おんど あげる','up',{ic:warm,sz:30}),btn('down','おんど さげる','down',{ic:cold,sz:30})];
+  if(brand.remote==='slide'){
+    r.appendChild(el('div','ir'));
     r.appendChild(lcdBox());
-    r.appendChild(grid(2,[btn('うんてん<br>ていし','power',{cls:'pw',style:`background:${C};color:#fff;grid-column:span 2`}),btn('▲<small>おんど</small>','up'),btn('▼<small>おんど</small>','down'),btn('うんてん<br>きりかえ','mode',{style:'grid-column:span 2'})]));
+    r.appendChild(powerKey(C));
+    r.appendChild(grid(2,tempKeys()));
+    r.appendChild(btn('mode','きりかえ','mode',{dyn:'mode'}));
     const box=el('div','coverBox');
-    box.appendChild(grid(3,[btn('ふうりょう','fan'),btn('かざむき','vane'),btn('スイング','swing'),btn('さゆう','side'),btn('入<small>タイマー</small>','timerOn'),btn('切<small>タイマー</small>','timerOff'),btn('おやすみ','sleep'),btn('パワフル','powerful'),btn('しずか','quiet'),btn(brand.special,'special',{style:`grid-column:span 2;background:#e6f3ff`}),btn('おそうじ','clean')],'6px'));
-    const cover=el('div','cover'+(st.coverOpen?' open':''),'▼ ふたを スライド');cover.style.background='#e9e9e4';
-    cover.onclick=()=>{st.coverOpen=!st.coverOpen;cover.classList.toggle('open',st.coverOpen);cover.textContent=st.coverOpen?'▲ ふたを もどす':'▼ ふたを スライド';audio();beep(600,.04,0,.03)};
+    box.appendChild(grid(3,[btn('speed','かぜのつよさ','fan'),btn('vane','かざむき','vane'),btn('swing','スイング','swing'),btn('side','さゆう','side'),btn('timerOn','タイマー入','timerOn'),btn('timerOff','タイマー切','timerOff'),btn('sleep','おやすみ','sleep'),btn('powerful','パワフル','powerful'),btn('quiet','しずか','quiet'),btn(SPECIAL_ICON.polar,brand.special,'special',{ic:C,style:'grid-column:span 2'}),btn('clean','おそうじ','clean')],'7px'));
+    const cover=el('div','cover'+(st.coverOpen?' open':''));
+    const setCover=()=>{cover.classList.toggle('open',st.coverOpen);cover.innerHTML=`<span class="grip"></span>${I(st.coverOpen?'unslide':'slide','#7a7f88',30)}`};
+    cover.onclick=()=>{st.coverOpen=!st.coverOpen;setCover();audio();beep(600,.04,0,.03)};setCover();
     box.appendChild(cover);r.appendChild(box);
-  }else if(brand.remote==='screen'){ // big screen, few keys: MENU chooses what ▲▼ does
-    r.style.borderRadius='18px';r.style.background='linear-gradient(#f9fbfd,#dfe6ef)';
-    const l=lcdBox();l.style.background='#0f1b2d';l.style.color='#8fd0ff';l.style.borderColor='#0a1220';l.style.minHeight='150px';r.appendChild(l);
-    r.appendChild(grid(3,[btn('モード','mode'),btn('▲','mUp',{style:'font-size:18px'}),btn('メニュー','menu')]));
-    r.appendChild(grid(3,[btn('おやすみ','sleep'),btn('▼','mDown',{style:'font-size:18px'}),btn('パワフル','powerful')]));
-    r.appendChild(btn('● うんてん / ていし','power',{cls:'pw',style:`background:${C};color:#fff;border-radius:999px`}));
-    r.appendChild(el('div','hint','「メニュー」で えらんで ▲▼ で かえる'));
-  }else if(brand.remote==='flip'){ // flip lid: big round button outside, full keypad inside
-    r.style.borderRadius='30px 30px 18px 18px';r.style.minHeight='420px';
+  }else if(brand.remote==='screen'){
+    r.appendChild(el('div','ir'));
+    r.appendChild(lcdBox(true));
+    r.appendChild(grid(3,[btn('mode','モード','mode',{dyn:'mode'}),btn('up','うえ','mUp',{ic:warm,sz:30}),btn('menu','メニュー','menu')]));
+    r.appendChild(grid(3,[btn('sleep','おやすみ','sleep'),btn('down','した','mDown',{ic:cold,sz:30}),btn('powerful','パワフル','powerful')]));
+    r.appendChild(powerKey(C,'border-radius:999px'));
+  }else if(brand.remote==='flip'){
+    r.style.minHeight='470px';
     const inside=el('div','grid');inside.style.gap='8px';
     inside.appendChild(lcdBox());
-    inside.appendChild(grid(4,[btn('じどう','setMode',{arg:'auto'}),btn('れいぼう','setMode',{arg:'cool',style:'background:#dff1ff'}),btn('じょしつ','setMode',{arg:'dry',style:'background:#e5f8e5'}),btn('だんぼう','setMode',{arg:'heat',style:'background:#ffeede'})],'5px'));
-    inside.appendChild(grid(3,[btn('▲<small>おんど</small>','up'),btn('ていし','stop',{style:'background:#444;color:#fff'}),btn('▼<small>おんど</small>','down'),btn('ふうりょう','fan'),btn('じょうげ','vane'),btn('さゆう','side'),btn('スイング','swing'),btn('切<small>タイマー</small>','timerOff'),btn('おそうじ','clean')],'6px'));
-    inside.appendChild(btn(brand.special,'special',{style:`background:${C};color:#fff`}));
+    inside.appendChild(grid(4,[btn('auto','じどう','setMode',{arg:'auto',ic:'#b08900'}),btn('cool','れいぼう','setMode',{arg:'cool',ic:'#2f80ed'}),btn('dry','じょしつ','setMode',{arg:'dry',ic:'#2fa84f'}),btn('heat','だんぼう','setMode',{arg:'heat',ic:'#e5484d'})],'6px'));
+    inside.appendChild(grid(3,[btn('up','おんど あげる','up',{ic:warm,sz:30}),btn('stop','とめる','stop',{ic:'#555'}),btn('down','おんど さげる','down',{ic:cold,sz:30}),btn('speed','かぜのつよさ','fan'),btn('vane','じょうげ','vane'),btn('side','さゆう','side'),btn('swing','スイング','swing'),btn('timerOff','タイマー切','timerOff'),btn('clean','おそうじ','clean')],'7px'));
+    inside.appendChild(btn(SPECIAL_ICON.soyo,brand.special,'special',{ic:C}));
     r.appendChild(inside);
-    const lid=el('div','lid'+(st.coverOpen?' open':''));lid.style.background=`linear-gradient(${brand.remoteBg},#d6eef2)`;
-    const big=btn('うんてん<br>ていし','power',{style:`width:120px;height:120px;border-radius:50%;justify-self:center;background:${C};color:#fff;font-size:18px;margin-top:30px`});
-    lid.appendChild(el('div','logo',brand.name));lid.appendChild(big);
-    lid.appendChild(grid(2,[btn('▲<small>おんど</small>','up'),btn('▼<small>おんど</small>','down')]));
-    const op=el('button','b','ふたを ひらく ▼');op.onclick=e=>{e.stopPropagation();st.coverOpen=true;lid.classList.add('open');audio();beep(600,.04,0,.03)};lid.appendChild(op);
+    const lid=el('div','lid'+(st.coverOpen?' open':''));
+    lid.appendChild(el('div','ir'));
+    lid.appendChild(btn('power','うんてん','power',{cls:'pw round',ic:'#fff',sz:46,style:`background:radial-gradient(circle at 35% 30%,${shade(C,18)},${C} 60%,${shade(C,-22)})`}));
+    lid.appendChild(grid(2,tempKeys()));
+    const op=el('button','b open-lid',`<span class="ic">${I('slide','#2b2f3a',28)}</span><small>ふたを ひらく</small>`);op.onclick=e=>{e.stopPropagation();st.coverOpen=true;lid.classList.add('open');audio();beep(600,.04,0,.03)};lid.appendChild(op);
+    lid.appendChild(el('div','logo',brand.name));
     r.appendChild(lid);
-    const cl=el('button','b','ふたを しめる ▲');cl.onclick=()=>{st.coverOpen=false;lid.classList.remove('open');beep(600,.04,0,.03)};r.appendChild(cl);
-  }else{ // simple: a few big buttons
-    r.style.borderRadius='28px';
+    const cl=el('button','b',`<span class="ic">${I('unslide','#2b2f3a',26)}</span><small>ふたを しめる</small>`);cl.onclick=()=>{st.coverOpen=false;lid.classList.remove('open');beep(600,.04,0,.03)};r.appendChild(cl);
+  }else{
+    r.appendChild(el('div','ir'));
     r.appendChild(lcdBox());
-    r.appendChild(btn('でんげん','power',{cls:'pw',style:`background:${C};color:#fff;border-radius:999px;font-size:20px;padding:14px`}));
-    r.appendChild(grid(2,[btn('＋','up',{style:'font-size:24px'}),btn('ー','down',{style:'font-size:24px'}),btn('モード','mode'),btn('かぜ','fan'),btn('かざむき','vane'),btn('タイマー','timerOff')]));
-    r.appendChild(btn(brand.special,'special',{style:'background:#fff1dd'}));
+    r.appendChild(powerKey(C,'border-radius:999px;padding:16px'));
+    r.appendChild(grid(2,[btn('up','あげる','up',{ic:warm,sz:34}),btn('down','さげる','down',{ic:cold,sz:34}),btn('mode','モード','mode',{dyn:'mode'}),btn('speed','かぜ','fan'),btn('vane','かざむき','vane'),btn('timerOff','タイマー','timerOff')]));
+    r.appendChild(btn(SPECIAL_ICON.mikan,brand.special,'special',{ic:C}));
   }
   const lg=el('div','logo',brand.name);lg.style.color=C;r.appendChild(lg);
   renderLCD();
 }
 function renderLCD(){
+  document.querySelectorAll('[data-dyn=mode] .ic').forEach(e=>e.innerHTML=I(MODE_ICON[st.mode],MODE_COL_ICON[st.mode],26));
   const l=$('lcd');if(!l)return;
+  const dark=l.classList.contains('dark'),ink=dark?'#8fd0ff':'#26301f';
   l.classList.toggle('off',!st.on&&!st.clean);
-  if(st.clean&&!st.on){l.innerHTML='<div class="md">おそうじちゅう</div><div class="tp">--</div><div class="sub">かわかしています</div>';return}
-  const bars=n=>'<span class="bars">'+[1,2,3,4,5].map(i=>`<i class="${i<=n?'on':''}" style="height:${3+i*2}px"></i>`).join('')+'</span>';
-  const fanTxt=st.powerful?'パワフル':st.quiet?'しずか':st.fan===0?'じどう':bars(st.fan);
-  const vaneTxt=st.vane==='swing'?'スイング':st.vane===0?'じどう':'▼'.repeat(1)+st.vane;
-  const sideTxt=st.side==='swing'?'↔':st.side===0?'・':st.side<0?'←'.repeat(-st.side):'→'.repeat(st.side);
-  const tm=(st.timerOff?`切 ${st.timerOff}h `:'')+(st.timerOn?`入 ${st.timerOn}h`:'');
-  const sel=i=>brand.remote==='screen'&&st.menu===i?' class="menuSel"':'';
+  if(st.clean&&!st.on){l.innerHTML=`<div class="lcd-mode">${I('clean',ink,30)}</div><div class="lcd-temp">--</div>`;return}
+  const bars=n=>`<span class="bars">${[1,2,3,4,5].map(i=>`<i class="${i<=n?'on':''}" style="height:${3+i*2}px;background:${ink}"></i>`).join('')}</span>`;
+  const fanTxt=st.powerful?I('powerful',ink,18):st.quiet?I('quiet',ink,18):st.fan===0?I('auto',ink,18):bars(st.fan);
+  const vaneTxt=st.vane==='swing'?I('swing',ink,18):st.vane===0?I('auto',ink,16):`${I('vane',ink,18)}<b>${st.vane}</b>`;
+  const sideTxt=st.side==='swing'?I('side',ink,18):st.side===0?'':(st.side<0?'◀'.repeat(-st.side):'▶'.repeat(st.side));
+  const tm=(st.timerOff?`${I('timerOff',ink,16)}${st.timerOff}h`:'')+(st.timerOn?`${I('timerOn',ink,16)}${st.timerOn}h`:'');
+  const sel=i=>brand.remote==='screen'&&st.menu===i?' sel':'';
   const tempTxt=st.mode==='fan'?'--':(brand.step<1?st.temp.toFixed(1):st.temp);
-  l.innerHTML=`<div class="md">${MODE_JP[st.mode]}${st.special?' ★':''}</div><div class="tp">${tempTxt}<small>℃</small></div>
-    <div class="sub"><span${sel(0)}>${fanTxt}</span></div>
-    <div class="row"><span${sel(1)}>かぜ ${vaneTxt}</span><span>${sideTxt}</span><span${sel(2)}>${tm||'タイマー なし'}</span></div>
-    ${st.special?`<div class="row"><span${sel(3)}>${brand.special} ON</span></div>`:brand.remote==='screen'&&st.menu>=0?`<div class="row"><span class="menuSel">メニュー：${MENU[st.menu]}</span></div>`:''}
-    ${st.sleep?'<div class="row"><span>おやすみ</span></div>':''}`;
+  l.innerHTML=`<div class="lcd-mode">${I(MODE_ICON[st.mode],ink,30)}${st.special?I(SPECIAL_ICON[brand.id],ink,22):''}${st.sleep?I('sleep',ink,20):''}</div>
+    <div class="lcd-temp">${tempTxt}<small>℃</small></div>
+    <div class="lcd-row"><span class="${sel(0)}">${I('speed',ink,16)}${fanTxt}</span><span class="${sel(1)}">${vaneTxt}</span><span>${sideTxt}</span><span class="${sel(2)}">${tm||(sel(2)?I('timer',ink,16):'')}</span>${brand.remote==='screen'&&st.menu===3?`<span class="sel">${I('eye',ink,16)}</span>`:''}${brand.remote==='screen'&&st.menu===4?`<span class="sel">${I('clean',ink,16)}</span>`:''}</div>`;
 }
-
-// ---------- the air conditioner body (SVG) ----------
+const MODE_COL_ICON={auto:'#b08900',cool:'#2f80ed',dry:'#2fa84f',heat:'#e5484d',fan:'#5a6070'};
+// ---------- the air conditioner body (SVG, seen from slightly below) ----------
 const NS='http://www.w3.org/2000/svg';
 let svgEls={};
 function svg(tag,attrs,parent){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);(parent||$('ac')).appendChild(e);return e}
 function buildAC(){
   const s=$('ac');s.innerHTML='';svgEls={};
   const B=brand,C=B.color;
-  const shape={box:{rx:10,h:210},sleek:{rx:40,h:190},round:{rx:80,h:220},compact:{rx:24,h:180}}[B.body];
-  const x0=40,w=720,h=shape.h,y0=20;
-  svg('rect',{x:x0+6,y:y0+10,width:w,height:h,rx:shape.rx,fill:'rgba(0,0,0,.12)'});
-  const grad=svg('defs',{});grad.innerHTML=`<linearGradient id="bodyG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="${B.body==='sleek'?'#d9dee6':'#ececea'}"/></linearGradient>`;
-  svg('rect',{x:x0,y:y0,width:w,height:h,rx:shape.rx,fill:'url(#bodyG)',stroke:'#2b2f3a','stroke-width':4});
-  // outlet slot at the bottom
-  const sy=y0+h-62,sx=x0+(B.body==='round'?90:50),sw=w-(B.body==='round'?180:100),sh=46;
+  const P={box:{rx:12,h:170,face:['#ffffff','#f1f2ef','#e2e3df']},sleek:{rx:34,h:150,face:['#fbfcfe','#eef1f5','#d8dde5']},round:{rx:70,h:178,face:['#ffffff','#f3f6f6','#dde5e6']},compact:{rx:20,h:146,face:['#ffffff','#f5f3ef','#e4e0d8']}}[B.body];
+  const x0=50,w=700,y0=24,h=P.h,ub=30; // ub = underside depth
+  s.innerHTML=`<defs>
+    <linearGradient id="face" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P.face[0]}"/><stop offset=".6" stop-color="${P.face[1]}"/><stop offset="1" stop-color="${P.face[2]}"/></linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".35" stop-color="#fff" stop-opacity=".7"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="under" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9ccd1"/><stop offset="1" stop-color="#9ea3ab"/></linearGradient>
+    <linearGradient id="slot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d1118"/><stop offset="1" stop-color="#2b3240"/></linearGradient>
+    <linearGradient id="vane" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#d9dde3"/><stop offset="1" stop-color="#aab1bb"/></linearGradient>
+    <linearGradient id="flapIn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d4d7dc"/><stop offset="1" stop-color="#a9aeb6"/></linearGradient>
+    <linearGradient id="cap" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e3e4e1"/><stop offset="1" stop-color="#b9bbb8"/></linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a3140"/><stop offset="1" stop-color="#0e121a"/></linearGradient>
+    <filter id="blur" x="-20%" y="-20%" width="140%" height="160%"><feGaussianBlur stdDeviation="10"/></filter>
+    <filter id="glow"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+  // shadow on the wall
+  svg('rect',{x:x0+14,y:y0+18,width:w,height:h+ub,rx:P.rx,fill:'rgba(60,50,30,.28)',filter:'url(#blur)'});
+  // right end cap (depth)
+  svg('path',{d:`M${x0+w-P.rx} ${y0} h${P.rx*0.6} q${P.rx*0.55} 0 ${P.rx*0.55} ${P.rx} v${h+ub-P.rx*1.6} q0 ${P.rx*0.5} ${-P.rx*0.55} ${P.rx*0.6} h${-P.rx*0.6} z`,fill:'url(#cap)'});
+  // underside (seen from below) with the outlet
+  const uy=y0+h-10;
+  svg('path',{d:`M${x0+18} ${uy} L${x0+w-18} ${uy} Q${x0+w-26} ${uy+ub} ${x0+w-60} ${uy+ub} L${x0+60} ${uy+ub} Q${x0+26} ${uy+ub} ${x0+18} ${uy} Z`,fill:'url(#under)',stroke:'#2b2f3a','stroke-width':2.5});
+  const sx=x0+80,sw=w-160,sy=uy+5,sh=ub-9;
   svgEls.slot={x:sx,y:sy,w:sw,h:sh};
-  svg('rect',{x:sx,y:sy,width:sw,height:sh,rx:8,fill:'#1d2330'});
-  // side louvers (vertical slats) inside the slot
-  svgEls.sides=[];for(let i=1;i<8;i++){svgEls.sides.push(svg('line',{x1:sx+sw*i/8,y1:sy+4,x2:sx+sw*i/8,y2:sy+sh-4,stroke:'#5a6478','stroke-width':4,'stroke-linecap':'round'}))}
-  // up/down vanes (horizontal slats)
-  svgEls.vanes=[0,1].map(i=>svg('rect',{x:sx+6,y:sy+10+i*16,width:sw-12,height:6,rx:3,fill:'#e8ebf0',stroke:'#8a93a5','stroke-width':1.5}));
-  // front flap that swings open
-  svgEls.flap=svg('rect',{x:sx-6,y:sy-2,width:sw+12,height:sh+6,rx:10,fill:B.body==='sleek'?'#e3e8ef':'#f6f6f3',stroke:'#2b2f3a','stroke-width':3});
-  // panel line + brand details
-  if(B.body==='box')svg('line',{x1:x0+20,y1:y0+46,x2:x0+w-20,y2:y0+46,stroke:'#c9c9c4','stroke-width':3});
-  if(B.body==='sleek'){svgEls.bar=svg('rect',{x:x0+w-300,y:y0+30,width:240,height:6,rx:3,fill:'#cfd6e0'})}
-  if(B.body==='round')svg('path',{d:`M${x0+60} ${y0+70} Q${x0+w/2} ${y0+40} ${x0+w-60} ${y0+70}`,stroke:C,'stroke-width':4,fill:'none',opacity:.6});
-  if(B.body==='compact')svg('circle',{cx:x0+50,cy:y0+40,r:12,fill:C});
-  const logo=svg('text',{x:B.body==='compact'?x0+72:x0+40,y:y0+(B.body==='box'?34:B.body==='round'?110:52),fill:C,style:`font:${B.logoFont}`});logo.textContent=B.logoText;
+  svg('rect',{x:sx,y:sy,width:sw,height:sh,rx:sh/2,fill:'url(#slot)'});
+  svgEls.sides=[];for(let i=1;i<10;i++)svgEls.sides.push(svg('line',{x1:sx+sw*i/10,y1:sy+3,x2:sx+sw*i/10,y2:sy+sh-3,stroke:'#46505f','stroke-width':3,'stroke-linecap':'round'}));
+  svgEls.vanes=[0,1].map(i=>svg('rect',{x:sx+8,y:sy+3+i*8,width:sw-16,height:4,rx:2,fill:'url(#vane)',stroke:'#7d8592','stroke-width':1}));
+  // front face
+  svg('rect',{x:x0,y:y0,width:w,height:h,rx:P.rx,fill:'url(#face)',stroke:'#2b2f3a','stroke-width':3});
+  svg('rect',{x:x0+8,y:y0+6,width:w-16,height:h*0.55,rx:P.rx*0.8,fill:'url(#sheen)',opacity:.55});
+  // intake slits along the top edge
+  for(let i=0;i<46;i++)svg('rect',{x:x0+P.rx*0.7+i*((w-P.rx*1.4)/46),y:y0+5,width:(w-P.rx*1.4)/46-4,height:5,rx:1.5,fill:'#c8cbc8'});
+  // lower front panel (the flap) seam
+  const fy=y0+h-40;
+  svg('line',{x1:x0+P.rx*0.5,y1:fy,x2:x0+w-P.rx*0.5,y2:fy,stroke:'#c3c5c1','stroke-width':2});
+  svgEls.flapGeo={l:x0+24,r:x0+w-24,top:fy,bot:y0+h-2,hl:x0+62,hr:x0+w-62,hy:uy+ub-1};
+  svgEls.flap=svg('polygon',{points:'',fill:'url(#face)',stroke:'#2b2f3a','stroke-width':2.5});
+  // brand details
+  if(B.body==='box')svg('line',{x1:x0+24,y1:y0+52,x2:x0+w-24,y2:y0+52,stroke:'#d0d1cd','stroke-width':2});
+  if(B.body==='sleek'){svgEls.bar=svg('rect',{x:x0+w-290,y:y0+38,width:220,height:5,rx:2.5,fill:'#cfd6e0'});svg('circle',{cx:x0+w/2,cy:y0+40,r:9,fill:'url(#glass)'});svg('circle',{cx:x0+w/2-3,cy:y0+37,r:2.5,fill:'#fff',opacity:.7})}
+  if(B.body==='round')svg('path',{d:`M${x0+70} ${y0+64} Q${x0+w/2} ${y0+36} ${x0+w-70} ${y0+64}`,stroke:C,'stroke-width':3,fill:'none',opacity:.55});
+  if(B.body==='compact')svg('circle',{cx:x0+46,cy:y0+42,r:11,fill:C});
+  const logo=svg('text',{x:B.body==='compact'?x0+66:x0+40,y:y0+(B.body==='box'?40:B.body==='round'?100:50),fill:C,style:`font:${B.logoFont.replace(/\d+px/,m=>Math.round(parseInt(m)*0.8)+'px')}`});logo.textContent=B.logoText;
   if(B.body==='round'){logo.setAttribute('x',x0+w/2);logo.setAttribute('text-anchor','middle')}
-  // display + lamps
+  // display window
   if(B.body==='box'||B.body==='round'){
-    const dx=B.body==='box'?x0+w-170:x0+w/2-60,dy=B.body==='box'?y0+70:y0+120;
-    svg('rect',{x:dx,y:dy,width:120,height:44,rx:8,fill:'#141821'});
-    svgEls.disp=svg('text',{x:dx+60,y:dy+33,'text-anchor':'middle',fill:'#ff5b4f',style:'font:28px "Share Tech Mono",monospace'});
+    const dx=B.body==='box'?x0+w-180:x0+w/2-55,dy=B.body==='box'?y0+66:y0+110;
+    svg('rect',{x:dx,y:dy,width:110,height:40,rx:7,fill:'url(#glass)',stroke:'#555','stroke-width':1});
+    svg('rect',{x:dx+4,y:dy+3,width:102,height:12,rx:5,fill:'#fff',opacity:.08});
+    svgEls.disp=svg('text',{x:dx+55,y:dy+30,'text-anchor':'middle',fill:'#ff5b4f',filter:'url(#glow)',style:'font:26px "Share Tech Mono",monospace'});
   }
-  svgEls.lamps=[0,1,2].map(i=>svg('circle',{cx:x0+w-(B.body==='round'?120:60)-i*22,cy:B.body==='box'?y0+140:B.body==='round'?y0+150:y0+60,r:6,fill:'#cfd3da',stroke:'#2b2f3a','stroke-width':1.5}));
+  svgEls.lamps=[0,1,2].map(i=>svg('circle',{cx:x0+w-(B.body==='round'?110:56)-i*20,cy:B.body==='box'?y0+124:B.body==='round'?y0+132:y0+60,r:5,fill:'#cfd3da',stroke:'#7d8592','stroke-width':1}));
 }
 function updateAC(t){
   const S=svgEls.slot;if(!S)return;
-  const running=st.on||st.clean>0;
-  // flap: closed → swung down below the slot
-  const fA=flap;
-  svgEls.flap.setAttribute('y',S.y-2+fA*(S.h+8));
-  svgEls.flap.setAttribute('height',Math.max(4,(S.h+6)*(1-fA*0.78)));
-  svgEls.flap.setAttribute('opacity',1-fA*0.15);
-  // up/down vanes: thin when blowing straight, thick when tilted down
-  svgEls.vanes.forEach((v,i)=>{const th=4+vaneAng*14;v.setAttribute('height',th);v.setAttribute('y',S.y+8+i*17-th*0.2+vaneAng*4)});
-  svgEls.sides.forEach((l,i)=>{const off=sideAng*9;l.setAttribute('x2',S.x+S.w*(i+1)/8+off)});
+  // flap swings down from the front face to below the unit
+  const F=svgEls.flapGeo,a=flap,top=F.top+(F.bot-F.top)*Math.min(1,a*2),hgt=F.bot-F.top;
+  let pts;
+  if(a<0.5){const k=1-a*2;pts=`${F.l},${F.bot} ${F.r},${F.bot} ${F.r-6*a},${F.bot-hgt*k} ${F.l+6*a},${F.bot-hgt*k}`}
+  else{const k=(a-0.5)*2;pts=`${F.hl},${F.hy} ${F.hr},${F.hy} ${F.hr-14*k},${F.hy+hgt*0.75*k} ${F.hl+14*k},${F.hy+hgt*0.75*k}`} // hangs below the outlet so the vanes show
+  svgEls.flap.setAttribute('points',pts);svgEls.flap.setAttribute('fill',a<0.5?'url(#face)':'url(#flapIn)');
+  // up/down vanes: flat when off, tilt shows as thicker blades
+  svgEls.vanes.forEach((v,i)=>{const th=3+vaneAng*9;v.setAttribute('height',th);v.setAttribute('y',S.y+2+i*(S.h/2)-th*0.15)});
+  svgEls.sides.forEach((l,i)=>{l.setAttribute('x2',S.x+S.w*(i+1)/10+sideAng*7)});
   const col=MODE_COL[st.special&&brand.id==='polar'?'cool':st.mode];
   svgEls.lamps.forEach((l,i)=>{
-    let f='#cfd3da';
-    if(st.on&&i===0)f=col;
-    if(st.on&&i===1&&(st.timerOn||st.timerOff))f='#ffa94d';
-    if(st.on&&i===2&&(st.special||st.powerful))f=brand.color;
-    if(!st.on&&st.clean>0&&i===0)f=Math.floor(t*2)%2?'#6fd36f':'#cfd3da';
-    l.setAttribute('fill',f);
+    let f='#cfd3da',g=false;
+    if(st.on&&i===0){f=col;g=true}
+    if(st.on&&i===1&&(st.timerOn||st.timerOff)){f='#ffa94d';g=true}
+    if(st.on&&i===2&&(st.special||st.powerful)){f=brand.color;g=true}
+    if(!st.on&&st.clean>0&&i===0&&Math.floor(t*2)%2){f='#6fd36f';g=true}
+    l.setAttribute('fill',f);if(g)l.setAttribute('filter','url(#glow)');else l.removeAttribute('filter');
   });
   if(svgEls.disp)svgEls.disp.textContent=st.on?(st.mode==='fan'?'--':(brand.step<1?st.temp.toFixed(1):st.temp)):'';
-  if(svgEls.bar)svgEls.bar.setAttribute('fill',st.on?col:'#cfd6e0');
+  if(svgEls.bar){svgEls.bar.setAttribute('fill',st.on?col:'#cfd6e0');if(st.on)svgEls.bar.setAttribute('filter','url(#glow)');else svgEls.bar.removeAttribute('filter')}
 }
-
 // ---------- wind particles ----------
 const cv=$('wind'),ctx=cv.getContext('2d');let dpr=1;
 function resize(){dpr=Math.min(1.5,devicePixelRatio||1);const r=cv.getBoundingClientRect();cv.width=r.width*dpr;cv.height=r.height*dpr}
