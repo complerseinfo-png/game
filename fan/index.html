@@ -983,9 +983,12 @@ function update(dt){
   for(const c of cats)updateCat(c,dt);
   // out through the window?
   for(const it of items){
+    // small trash (bottles, cans and lighter) vanishes shortly after leaving the house
+    if(it.out&&!it.gone&&it.vanish!==undefined){it.vanish-=dt;if(it.vanish<=0){it.gone=true;scene.remove(it.g);puff(it.x,0.5,it.z,4,0xffffff,true)}continue}
     if(it.out||it.gone||it.static)continue;
     if(it.x>W+0.3){
       it.out=true;
+      if(it.weight<=3&&!it.human)it.vanish=0.7;
       if(it.count){tone(880,.08,'triangle',.05);tone(1175,.1,'triangle',.04,0,.06);if(it.human)toast((it.kind==='dad'?'おとうさん':'おかあさん')+' そとへ！',1.2);else if(it.weight===5)toast('ばいばーい！',0.8)}
       updateHud();
     }
