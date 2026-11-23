@@ -63,7 +63,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
 
 <canvas id="c" aria-label="ゲーム画面"></canvas>
 <div class="hud">
-  <div class="col"><div class="pill lv" id="lv">ハンディせんぷうき</div><div class="bar" aria-label="パワーアップまで"><i id="barFill"></i></div><div class="pill" id="batt">ふきとばした 0/10</div></div>
+  <div class="col"><div class="pill lv" id="lv">ハンディせんぷうき</div><div class="bar" aria-label="パワーアップまで"><i id="barFill"></i></div><div class="pill" id="batt">パワーアップまで 40びょう</div></div>
   <div class="mid"><div class="pill" id="left">のこり 0</div></div>
   <button class="pill mute" id="mute">おと ON</button>
 </div>
@@ -82,7 +82,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
     <button class="btn" id="startBtn">スタート</button>
     <p class="small" id="bestLine"></p>
     <div class="ladder"><span>ハンディ</span>→<span>たくじょう</span>→<span>かていよう</span>→<span>ぎょうむよう</span>→<span>ちょうきょだい</span></div>
-    <p>がめんを <b>おしたまま ゆびを うごかす</b> と すすむよ。せんぷうきは むいている ほうに かぜを だすよ。<br>ほこりや ゴミを どんどん ふきとばすと <b>パワーアップ</b>！<br>ゴミや ものは ひらいた <b>まど</b>から そとへ ふきとばそう。</p>
+    <p>がめんを <b>おしたまま ゆびを うごかす</b> と すすむよ。せんぷうきは むいている ほうに かぜを だすよ。<br>40びょう ごとに せんぷうきが <b>パワーアップ</b>！<br>ゴミや ものは ひらいた <b>まど</b>から そとへ ふきとばそう。</p>
     <p class="small">いえの なかを ぜんぶ そとに だしたら クリア！ ねこは もどってくるよ<br>パソコンは やじるしキー でも うごかせます</p>
   </div>
 </div>
@@ -590,11 +590,9 @@ function freeSpot(x,z){
   for(let r=1;r<14;r+=0.7)for(let a=0;a<6.28;a+=0.5){const nx=clamp(x+Math.cos(a)*r,-W+1.2,W-1.2),nz=clamp(z+Math.sin(a)*r,-D+1.2,D-1.2);if(!blocked(nx,nz))return [nx,nz]}
   return [fan.x,fan.z];
 }
-function addBlow(){ // one more thing blown away → closer to the next power-up
-  if(level>=5||state!=='play')return;
-  batt++;
-  if(batt>=LV[level].need)levelUp();else updateHud();
-}
+const LEVEL_SECS=40; // the fan powers up every 40 seconds
+let lvT=0,blown=0;
+function addBlow(){if(state==='play')blown++}
 function spawnBattery(x,z,tier){
   const st=BATT_STYLE[clamp(tier,1,4)];
   const g=grp();const k=new THREE.Group();k.scale.setScalar(st.s);g.add(k);
@@ -646,8 +644,8 @@ function remaining(){return items.filter(i=>i.count&&!i.out).length}
 function updateHud(){
   const L=LV[level];
   $('lv').textContent=L.name;
-  $('batt').textContent=level<5?`ふきとばした ${batt}/${L.need}`:'さいきょう！';
-  $('barFill').style.width=(level<5?Math.min(100,batt/L.need*100):100)+'%';
+  $('batt').textContent=level<5?`パワーアップまで ${Math.max(0,Math.ceil(LEVEL_SECS-lvT))}びょう`:'さいきょう！';
+  $('barFill').style.width=(level<5?Math.min(100,lvT/LEVEL_SECS*100):100)+'%';
   $('left').textContent='のこり '+remaining();
 }
 function resetWorld(){
@@ -659,7 +657,7 @@ function resetWorld(){
   if(!chanceS){chanceS=makeLabel('いまだ！','#e0560a');scene.add(chanceS)}chanceS.visible=false;dad.chance=chanceS;
   cats.forEach((c,i)=>Object.assign(c,{x:[-3,1,9][i],z:[6,-3,8][i],y:0,vx:0,vz:0,vy:0,state:'idle',t:rand(1,4),out:false}));
   Object.assign(fan,{x:0,z:9,vx:0,vz:0});camA=0;
-  level=1;batt=0;buildFan(1);camS=LV[1].cam;time=0;shake=0;total=remaining();camSnap=true;
+  level=1;batt=0;lvT=0;blown=0;buildFan(1);camS=LV[1].cam;time=0;shake=0;total=remaining();camSnap=true;
   updateHud();
 }
 function start(){
@@ -669,7 +667,7 @@ function start(){
 }
 $('startBtn').addEventListener('click',start);$('againBtn').addEventListener('click',start);
 function levelUp(){
-  level++;batt=0;buildFan(level);updateHud();shake=0.5;
+  level++;batt=0;lvT=0;buildFan(level);updateHud();shake=0.5;
   puff(fan.x,1,fan.z,24,0xffee55,true);
   [523,659,784,1047,1319].forEach((f,i)=>tone(f,.15,'square',.06,0,i*.08));
   const what=['','','かみゴミと つつみがみ が とばせる！','ペットボトルと かん が とばせる！','こものが ぜんぶ とばせる！','かぐも にんげんも とばせる！！'][level];
@@ -817,6 +815,7 @@ function update(dt){
   if(state==='menu'){camA+=dt*0.15;return}
   if(state!=='play')return;
   time+=dt;
+  if(level<5){lvT+=dt;if(lvT>=LEVEL_SECS)levelUp()}
   const L=LV[level];
   // move the fan: ease toward the stick direction, glide to a stop on release
   let ix=stick.dx,iy=stick.dy;
