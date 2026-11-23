@@ -796,12 +796,19 @@ function buildDeviceInner(){
     mesh(new THREE.CircleGeometry(0.007,14),std(0x111111,0.5),0.24,0.37,Dp/2+0.002,devG,false); // room-temp sensor hole
     // recessed outlet with louvres and the flame glow behind
     const ow=0.46,oh=0.2,oy=0.17;
-    DV.glowMat=new THREE.MeshStandardMaterial({color:0x140806,emissive:0x000000,roughness:0.9});
-    mesh(new THREE.PlaneGeometry(ow,oh),DV.glowMat,0,oy,Dp/2-0.03,devG,false);
-    const recess=std(0x111214,0.6);
-    mesh(new THREE.BoxGeometry(ow,0.008,0.035),recess,0,oy+oh/2,Dp/2-0.012,devG,false);mesh(new THREE.BoxGeometry(ow,0.008,0.035),recess,0,oy-oh/2,Dp/2-0.012,devG,false);
-    for(const sx of[-1,1])mesh(new THREE.BoxGeometry(0.008,oh,0.035),recess,sx*ow/2,oy,Dp/2-0.012,devG,false);
-    for(let i=0;i<6;i++){const l=mesh(new THREE.BoxGeometry(ow-0.01,0.006,0.03),std(0x2a2b2e,0.4,0.4),0,oy-oh/2+0.025+i*0.03,Dp/2-0.012,devG,false);l.rotation.x=-0.45}
+    // the outlet sits on the front face: dark opening with a frame, glowing when the burner is lit
+    const fz=Dp/2+0.003;
+    DV.glowMat=new THREE.MeshStandardMaterial({color:0x0e0c0c,emissive:0x000000,roughness:0.9});
+    mesh(new THREE.PlaneGeometry(ow,oh),DV.glowMat,0,oy,fz,devG,false);
+    const frameM=std(0x1b1c1f,0.35,0.4);
+    mesh(new THREE.BoxGeometry(ow+0.03,0.014,0.016),frameM,0,oy+oh/2+0.007,fz+0.004,devG,false);mesh(new THREE.BoxGeometry(ow+0.03,0.014,0.016),frameM,0,oy-oh/2-0.007,fz+0.004,devG,false);
+    for(const sx of[-1,1])mesh(new THREE.BoxGeometry(0.014,oh+0.028,0.016),frameM,sx*(ow/2+0.008),oy,fz+0.004,devG,false);
+    for(let i=0;i<9;i++)mesh(new THREE.BoxGeometry(0.004,oh-0.01,0.004),std(0x3a3532,0.6,0.3),-ow/2+ow*(i+0.5)/9,oy,fz+0.002,devG,false); // burner screen behind the shutter
+    // automatic shutter: body-coloured slats that tilt open when it runs
+    DV.slats=[];const sh=oh/6;
+    for(let i=0;i<6;i++){const piv=new THREE.Group();piv.position.set(0,oy-oh/2+sh*(i+0.5),fz+0.012);devG.add(piv);
+      mesh(new THREE.BoxGeometry(ow-0.004,sh-0.003,0.008),body,0,0,0,piv,true);DV.slats.push(piv)}
+    DV.shut=0;
     // wire safety guard clipped over the outlet
     const wire=std(0x2b2c2f,0.45,0.6),gw=ow+0.02,gh=oh+0.04,gd=0.08,gz=Dp/2+gd;
     const rod=(len,x,y,z,rx,rz)=>{const m=mesh(new THREE.CylinderGeometry(0.0028,0.0028,len,6),wire,x,y,z,devG,false);m.rotation.set(rx||0,0,rz||0);return m};
@@ -894,8 +901,12 @@ function updateDevice(dt){
     }
     if(burnerG)burnerG.gain.value=muted?0:s.flame*0.05;
     if(devHumG)devHumG.gain.value=muted?0:s.fan*0.03;
+    const want=(s.phase==='ignite'||s.phase==='burn')?1:0; // closes as soon as it is switched off
+    if(want!==DV.shutWant){DV.shutWant=want;shutterSound()}
+    DV.shut+=(want-DV.shut)*Math.min(1,dt*1.6);
+    if(DV.slats)DV.slats.forEach((p,i)=>p.rotation.x=-1.25*clamp(DV.shut*1.4-i*0.07,0,1));
     const f=s.flame*(0.85+Math.sin(t*23)*0.08+Math.sin(t*7.3)*0.07);
-    DV.glowMat.emissive.setRGB(1*f,0.38*f,0.08*f);DV.light.intensity=f*1.2;
+    DV.glowMat.emissive.setRGB(1.2*f,0.45*f,0.1*f);DV.light.intensity=f*1.4;
     drawHeaterDisplay();
     return;
   }
@@ -926,6 +937,7 @@ function heaterClick(){if(muted||!audio())return;const t0=ac.currentTime,n=ac.sa
   const s=ac.createBufferSource();s.buffer=b;const g=ac.createGain();g.gain.value=0.5;const f=ac.createBiquadFilter();f.type='highpass';f.frequency.value=1500;s.connect(f).connect(g).connect(OUT());s.start(t0)}
 function heaterWhoomp(){if(muted||!audio())return;const t0=ac.currentTime,n=ac.sampleRate*0.6,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/(n*0.25))*Math.min(1,i/(n*0.03));
   const s=ac.createBufferSource();s.buffer=b;const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.setValueAtTime(900,t0);f.frequency.exponentialRampToValueAtTime(150,t0+0.5);const g=ac.createGain();g.gain.value=0.6;s.connect(f).connect(g).connect(OUT());s.start(t0)}
+function shutterSound(){if(muted||!audio())return;const t0=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();o.type='sawtooth';o.frequency.setValueAtTime(140,t0);o.frequency.linearRampToValueAtTime(190,t0+0.9);g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(0.025,t0+0.1);g.gain.setValueAtTime(0.025,t0+0.8);g.gain.exponentialRampToValueAtTime(0.0001,t0+1.0);const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=600;o.connect(f).connect(g).connect(OUT());o.start(t0);o.stop(t0+1.05)}
 function beepSeq(fs,gap=0.12){fs.forEach((f,i)=>beep(f,.09,i*gap))}
 
 // ---------- control panels for the floor appliances ----------
