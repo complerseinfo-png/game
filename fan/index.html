@@ -33,6 +33,8 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
 .lv{background:var(--wind);color:#fff;-webkit-text-stroke:0;font-size:clamp(14px,4vw,20px)}
 .bar{width:clamp(120px,34vw,200px);height:16px;border:3px solid var(--ink);border-radius:999px;background:#fff;overflow:hidden;box-shadow:0 3px 0 var(--ink)}
 .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#7be04a,#ffd23a);transition:width .3s}
+.again{pointer-events:auto;font:inherit;font-weight:800;cursor:pointer;background:var(--accent);color:var(--ink);font-size:clamp(15px,4.2vw,20px);padding:6px 16px}
+.again:active{transform:translateY(3px);box-shadow:0 0 0 var(--ink)}
 .mute{pointer-events:auto;font:inherit;cursor:pointer;color:var(--ink)}
 #joy{position:fixed;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;border:3px solid rgba(255,255,255,.9);background:rgba(255,255,255,.22);pointer-events:none}
 #knob{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(255,255,255,.95);box-shadow:0 2px 6px rgba(0,0,0,.25)}
@@ -72,7 +74,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
 <canvas id="c" aria-label="ゲーム画面"></canvas>
 <div class="hud">
   <div class="col"><div class="pill lv" id="lv">ハンディせんぷうき</div><div class="bar" aria-label="パワーアップまで"><i id="barFill"></i></div><div class="pill" id="batt">パワーアップまで 30びょう</div></div>
-  <div class="mid"><div class="pill" id="left">のこり 0</div></div>
+  <div class="mid"><div class="pill" id="left">のこり 0</div><button class="pill again" id="retryBtn" hidden>もういっかい！</button></div>
   <button class="pill mute" id="mute">おと ON</button>
 </div>
 <div id="joy" hidden><div id="knob"></div></div>
@@ -99,7 +101,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
   <div class="card">
     <h1>クリア！</h1>
     <div class="big" id="finalTime">0 びょう</div>
-    <p id="finalDetail">いえが からっぽに なった！</p>
+    <p id="finalDetail">いえが からっぽに なった！ はやいほど すごい！</p>
     <p id="bestMsg"></p>
     <button class="btn" id="againBtn">もういちど</button>
   </div>
@@ -627,7 +629,7 @@ function freeSpot(x,z){
   for(let r=1;r<14;r+=0.7)for(let a=0;a<6.28;a+=0.5){const nx=clamp(x+Math.cos(a)*r,-W+1.2,W-1.2),nz=clamp(z+Math.sin(a)*r,-D+1.2,D-1.2);if(!blocked(nx,nz))return [nx,nz]}
   return [fan.x,fan.z];
 }
-const levelSecs=()=>level===1?30:40; // the handy fan powers up after 30 s, the others every 40 s
+const levelSecs=()=>level<=2?30:40; // handy and desk fans power up after 30 s, the others after 40 s
 let lvT=0,blown=0;
 function addBlow(){if(state==='play')blown++}
 function spawnBattery(x,z,tier){
@@ -680,8 +682,9 @@ showBest();
 function toast(txt,dur=1.2){const t=$('toast');t.innerHTML=txt;t.style.opacity=1;toastT=dur}
 function remaining(){return items.filter(i=>i.count&&!i.out).length}
 function updateHud(){
+  $('retryBtn').hidden=!(state==='play'&&level>=5);
   const L=LV[level];
-  $('lv').textContent=L.name;
+  $('lv').textContent=L.name.replace(/\s*せんぷうき$/,''); // short name so it fits next to the counter
   $('batt').textContent=level<5?`パワーアップまで ${Math.max(0,Math.ceil(levelSecs()-lvT))}びょう`:'さいきょう！';
   $('barFill').style.width=(level<5?Math.min(100,lvT/levelSecs()*100):100)+'%';
   $('left').textContent='のこり '+remaining();
@@ -711,6 +714,7 @@ function start(){
   tone(523,.1,'square',.05);tone(784,.15,'square',.05,0,.1);
   toast('ほこりに かぜを あてよう！',2);
 }
+$('retryBtn').addEventListener('click',e=>{e.stopPropagation();start()});
 $('startBtn').addEventListener('click',start);$('againBtn').addEventListener('click',start);
 function levelUp(){
   level++;batt=0;lvT=0;buildFan(level);updateHud();shake=0.5;
@@ -722,8 +726,8 @@ function levelUp(){
   if(level===5)setTimeout(()=>{if(state==='play')blowAwayWall()},1400);
 }
 function gameClear(){
-  state='over';overAt=performance.now();setWind();
-  $('finalTime').textContent=Math.round(time)+' びょう';
+  state='over';overAt=performance.now();setWind();updateHud();
+  $('finalTime').textContent=Math.round(time)+'びょうで クリア！';
   let isNew=false;if(!best||time<best){best=time;isNew=true;try{localStorage.setItem('fan-best',best)}catch(e){}}
   $('bestMsg').innerHTML=isNew?'<span class="new">しんきろく！</span>':`さいこうきろく ${Math.round(best)} びょう`;
   showBest();
