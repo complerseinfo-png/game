@@ -315,7 +315,10 @@ const scene=new THREE.Scene();scene.background=new THREE.Color(0xf1ece2);
 const camera=new THREE.PerspectiveCamera(42,1,0.05,50);
 function resize(){const r=room.getBoundingClientRect();renderer.setSize(r.width,r.height,false);camera.aspect=r.width/r.height;
   const portrait=r.width<r.height*1.05;camera.fov=portrait?60:48;
-  camera.position.set(0,1.5,portrait?3.9:3.1);camera.lookAt(0,1.62,0);camera.updateProjectionMatrix()}
+  // pull back far enough that the whole (wide) unit fits the frame width
+  const hfov=2*Math.atan(Math.tan(camera.fov*Math.PI/360)*camera.aspect),need=3.5;
+  const dist=Math.max(portrait?3.9:3.4,need/2/Math.tan(hfov/2)+0.8);
+  camera.position.set(0,1.5,dist);camera.lookAt(0,1.62,0);camera.updateProjectionMatrix()}
 addEventListener('resize',resize);
 scene.add(new THREE.HemisphereLight(0xffffff,0xb8a88a,0.62));
 const key=new THREE.DirectionalLight(0xfff4e2,0.75);key.position.set(-3,4.5,4);key.castShadow=true;key.shadow.mapSize.set(1024,1024);
