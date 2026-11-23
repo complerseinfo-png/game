@@ -853,7 +853,7 @@ function update(dt){
   let ix=stick.dx,iy=stick.dy;
   if(keys.ArrowLeft||keys.KeyA)ix-=1;if(keys.ArrowRight||keys.KeyD)ix+=1;if(keys.ArrowUp||keys.KeyW)iy-=1;if(keys.ArrowDown||keys.KeyS)iy+=1;
   const il=Math.hypot(ix,iy);if(il>1){ix/=il;iy/=il}
-  ix*=0.5; // left/right is half as sensitive as forward/back
+  ix*=0.28; // left/right is much less sensitive than forward/back
   const [tx,tz]=toWorld(ix,iy);
   const k=Math.min(1,dt*(il>0.05?3.2:2.2));
   fan.vx+=(tx*L.speed-fan.vx)*k;fan.vz+=(tz*L.speed-fan.vz)*k;
