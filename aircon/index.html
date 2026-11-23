@@ -333,7 +333,7 @@ function resize(){const r=room.getBoundingClientRect();renderer.setSize(r.width,
   const hfov=2*Math.atan(Math.tan(camera.fov*Math.PI/360)*camera.aspect),need=3.5;
   const dist=Math.max(portrait?3.9:3.4,need/2/Math.tan(hfov/2)+0.8);
   CAM.ac.pos.set(0,1.5,dist);CAM.ac.look.set(0,1.62,0);
-  CAM.heater.pos.set(0.3,1.25,portrait?3.9:3.2);CAM.heater.look.set(0.25,0.55,0.9);
+  CAM.heater.pos.set(0.25,1.05,portrait?3.4:2.6);CAM.heater.look.set(0.15,0.45,0.95);
   CAM.fan.pos.set(0.1,0.95,portrait?3.0:2.3);CAM.fan.look.set(0.05,0.66,0.8);
   camera.updateProjectionMatrix()}
 const V=()=>new THREE.Vector3(),CAM={ac:{pos:V(),look:V()},heater:{pos:V(),look:V()},fan:{pos:V(),look:V()}};
@@ -729,8 +729,8 @@ function updateCat(dt,t){
 
 // ===================== floor appliances: oil fan heaters, fans, circulators =====================
 const DEVICES=[
-  {id:'hidamari',cat:'heater',name:'ひだまり工業',short:'ひだまり',color:'#e8742a',body:0xf3eee3,trim:0xd9d2c4},
-  {id:'akane',cat:'heater',name:'あかね製作所',short:'あかね',color:'#c43b3b',body:0x6e7176,trim:0x3d4045},
+  {id:'hidamari',cat:'heater',name:'ひだまり工業',short:'ひだまり',color:'#e8742a',body:0xefe8da,trim:0xd9d2c4},
+  {id:'akane',cat:'heater',name:'あかね製作所',short:'あかね',color:'#8e2a2f',body:0x4a1418,trim:0x2a0c0e},
   {id:'livingfan',cat:'fan',type:'stand',name:'そよかぜ工業 リビングファン',short:'リビング',color:'#16a2b8'},
   {id:'deskfan',cat:'fan',type:'desk',name:'みかん家電 たくじょうファン',short:'たくじょう',color:'#f08a1c'},
   {id:'tower',cat:'fan',type:'tower',name:'アオゾラ テクノ タワーファン',short:'タワー',color:'#1f6fd6'},
@@ -780,29 +780,40 @@ function buildDevice(){
 function buildDeviceInner(){
   const C0=0;devG=new THREE.Group();devG.position.copy(DEV_POS);devG.rotation.y=DEV_YAW;devG.scale.setScalar(DEV_K);scene.add(devG);DEFP=devG;
   const C=new THREE.Color(dev.color);
-  if(dev.cat==='heater'){
-    const body=std(dev.body,0.45),trim=std(dev.trim,0.5);
-    const b=rbox(0.5,0.44,0.3,0.035,body,devG);b.position.set(0,0.25,0);
-    mesh(new THREE.BoxGeometry(0.46,0.03,0.28),trim,0,0.03,0); // base
-    // slanted top control panel
-    const panel=new THREE.Group();panel.position.set(0,0.47,0.06);panel.rotation.x=-0.35;devG.add(panel);
-    mesh(new THREE.BoxGeometry(0.4,0.008,0.14),std(dev.id==='akane'?0x2c2f33:0xe6e0d4,0.4),0,0,0,panel);
-    const dc=document.createElement('canvas');dc.width=256;dc.height=96;DV.dctx=dc.getContext('2d');DV.dtex=new THREE.CanvasTexture(dc);
-    const disp=mesh(new THREE.PlaneGeometry(0.15,0.056),new THREE.MeshBasicMaterial({map:DV.dtex}),-0.07,0.006,0,panel,false);disp.rotation.x=-Math.PI/2;
-    DV.btn=mesh(new THREE.CylinderGeometry(0.024,0.024,0.012,20),std(C.getHex(),0.4),0.13,0.008,0,panel);
-    // front: upper louvre with the flame glow behind, lower hot-air outlet
-    DV.glowMat=new THREE.MeshStandardMaterial({color:0x221008,emissive:0x000000,roughness:0.9});
-    mesh(new THREE.PlaneGeometry(0.36,0.13),DV.glowMat,0,0.3,0.151,devG,false);
-    for(let i=0;i<7;i++)mesh(new THREE.BoxGeometry(0.37,0.006,0.012),std(dev.id==='akane'?0x2a2c30:0xcfc7b8,0.4,0.3),0,0.245+i*0.018,0.156,devG,false);
-    mesh(new THREE.PlaneGeometry(0.4,0.08),std(0x14161a,0.9),0,0.1,0.151,devG,false);
-    for(let i=0;i<12;i++)mesh(new THREE.BoxGeometry(0.006,0.075,0.012),std(0x8d9096,0.4,0.5),-0.18+i*0.033,0.1,0.156,devG,false);
-    // tank cap and carry handle at the back
-    mesh(new THREE.CylinderGeometry(0.03,0.03,0.02,18),std(0x2a2c30,0.4),0.15,0.475,-0.1);
-    mesh(new THREE.BoxGeometry(0.16,0.012,0.03),trim,-0.1,0.476,-0.12);
-    const lg=textTex(dev.name,'800 64px "M PLUS Rounded 1c",sans-serif',dev.color,1024,120);
-    mesh(new THREE.PlaneGeometry(0.22,0.026),new THREE.MeshBasicMaterial({map:lg,transparent:true}),-0.02,0.41,0.152,devG,false);
-    DV.light=new THREE.PointLight(0xff8a3c,0,1.6);DV.light.position.set(0,0.2,0.35);devG.add(DV.light);
-    DV.src={o:new THREE.Vector3(0,0.1,0.17),r:0.18,slot:true};
+  if(dev.cat==='heater'){ // wide glossy body, LCD at the top front, recessed louvre outlet with a wire guard
+    const W=0.62,H=0.47,Dp=0.3;
+    const body=new THREE.MeshStandardMaterial({color:dev.body,roughness:0.22,metalness:0.15});
+    const b=rbox(W,H,Dp,0.03,body,devG);b.position.set(0,0.035+H/2,0);
+    const baseM=std(0x1c1d20,0.5);
+    const base=rbox(W+0.04,0.045,Dp+0.05,0.015,baseM,devG);base.position.set(0,0.022,0.01);
+    // display window (clock / set temp / room temp) and a gold plate under it
+    mesh(new THREE.BoxGeometry(0.2,0.082,0.01),std(0x1a1b1e,0.25,0.3),0,0.415,Dp/2+0.004);
+    const dc=document.createElement('canvas');dc.width=320;dc.height=128;DV.dctx=dc.getContext('2d');DV.dtex=new THREE.CanvasTexture(dc);
+    mesh(new THREE.PlaneGeometry(0.17,0.068),new THREE.MeshBasicMaterial({map:DV.dtex}),0,0.418,Dp/2+0.0105,devG,false);
+    const plate=textTex('PREMIUM EDITION','600 54px Georgia,serif','#3a2a10',1024,96,'center');
+    mesh(new THREE.BoxGeometry(0.2,0.02,0.006),std(0xc9a85a,0.3,0.7),0,0.364,Dp/2+0.004);
+    mesh(new THREE.PlaneGeometry(0.19,0.018),new THREE.MeshBasicMaterial({map:plate,transparent:true}),0,0.364,Dp/2+0.0075,devG,false);
+    mesh(new THREE.CircleGeometry(0.007,14),std(0x111111,0.5),0.24,0.37,Dp/2+0.002,devG,false); // room-temp sensor hole
+    // recessed outlet with louvres and the flame glow behind
+    const ow=0.46,oh=0.2,oy=0.17;
+    DV.glowMat=new THREE.MeshStandardMaterial({color:0x140806,emissive:0x000000,roughness:0.9});
+    mesh(new THREE.PlaneGeometry(ow,oh),DV.glowMat,0,oy,Dp/2-0.03,devG,false);
+    const recess=std(0x111214,0.6);
+    mesh(new THREE.BoxGeometry(ow,0.008,0.035),recess,0,oy+oh/2,Dp/2-0.012,devG,false);mesh(new THREE.BoxGeometry(ow,0.008,0.035),recess,0,oy-oh/2,Dp/2-0.012,devG,false);
+    for(const sx of[-1,1])mesh(new THREE.BoxGeometry(0.008,oh,0.035),recess,sx*ow/2,oy,Dp/2-0.012,devG,false);
+    for(let i=0;i<6;i++){const l=mesh(new THREE.BoxGeometry(ow-0.01,0.006,0.03),std(0x2a2b2e,0.4,0.4),0,oy-oh/2+0.025+i*0.03,Dp/2-0.012,devG,false);l.rotation.x=-0.45}
+    // wire safety guard clipped over the outlet
+    const wire=std(0x2b2c2f,0.45,0.6),gw=ow+0.02,gh=oh+0.04,gd=0.08,gz=Dp/2+gd;
+    const rod=(len,x,y,z,rx,rz)=>{const m=mesh(new THREE.CylinderGeometry(0.0028,0.0028,len,6),wire,x,y,z,devG,false);m.rotation.set(rx||0,0,rz||0);return m};
+    for(let i=0;i<=22;i++){const x=-gw/2+gw*i/22;rod(gh,x,oy,gz)}                    // front vertical bars
+    for(const y of[oy-gh/2,oy+gh/2]){rod(gw,0,y,gz,0,Math.PI/2);for(const x of[-gw/2,gw/2])rod(gd,x,y,Dp/2+gd/2,Math.PI/2)}
+    for(const x of[-gw/2,gw/2])for(let i=0;i<=4;i++)rod(gd,x,oy-gh/2+gh*i/4,Dp/2+gd/2,Math.PI/2); // sides
+    // tank bulge and handle on the right side
+    const tank=rbox(0.05,0.32,Dp*0.8,0.02,body,devG);tank.position.set(W/2+0.02,0.25,0);
+    mesh(new THREE.TorusGeometry(0.04,0.008,8,16,Math.PI),std(0x2a2b2e,0.4),W/2+0.05,0.33,0.02,devG).rotation.y=Math.PI/2;
+    mesh(new THREE.CylinderGeometry(0.018,0.018,0.02,14),std(0x6b1f22,0.5),W/2+0.052,0.2,0.08,devG).rotation.z=Math.PI/2;
+    DV.light=new THREE.PointLight(0xff8a3c,0,1.6);DV.light.position.set(0,0.18,0.4);devG.add(DV.light);
+    DV.src={o:new THREE.Vector3(0,oy,Dp/2+0.1),r:0.18,slot:true};
   }else if(dev.type==='stand'||dev.type==='desk'){
     const desk=dev.type==='desk',H=desk?0.38:0.95,R=desk?0.15:0.2;
     const white=std(0xf5f6f4,0.35);
@@ -859,7 +870,7 @@ function devStrength(){
 }
 function devSource(){
   const s=devStrength();if(!devG||s<=0.01)return null;
-  if(dev.cat==='heater'){const o=DV.src.o.clone();devG.localToWorld(o);return {o,d:headDir(devG).add(new THREE.Vector3(0,0.12,0)).normalize(),r:0.17*DEV_K,slotW:0.36*DEV_K,strength:s,col:[1,0.55,0.22],spd:0.7,warm:true,spread0:0.2,spreadK:0.45,len:2.5}}
+  if(dev.cat==='heater'){const o=DV.src.o.clone();devG.localToWorld(o);return {o,d:headDir(devG).add(new THREE.Vector3(0,0.1,0)).normalize(),r:0.17*DEV_K,slotW:0.44*DEV_K,strength:s,col:[1,0.55,0.22],spd:0.7,warm:true,spread0:0.2,spreadK:0.45,len:2.5}}
   if(DV.src.tower){const o=new THREE.Vector3(0,0.55,0.1);DV.pan.localToWorld(o);return {o,d:headDir(DV.pan),r:0.05,slotH:0.6*DEV_K,strength:s,col:[0.85,0.9,1],spd:1+s*2,spread0:0.25,spreadK:0.3,len:3.5}}
   const o=new THREE.Vector3(0,0,0.08);DV.src.head.localToWorld(o);
   const circ=dev.cat==='circ';
@@ -1000,12 +1011,21 @@ function renderPanel(){
     <div class="lcd-row"><span>${s.osc||s.osc3d?I2('side',ink,18):''}${s.oscV||s.osc3d?I2('swing',ink,18):''}</span><span>${s.mode==='rhythm'||s.mode==='nature'?I2('wave',ink,18):s.mode==='night'?I2('night',ink,18):''}</span><span>${s.timer?I2('timer',ink,16)+s.timer+'h':''}</span></div>`;
 }
 function drawHeaterDisplay(){
-  if(!DV.dctx)return;const c=DV.dctx,s=dst;c.fillStyle=dev.id==='akane'?'#120a08':'#b8c7a6';c.fillRect(0,0,256,96);
-  const ink=dev.id==='akane'?'#ff5b3a':'#26301f';c.fillStyle=ink;c.font='54px "Share Tech Mono",monospace';c.textBaseline='middle';
-  if(s.phase==='off'&&s.fuel>0){DV.dtex.needsUpdate=true;return}
-  if(s.fuel<=0&&Math.floor(t*2)%2){c.font='800 40px "M PLUS Rounded 1c"';c.fillText('給油',60,50)}
-  else if(s.phase==='ignite'){c.font='800 34px "M PLUS Rounded 1c"';c.fillText('点火中'+'.'.repeat(1+Math.floor(t*3)%3),20,50)}
-  else c.fillText(s.temp+'℃',40,50);
+  if(!DV.dctx)return;const c=DV.dctx,s=dst,W=320,H=128;
+  const lit=s.phase!=='off'||s.fuel<=0;
+  c.fillStyle=lit?'#3fcf6a':'#1f3a26';c.fillRect(0,0,W,H);
+  if(lit){const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'rgba(255,255,255,.18)');g.addColorStop(1,'rgba(0,0,0,.12)');c.fillStyle=g;c.fillRect(0,0,W,H)}
+  const ink=lit?'#0b2a12':'#18301e';c.fillStyle=ink;c.textBaseline='alphabetic';
+  c.font='700 15px sans-serif';c.fillText('設定温度',150,20);c.fillText('室内温度',236,20);
+  const d=new Date(),hh=d.getHours(),mm=String(d.getMinutes()).padStart(2,'0');
+  c.font='700 14px sans-serif';c.fillText(hh<12?'午前':'午後',10,78);
+  c.font='34px "Share Tech Mono",monospace';c.fillText(`${hh%12||12}:${mm}`,46,80);
+  c.font='64px "Share Tech Mono",monospace';
+  if(s.fuel<=0&&Math.floor(t*2)%2){c.font='800 40px sans-serif';c.fillText('給油',170,84)}
+  else if(s.phase==='ignite'){c.font='800 30px sans-serif';c.fillText('点火'+'.'.repeat(1+Math.floor(t*3)%3),160,80)}
+  else{c.fillText(String(s.temp),150,90);c.fillText(String(Math.round(roomT)),236,90)}
+  // three status lamps under the display
+  [['#9aa',s.phase==='burn'&&s.eco],['#3f6',s.phase==='burn'||s.phase==='ignite'],['#fa3',s.timer>0]].forEach(([col,on],i)=>{c.fillStyle=on?col:'rgba(0,0,0,.25)';c.fillRect(110+i*40,106,28,8)});
   DV.dtex.needsUpdate=true;
 }
 
