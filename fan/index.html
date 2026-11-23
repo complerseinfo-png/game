@@ -607,7 +607,8 @@ function spawnBattery(x,z,tier){
 const keys={};
 let camA=Math.PI*0.5;
 const stick={on:false,id:null,ox:0,oy:0,dx:0,dy:0};
-function toWorld(sx,sy){const fx=Math.sin(camA),fz=-Math.cos(camA),rx=-fz,rz=fx;return [rx*sx-fx*sy, rz*sx-fz*sy]}
+let camYaw=Math.PI*0.5; // the camera's own heading, trailing the fan a little
+function toWorld(sx,sy){const fx=Math.sin(camYaw),fz=-Math.cos(camYaw),rx=-fz,rz=fx;return [rx*sx-fx*sy, rz*sx-fz*sy]}
 const joy=$('joy'),knob=$('knob');
 canvas.addEventListener('pointerdown',e=>{
   if(state!=='play')return;
@@ -1033,9 +1034,12 @@ function sync(dt){
   camS+=(LV[level].cam-camS)*Math.min(1,dt*1.6);
   const s=camS;
   const dist=s*(portrait?6.8:5.6)+0.6,hgt=s*(portrait?3.4:2.7)+0.4;
-  const cx=clamp(fan.x-fx*dist,-W+0.8,W-0.8),cz=clamp(fan.z-fz*dist,-D+0.8,D-0.8);
+  {let dY=camA-camYaw;while(dY>Math.PI)dY-=Math.PI*2;while(dY<-Math.PI)dY+=Math.PI*2;camYaw+=dY*Math.min(1,dt*1.3)}
+  if(camSnap)camYaw=camA;
+  const cfx=Math.sin(camYaw),cfz=-Math.cos(camYaw);
+  const cx=clamp(fan.x-cfx*dist,-W+0.8,W-0.8),cz=clamp(fan.z-cfz*dist,-D+0.8,D-0.8);
   const short=dist-Math.hypot(cx-fan.x,cz-fan.z);
-  const tp=new THREE.Vector3(cx,hgt+short*0.9,cz),tl=new THREE.Vector3(fan.x+fx*s*3,s*0.9,fan.z+fz*s*3);
+  const tp=new THREE.Vector3(cx,hgt+short*0.9,cz),tl=new THREE.Vector3(fan.x+cfx*s*3,s*0.9,fan.z+cfz*s*3);
   if(state==='menu'){tp.set(Math.sin(camA)*-20,14,-Math.cos(camA)*-20+2);tl.set(0,1,0)}
   if(camSnap){camPos.copy(tp);camLook.copy(tl);camSnap=false}
   camPos.lerp(tp,Math.min(1,dt*4));camLook.lerp(tl,Math.min(1,dt*5));
