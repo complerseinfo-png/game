@@ -25,7 +25,20 @@
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;background:var(--wall);color:var(--ink);font-family:var(--font)}
 body{display:flex;flex-direction:column;overflow-x:hidden}
-.brands{display:flex;gap:6px;overflow-x:auto;padding:calc(env(safe-area-inset-top,0px) + 8px) max(10px,env(safe-area-inset-right,0px)) 6px max(10px,env(safe-area-inset-left,0px));flex:none}
+.brands{display:flex;gap:6px;overflow-x:auto;padding:6px max(10px,env(safe-area-inset-right,0px)) 6px max(10px,env(safe-area-inset-left,0px));flex:none}
+.cats{display:flex;gap:6px;overflow-x:auto;padding:calc(env(safe-area-inset-top,0px) + 8px) max(10px,env(safe-area-inset-right,0px)) 0 max(10px,env(safe-area-inset-left,0px));flex:none}
+.ctab{font:inherit;display:flex;align-items:center;gap:4px;border:2px solid var(--ink);background:#fff;border-radius:999px;padding:4px 12px 4px 8px;cursor:pointer;white-space:nowrap;font-weight:800;font-size:13px;flex:none}
+.ctab.sel{background:var(--accent)}
+.ctab:focus-visible{outline:4px solid #2b7bff}
+.piano{min-height:70px;border-radius:6px;box-shadow:0 6px 0 #b5bac2,0 8px 8px rgba(0,0,0,.2),inset 0 1px 0 #fff}
+.piano.down{transform:translateY(5px);box-shadow:0 1px 0 #b5bac2,inset 0 3px 4px rgba(0,0,0,.18);background:linear-gradient(#e9ebee,#d8dbdf)}
+.dialKnob{--a:-90deg;position:relative;justify-self:center;width:150px;height:150px;border-radius:50%;cursor:pointer;border:1px solid rgba(0,0,0,.3);
+  background:radial-gradient(circle at 40% 35%,#ffffff,#e4e6e9 55%,#c3c7cc);box-shadow:0 6px 0 #aeb3ba,0 10px 14px rgba(0,0,0,.25),inset 0 2px 1px #fff}
+.dialKnob .mark{position:absolute;left:50%;top:50%;width:6px;height:56px;margin:-56px 0 0 -3px;border-radius:3px;background:#d7262e;transform-origin:50% 100%;transform:rotate(var(--a));transition:transform .3s}
+.dialKnob .lbl{position:absolute;font-weight:800;font-size:15px;color:#555}
+.dialKnob .l0{left:8px;top:66px}.dialKnob .l1{left:30px;top:16px}.dialKnob .l2{right:30px;top:16px}.dialKnob .l3{right:8px;top:66px}
+.blink{animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.2}}
 .brand{font:inherit;border:3px solid var(--ink);background:#fff;border-radius:14px;padding:6px 10px;cursor:pointer;white-space:nowrap;font-weight:800;font-size:14px;box-shadow:0 3px 0 var(--ink);flex:none}
 .brand.sel{transform:translateY(2px);box-shadow:0 1px 0 var(--ink);outline:3px solid var(--accent)}
 .brand:focus-visible{outline:4px solid #2b7bff}
@@ -96,6 +109,7 @@ body{display:flex;flex-direction:column;overflow-x:hidden}
 </head>
 <body>
 
+<div class="cats" id="cats"></div>
 <div class="brands" id="brands" role="tablist"><button class="mute" id="mute">おと ON</button></div>
 <div class="stage">
   <div class="room" id="room">
@@ -305,7 +319,7 @@ function renderLCD(){
 }
 const MODE_COL_ICON={auto:'#b08900',cool:'#2f80ed',dry:'#2fa84f',heat:'#e5484d',fan:'#5a6070'};
 // ---------- 3D room: lighting and shadows make the unit, cat and furniture look real ----------
-const room=$('room');
+const room=$('room');let sofaG=null;
 const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});
 renderer.setPixelRatio(Math.min(1.5,devicePixelRatio||1));
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
@@ -318,7 +332,17 @@ function resize(){const r=room.getBoundingClientRect();renderer.setSize(r.width,
   // pull back far enough that the whole (wide) unit fits the frame width
   const hfov=2*Math.atan(Math.tan(camera.fov*Math.PI/360)*camera.aspect),need=3.5;
   const dist=Math.max(portrait?3.9:3.4,need/2/Math.tan(hfov/2)+0.8);
-  camera.position.set(0,1.5,dist);camera.lookAt(0,1.62,0);camera.updateProjectionMatrix()}
+  CAM.ac.pos.set(0,1.5,dist);CAM.ac.look.set(0,1.62,0);
+  CAM.heater.pos.set(0.3,1.25,portrait?3.9:3.2);CAM.heater.look.set(0.25,0.55,0.9);
+  CAM.fan.pos.set(0.1,0.95,portrait?3.0:2.3);CAM.fan.look.set(0.05,0.66,0.8);
+  camera.updateProjectionMatrix()}
+const V=()=>new THREE.Vector3(),CAM={ac:{pos:V(),look:V()},heater:{pos:V(),look:V()},fan:{pos:V(),look:V()}};
+const camLook=new THREE.Vector3(0,1.62,0);let camReady=false;
+function updateCamera(dt){
+  const T=CAM[typeof camMode!=='undefined'?camMode:'ac'];
+  if(!camReady){camera.position.copy(T.pos);camLook.copy(T.look);camReady=true}
+  camera.position.lerp(T.pos,Math.min(1,dt*2.5));camLook.lerp(T.look,Math.min(1,dt*2.5));camera.lookAt(camLook);
+}
 addEventListener('resize',resize);
 scene.add(new THREE.HemisphereLight(0xffffff,0xb8a88a,0.62));
 const key=new THREE.DirectionalLight(0xfff4e2,0.75);key.position.set(-3,4.5,4);key.castShadow=true;key.shadow.mapSize.set(1024,1024);
@@ -327,7 +351,8 @@ const fill=new THREE.PointLight(0xdfeaff,0.35,12);fill.position.set(2.5,2.4,2.5)
 const std=(c,r=0.6,m=0)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:m});
 const lam=c=>new THREE.MeshLambertMaterial({color:c});
 const phongFlat=c=>new THREE.MeshPhongMaterial({color:c,flatShading:true,shininess:5});
-function mesh(geo,mat,x=0,y=0,z=0,parent=scene,shadow=true){const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);if(shadow){m.castShadow=true;m.receiveShadow=true}parent.add(m);return m}
+let DEFP=null; // default parent while building an appliance
+function mesh(geo,mat,x=0,y=0,z=0,parent=null,shadow=true){const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);if(shadow){m.castShadow=true;m.receiveShadow=true}(parent||DEFP||scene).add(m);return m}
 function ctex(w,h,draw,rx=1,ry=1){const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rx,ry);t.anisotropy=4;return t}
 function roundRectShape(w,h,r){const s=new THREE.Shape(),x=-w/2,y=-h/2;s.moveTo(x+r,y);s.lineTo(x+w-r,y);s.quadraticCurveTo(x+w,y,x+w,y+r);s.lineTo(x+w,y+h-r);s.quadraticCurveTo(x+w,y+h,x+w-r,y+h);s.lineTo(x+r,y+h);s.quadraticCurveTo(x,y+h,x,y+h-r);s.lineTo(x,y+r);s.quadraticCurveTo(x,y,x+r,y);return s}
 function rbox(w,h,d,r,mat,parent=scene){ // rounded box (soft cushions, sofa)
@@ -356,7 +381,7 @@ function rbox(w,h,d,r,mat,parent=scene){ // rounded box (soft cushions, sofa)
   const rug=mesh(new THREE.PlaneGeometry(2.6,1.7),new THREE.MeshStandardMaterial({map:rugT,roughness:1}),0.2,0.006,1.9,scene,false);rug.rotation.x=-Math.PI/2;rug.receiveShadow=true;
   // sofa
   const fab=std(0x7f9c88,0.95),fab2=std(0x8fac97,0.95);
-  const sofa=new THREE.Group();sofa.position.set(-1.9,0,0.55);scene.add(sofa);
+  const sofa=new THREE.Group();sofa.position.set(-1.9,0,0.55);scene.add(sofa);sofaG=sofa;
   const sb=rbox(1.9,0.42,0.85,0.08,fab,sofa);sb.position.set(0,0.27,0.05);
   const sk=rbox(1.9,0.55,0.22,0.09,fab,sofa);sk.position.set(0,0.62,-0.32);
   for(const x of[-0.98,0.98]){const a=rbox(0.22,0.6,0.85,0.08,fab,sofa);a.position.set(x,0.36,0.05)}
@@ -462,43 +487,54 @@ function airDir(){ // unit direction of the airflow from the vane and side louve
   const dx=Math.sin(sideAng*0.28);
   return new THREE.Vector3(dx,-Math.sin(a),Math.cos(a)).normalize();
 }
+function acSource(){
+  if(!acG||!acG.visible)return null;
+  const blowing=(st.on&&flap>0.8)||(st.clean>0&&flap>0.3);if(!blowing)return null;
+  const K=acG.scale.x,lvl=st.clean>0&&!st.on?1:fanLevel();
+  const special=st.special&&(brand.id==='soyo'||brand.id==='aozora'||brand.id==='polar');
+  return {o:new THREE.Vector3(0,acG.position.y-0.02,acG.position.z+(AC.oz+0.04)*K),d:airDir(),slotW:AC.ow*K,strength:lvl/6,col:airColor(),spd:0.8+lvl*0.35,warm:st.mode==='heat',sparkle:special,spread0:0.35,spreadK:0.35,len:6};
+}
+function sources(){const out=[],a=acSource();if(a)out.push(a);const d=typeof devSource==='function'?devSource():null;if(d)out.push(d);return out}
+const _u=new THREE.Vector3(),_v=new THREE.Vector3();
 function stepWind(dt,t){
-  const blowing=(st.on&&flap>0.8)||(st.clean>0&&flap>0.3);
-  const lvl=st.clean>0&&!st.on?1:fanLevel();
-  if(blowing&&acG){
-    const n=lvl*30*dt,dir=airDir(),col=airColor();
+  for(const S of sources()){
+    const n=S.strength*180*dt;
+    _u.set(0,1,0).cross(S.d);if(_u.lengthSq()<1e-4)_u.set(1,0,0);_u.normalize();_v.copy(S.d).cross(_u).normalize();
     for(let i=0;i<n&&parts.length<MAXP;i++){
-      const sp=0.8+lvl*0.35+Math.random()*0.4;
-      const special=st.special&&(brand.id==='soyo'||brand.id==='aozora'||brand.id==='polar');
-      const K=acG.scale.x;parts.push({p:new THREE.Vector3((Math.random()-0.5)*AC.ow*K,acG.position.y-0.02,acG.position.z+(AC.oz+0.04)*K),
-        v:dir.clone().multiplyScalar(sp).add(new THREE.Vector3((Math.random()-0.5)*0.25,(Math.random()-0.5)*0.15,(Math.random()-0.5)*0.15)),
-        life:0,max:1.6+Math.random()*1.2,col:special&&Math.random()<0.25?[1,1,0.85]:col});
+      const p=S.o.clone();
+      if(S.slotW)p.addScaledVector(_u,(Math.random()-0.5)*S.slotW);
+      else if(S.slotH)p.y+=(Math.random()-0.5)*S.slotH;
+      else{const a=Math.random()*6.283,r=Math.sqrt(Math.random())*S.r;p.addScaledVector(_u,Math.cos(a)*r).addScaledVector(_v,Math.sin(a)*r)}
+      const sp=S.spd*(0.85+Math.random()*0.3);
+      parts.push({p,v:S.d.clone().multiplyScalar(sp).add(new THREE.Vector3((Math.random()-0.5)*0.2,(Math.random()-0.5)*0.12,(Math.random()-0.5)*0.2)),
+        life:0,max:(1.4+Math.random()*1.1)*Math.min(1.4,S.len/4),warm:!!S.warm,col:S.sparkle&&Math.random()<0.25?[1,1,0.85]:S.col});
     }
   }
   let k=0;
   for(let i=parts.length-1;i>=0;i--){
     const q=parts[i];q.life+=dt;
     if(q.life>q.max||q.p.y<0.02){parts.splice(i,1);continue}
-    q.v.y+=(st.mode==='heat'?0.12:-0.18)*dt;q.v.multiplyScalar(1-0.18*dt);
+    q.v.y+=(q.warm?0.15:-0.12)*dt;q.v.multiplyScalar(1-0.2*dt);
     q.p.addScaledVector(q.v,dt);
   }
   for(const q of parts){
     const f=Math.sin(Math.PI*q.life/q.max),len=0.08+q.life*0.1;
     wPos[k*6]=q.p.x;wPos[k*6+1]=q.p.y;wPos[k*6+2]=q.p.z;
     wPos[k*6+3]=q.p.x-q.v.x*len;wPos[k*6+4]=q.p.y-q.v.y*len;wPos[k*6+5]=q.p.z-q.v.z*len;
-    const bg=[0.95,0.93,0.89];for(let j=0;j<3;j++){const c=bg[j]+(q.col[j]-bg[j])*f;wCol[k*6+j]=c;wCol[k*6+3+j]=bg[j]+(q.col[j]-bg[j])*f*0.2}
+    const bg=[0.95,0.93,0.89];for(let j=0;j<3;j++){wCol[k*6+j]=bg[j]+(q.col[j]-bg[j])*f;wCol[k*6+3+j]=bg[j]+(q.col[j]-bg[j])*f*0.2}
     k++;
   }
   wGeo.setDrawRange(0,k*2);wGeo.attributes.position.needsUpdate=true;wGeo.attributes.color.needsUpdate=true;
 }
-// how much air reaches a point on the floor area
+// how much air reaches a point (all running appliances added up)
 function windAt(x,z,y=0.3){
-  if(!(st.on&&flap>0.8)||!acG)return 0;
-  const o=new THREE.Vector3(0,acG.position.y,acG.position.z+AC.oz*acG.scale.x),d=airDir(),p=new THREE.Vector3(x,y,z).sub(o);
-  const along=p.dot(d);if(along<0)return 0;
-  const off=p.clone().sub(d.clone().multiplyScalar(along)).length();
-  const spread=0.35+along*0.35;
-  return clamp(fanLevel()/6*Math.exp(-(off*off)/(2*spread*spread))*(1.4-along*0.12),0,1.3);
+  let sum=0;const P=new THREE.Vector3(x,y,z);
+  for(const S of sources()){
+    const p=P.clone().sub(S.o),along=p.dot(S.d);if(along<0||along>S.len)continue;
+    const off=p.sub(S.d.clone().multiplyScalar(along)).length(),spread=S.spread0+along*S.spreadK;
+    sum+=S.strength*Math.exp(-(off*off)/(2*spread*spread))*(1.4-along/S.len)*1.0;
+  }
+  return clamp(sum,0,1.4);
 }
 function fanLevel(){return st.powerful?6:st.quiet?0.6:st.fan===0?3:st.fan}
 
@@ -573,20 +609,27 @@ function buildCat(kind){
 
 // cat tower: the white cat sits on top, right in the air stream
 const TOWER={x:0.75,z:0.95,y:1.08};
+const towerG=new THREE.Group(),cabG=new THREE.Group(),zabG=new THREE.Group();scene.add(towerG,cabG,zabG);
 {
   const sisal=ctex(64,256,(g,w,h)=>{g.fillStyle='#c9a46a';g.fillRect(0,0,w,h);for(let y=0;y<h;y+=4){g.fillStyle=y%8?'#b88f55':'#d8b67c';g.fillRect(0,y,w,2)}},1,6);
-  mesh(new THREE.BoxGeometry(0.62,0.06,0.62),std(0xd9c7aa,0.9),TOWER.x,0.03,TOWER.z);
-  mesh(new THREE.CylinderGeometry(0.06,0.06,TOWER.y,16),new THREE.MeshStandardMaterial({map:sisal,roughness:1}),TOWER.x,TOWER.y/2,TOWER.z);
-  mesh(new THREE.CylinderGeometry(0.28,0.28,0.06,28),std(0xd9c7aa,0.9),TOWER.x,TOWER.y-0.03,TOWER.z);
-  const cush=mesh(new THREE.CylinderGeometry(0.26,0.25,0.05,28),std(0xf1e6d6,1),TOWER.x,TOWER.y+0.02,TOWER.z);
-  mesh(new THREE.BoxGeometry(0.4,0.05,0.4),std(0xd9c7aa,0.9),TOWER.x,0.55,TOWER.z);
+  mesh(new THREE.BoxGeometry(0.62,0.06,0.62),std(0xd9c7aa,0.9),TOWER.x,0.03,TOWER.z,towerG);
+  mesh(new THREE.CylinderGeometry(0.06,0.06,TOWER.y,16),new THREE.MeshStandardMaterial({map:sisal,roughness:1}),TOWER.x,TOWER.y/2,TOWER.z,towerG);
+  mesh(new THREE.CylinderGeometry(0.28,0.28,0.06,28),std(0xd9c7aa,0.9),TOWER.x,TOWER.y-0.03,TOWER.z,towerG);
+  const cush=mesh(new THREE.CylinderGeometry(0.26,0.25,0.05,28),std(0xf1e6d6,1),TOWER.x,TOWER.y+0.02,TOWER.z,towerG);
+  mesh(new THREE.BoxGeometry(0.4,0.05,0.4),std(0xd9c7aa,0.9),TOWER.x,0.55,TOWER.z,towerG);
 }
 // small cabinet with the pinwheel on top
-mesh(new THREE.BoxGeometry(0.7,0.62,0.4),std(0x9b7652,0.55),-0.95,0.31,0.4);
-mesh(new THREE.BoxGeometry(0.66,0.02,0.002),std(0x6b4a30,0.6),-0.95,0.31,0.601);
+mesh(new THREE.BoxGeometry(0.7,0.62,0.4),std(0x9b7652,0.55),-0.95,0.31,0.4,cabG);
+mesh(new THREE.BoxGeometry(0.66,0.02,0.002),std(0x6b4a30,0.6),-0.95,0.31,0.601,cabG);
+// zabuton (floor cushion) in front of the heater, for the heater scene
+const ZAB=new THREE.Vector3(0,0.085,1.65);
+{const z=rbox(0.62,0.09,0.62,0.04,std(0xb5473f,0.95),zabG);z.position.set(ZAB.x,0.05,ZAB.z);
+ const st2=mesh(new THREE.BoxGeometry(0.03,0.012,0.03),std(0x2b2b2b,0.8),ZAB.x,0.1,ZAB.z,zabG);
+ for(const[a,b]of[[1,1],[1,-1],[-1,1],[-1,-1]])mesh(new THREE.SphereGeometry(0.018,8,6),std(0xe9c46a,0.7),ZAB.x+a*0.3,0.05,ZAB.z+b*0.3,zabG)}
+zabG.visible=false;
 const cat=buildCat('cap');cat.root.scale.setScalar(0.36);cat.root.position.set(TOWER.x,TOWER.y+0.04,TOWER.z);cat.root.rotation.y=-0.4;
 const tongue=mesh(new THREE.BoxGeometry(0.08,0.02,0.12),lam(0xf07d95),0,-0.18,0.38,cat.head,false);tongue.visible=false;
-const pin=new THREE.Group();pin.position.set(-0.95,0.62,0.45);scene.add(pin);
+const pin=new THREE.Group();pin.position.set(-0.95,0.62,0.45);cabG.add(pin);
 mesh(new THREE.CylinderGeometry(0.012,0.012,0.6,8),std(0x9a6b45,0.6),0,0.3,0,pin);
 const pot2=mesh(new THREE.CylinderGeometry(0.08,0.065,0.12,16),std(0x4f9fb8,0.6),0,0.06,0,pin);
 const pinHead=new THREE.Group();pinHead.position.set(0,0.62,0.03);pin.add(pinHead);pinHead.scale.setScalar(1.3);
@@ -595,21 +638,73 @@ const pinHead=new THREE.Group();pinHead.position.set(0,0.62,0.03);pin.add(pinHea
   const m=new THREE.Mesh(gg,new THREE.MeshStandardMaterial({color:cols[i],side:THREE.DoubleSide,roughness:0.5}));m.rotation.z=i*Math.PI/2;m.castShadow=true;pinHead.add(m)}
  mesh(new THREE.SphereGeometry(0.014,10,8),std(0xffffff,0.4),0,0,0.01,pinHead)}
 let pinV=0,catPush=0,catMood='';
+const catPos=new THREE.Vector3(TOWER.x,TOWER.y+0.04,TOWER.z);let catPath=[],catSeg=null,catOnTower=true,catHeading=-0.4,catPet=0,catWantT=0;
+function catGoal(){ // where the cat wants to be
+  if(typeof dev!=='undefined'&&dev&&dev.cat==='heater'&&dstates[dev.id].flame>0.5){
+    return {floor:true,p:ZAB.clone()};
+  }
+  return {floor:false};
+}
+function planCat(){
+  const g=catGoal(),base=new THREE.Vector3(TOWER.x,0,TOWER.z+0.42);catPath=[];
+  if(g.floor){
+    if(catOnTower)catPath.push({jump:true,to:base});
+    catPath.push({to:new THREE.Vector3(g.p.x+0.35,0,g.p.z)});catPath.push({jump:true,to:g.p,small:true});
+  }else if(!catOnTower){
+    if(catPos.y>0.05)catPath.push({jump:true,to:new THREE.Vector3(catPos.x+0.35,0,catPos.z),small:true});
+    catPath.push({to:base});catPath.push({jump:true,to:new THREE.Vector3(TOWER.x,TOWER.y+0.04,TOWER.z),up:true});
+  }
+}
+function moveCat(dt){
+  const g=catGoal();
+  const atGoal=g.floor?(!catOnTower&&catPos.distanceTo(g.p)<0.08):catOnTower;
+  if(g.floor&&atGoal)catHeading=Math.atan2(DEV_POS.x-catPos.x,DEV_POS.z-catPos.z); // sits facing the heater
+  if(!atGoal&&!catPath.length&&!catSeg){catWantT+=dt;if(catWantT>(g.floor?0.8:2.5)){planCat();catWantT=0}}else if(atGoal)catWantT=0;
+  if(!catSeg&&catPath.length){catSeg=Object.assign({from:catPos.clone(),k:0},catPath.shift());if(catSeg.jump)catOnTower=false}
+  if(!catSeg)return false;
+  const S=catSeg,d=S.to.clone().sub(S.from);
+  if(Math.hypot(d.x,d.z)>0.01)catHeading=Math.atan2(d.x,d.z);
+  if(S.jump){S.k=Math.min(1,S.k+dt/(S.small?0.35:0.55));catPos.lerpVectors(S.from,S.to,S.k);catPos.y+=Math.sin(Math.PI*S.k)*(S.small?0.12:0.35)}
+  else{const L=Math.max(0.01,d.length());S.k=Math.min(1,S.k+dt*0.7/L);catPos.lerpVectors(S.from,S.to,S.k)}
+  if(S.k>=1){if(S.up)catOnTower=true;catSeg=null}
+  return true;
+}
+// tap the cat → meow
+{
+  const ray=new THREE.Raycaster(),ndc=new THREE.Vector2();
+  renderer.domElement.addEventListener('pointerdown',e=>{
+    const r=renderer.domElement.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);
+    ray.setFromCamera(ndc,camera);
+    if(ray.intersectObject(cat.root,true).length){audio();catPet=1.4;meowSnd('pet');bubble.textContent='にゃ〜♪'}
+  });
+}
 const bubble=$('bubble');
 function updateCat(dt,t){
   // pinwheel spins with the wind where it stands
   const wp=windAt(pin.position.x,pin.position.z,pin.position.y+0.62);pinV+=(wp*28-pinV)*Math.min(1,dt*2);pinHead.rotation.z-=pinV*dt;
   // the cat
-  const w=windAt(TOWER.x,TOWER.z,TOWER.y+0.15),cold=roomT<23,hot=roomT>28.5,strong=w>0.55;
-  const mood=strong?'wind':cold?'cold':hot?'hot':'comfy';
+  const walking=moveCat(dt);if(catPet>0)catPet-=dt;
+  const w=windAt(catPos.x,catPos.z,catPos.y+0.15),cold=roomT<23,hot=roomT>28.5,strong=w>0.55&&!walking;
+  const nearHeat=!catOnTower&&!walking&&catGoal().floor;
+  const mood=walking?'walk':catPet>0?'pet':strong?'wind':nearHeat?'cozy':cold?'cold':hot?'hot':'comfy';
   const dir=airDir();
-  catPush+=((strong?Math.min(0.17,(w-0.45)*0.5):0)-catPush)*Math.min(1,dt*(strong?0.7:1.2)); // slides to the edge of the tower
+  catPush+=((strong?Math.min(catOnTower?0.17:0.5,(w-0.45)*0.5):0)-catPush)*Math.min(1,dt*(strong?0.7:1.2)); // slides downwind (to the edge of the tower)
   const m=cat;
-  m.root.position.set(TOWER.x+dir.x*catPush,TOWER.y+0.04,TOWER.z+dir.z*catPush);
+  m.root.position.set(catPos.x+dir.x*catPush,catPos.y+(catPet>0?Math.max(0,Math.sin(catPet*9))*0.04:0),catPos.z+dir.z*catPush);
+  {let dh=catHeading-m.root.rotation.y;while(dh>Math.PI)dh-=Math.PI*2;while(dh<-Math.PI)dh+=Math.PI*2;m.root.rotation.y+=dh*Math.min(1,dt*6)}
   m.body.position.set(0,0,0);m.body.rotation.set(0,0,0);m.body.scale.set(1,1,1);
   tongue.visible=false;m.head.rotation.set(0,0,0);m.head.position.y=0.98;
   const legs=m.legs;
-  if(mood==='comfy'){
+  if(mood==='walk'){
+    const ph=t*11;legs[0].rotation.x=legs[3].rotation.x=Math.sin(ph)*0.7;legs[1].rotation.x=legs[2].rotation.x=-Math.sin(ph)*0.7;
+    m.body.position.y=Math.abs(Math.sin(ph))*0.03;m.tail.forEach((s,i)=>{s.rotation.x=i?0.2:0.9;s.rotation.y=Math.sin(t*4+i)*0.2});
+  }else if(mood==='pet'){
+    legs.forEach(l=>l.rotation.x=0);m.head.rotation.z=Math.sin(catPet*8)*0.25;m.head.rotation.x=-0.25;
+    m.tail.forEach((s,i)=>{s.rotation.x=i?0.25:1.1;s.rotation.y=Math.sin(t*9+i)*0.2});
+  }else if(mood==='cozy'){ // curled up happily in the warm air
+    m.body.scale.set(1.15,0.62,0.82);m.body.position.y=-0.05;legs.forEach(l=>l.rotation.x=0);m.head.position.y=0.8;m.head.rotation.x=0.35;m.head.rotation.z=Math.sin(t*0.8)*0.1;
+    m.tail.forEach((s,i)=>{s.rotation.x=i?0.1:-0.2;s.rotation.y=i?0.5:1.2});
+  }else if(mood==='comfy'){
     legs.forEach(l=>l.rotation.x=0);m.head.rotation.y=Math.sin(t*0.9)*0.35;m.head.rotation.z=Math.sin(t*1.7)*0.08;
     m.tail.forEach((s,i)=>{s.rotation.x=i?0.2:0.9;s.rotation.y=Math.sin(t*3+i*0.6)*0.35});
   }else if(mood==='cold'){ // curled up and shivering
@@ -627,13 +722,325 @@ function updateCat(dt,t){
   // speech bubble follows the cat's head on screen
   const hp=new THREE.Vector3();m.head.getWorldPosition(hp);hp.y+=0.22;hp.project(camera);
   const r=room.getBoundingClientRect();bubble.style.left=((hp.x+1)/2*r.width)+'px';bubble.style.top=((1-hp.y)/2*r.height)+'px';
-  const msg={wind:catPush>0.15?'おちちゃう〜！':'とばされる〜！',cold:'さむい…ブルブル',hot:'あつい〜',comfy:'ごろごろ♪'}[mood];
-  if(mood!==catMood){catMood=mood;bubble.textContent=msg;if(mood!=='comfy'&&st.on)meowSnd(mood)}
+  const cozy=dev&&dev.cat==='heater'&&dstates[dev.id].flame>0.5;
+  const msg={wind:catPush>0.15?'おちちゃう〜！':'とばされる〜！',cold:'さむい…ブルブル',hot:'あつい〜',comfy:'ごろごろ♪',cozy:'ぬくぬく♪',walk:catGoal().floor?'あったか〜い！':'もどろっと',pet:'にゃ〜♪'}[mood];
+  if(mood!==catMood||bubble.textContent!==msg){const changed=mood!==catMood;catMood=mood;bubble.textContent=msg;if(changed&&mood!=='comfy'&&mood!=='pet'&&mood!=='walk'&&(st.on||dev))meowSnd(mood)}
+}
+
+// ===================== floor appliances: oil fan heaters, fans, circulators =====================
+const DEVICES=[
+  {id:'hidamari',cat:'heater',name:'ひだまり工業',short:'ひだまり',color:'#e8742a',body:0xf3eee3,trim:0xd9d2c4},
+  {id:'akane',cat:'heater',name:'あかね製作所',short:'あかね',color:'#c43b3b',body:0x6e7176,trim:0x3d4045},
+  {id:'livingfan',cat:'fan',type:'stand',name:'そよかぜ工業 リビングファン',short:'リビング',color:'#16a2b8'},
+  {id:'deskfan',cat:'fan',type:'desk',name:'みかん家電 たくじょうファン',short:'たくじょう',color:'#f08a1c'},
+  {id:'tower',cat:'fan',type:'tower',name:'アオゾラ テクノ タワーファン',short:'タワー',color:'#1f6fd6'},
+  {id:'roundcirc',cat:'circ',type:'round',name:'ほっきょくぐま電機 サーキュレーター',short:'まるがた',color:'#d7262e'},
+  {id:'circ3d',cat:'circ',type:'3d',name:'アオゾラ テクノ 3Dサーキュレーター',short:'3D',color:'#1f6fd6'},
+];
+const dstates={};
+DEVICES.forEach(d=>dstates[d.id]=d.cat==='heater'?{on:false,phase:'off',t:0,temp:22,eco:false,timer:0,fuel:0.85,flame:0,fan:0}
+  :{on:false,speed:1,mode:'normal',osc:false,oscV:false,osc3d:false,tilt:d.cat==='circ'?0.35:0.1,oscP:0,oscVP:0,timer:0,spin:0,dial:0});
+let dev=null,dst=null,devG=null,DV={};
+let DEV_POS=new THREE.Vector3(0,0,0.6),DEV_YAW=0,DEV_K=1.6;
+function placeDevice(){if(dev.cat==='heater'){DEV_POS.set(0,0,0.55);DEV_YAW=0;DEV_K=1.6}else{DEV_POS.set(0,0,0.85);DEV_YAW=0.3;DEV_K=dev.type==='stand'||dev.type==='tower'?1.15:1.6}} // stands left of center, angled toward the cat tower
+
+// ---------- extra icons ----------
+const I2=(n,c='#2b2f3a',sz=26)=>{
+  const S=(b)=>`<svg viewBox="0 0 24 24" width="${sz}" height="${sz}" fill="none" stroke="${c}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${b}</svg>`;
+  switch(n){
+    case 'fuel':return S(`<path d="M6 4h8l4 4v12H6z" fill="${c}" fill-opacity=".15"/><path d="M14 4v4h4M9 12h6M9 16h6M17 3l3 3"/>`);
+    case 'flame':return S(`<path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 2-5 3-6 0 2 1 3 2 3-1-3 0-6 1-9z" fill="${c}" fill-opacity=".3"/>`);
+    case 'eco':return S('<path d="M5 19c0-8 6-14 15-15-1 9-7 15-15 15z"/><path d="M5 19l8-8"/>');
+    case 'wave':return S('<path d="M2 12c3-5 5-5 7 0s4 5 7 0 4-5 6 0"/>');
+    case 'tiltUp':return S('<path d="M12 20V5M6 11l6-6 6 6"/>');
+    case 'tiltDown':return S('<path d="M12 4v15M6 13l6 6 6-6"/>');
+    case 'three':return S('<path d="M8 4c-4 4-4 12 0 16M16 4c4 4 4 12 0 16"/><path d="M3 12h18"/>');
+    case 'night':return S(`<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" fill="${c}" fill-opacity=".25"/>`);
+  }
+  return I(n,c,sz);
+};
+
+// ---------- 3D models ----------
+function grille(parent,r,rings=5,col=0xcfd3d9){ // fan guard: rings + spokes
+  const m=std(col,0.35,0.4);
+  for(let i=1;i<=rings;i++)mesh(new THREE.TorusGeometry(r*i/rings,0.0045,6,40),m,0,0,0,parent,false);
+  for(let i=0;i<16;i++){const s=mesh(new THREE.BoxGeometry(0.004,r,0.004),m,0,0,0,parent,false);s.rotation.z=i*Math.PI/8;s.position.set(Math.sin(-i*Math.PI/8)*r/2,Math.cos(i*Math.PI/8)*r/2,0)}
+}
+function blades(parent,r,n,col,opacity=0.75){
+  const g=new THREE.Group();parent.add(g);
+  const mat=new THREE.MeshStandardMaterial({color:col,roughness:0.25,metalness:0.05,transparent:opacity<1,opacity,side:THREE.DoubleSide});
+  for(let i=0;i<n;i++){const b=mesh(new THREE.SphereGeometry(r*0.5,16,10),mat,0,0,0,g,true);b.scale.set(0.42,1,0.06);b.position.set(Math.sin(i*2*Math.PI/n)*r*0.5,Math.cos(i*2*Math.PI/n)*r*0.5,0);b.rotation.set(0.25,0,-i*2*Math.PI/n)}
+  mesh(new THREE.CylinderGeometry(r*0.16,r*0.18,r*0.12,20),std(0xe9ecef,0.3),0,0,0.01,g).rotation.x=Math.PI/2;
+  return g;
+}
+function buildDevice(){
+  if(devG){scene.remove(devG);devG=null}DV={};
+  if(!dev)return;placeDevice();try{buildDeviceInner()}finally{DEFP=null}
+}
+function buildDeviceInner(){
+  const C0=0;devG=new THREE.Group();devG.position.copy(DEV_POS);devG.rotation.y=DEV_YAW;devG.scale.setScalar(DEV_K);scene.add(devG);DEFP=devG;
+  const C=new THREE.Color(dev.color);
+  if(dev.cat==='heater'){
+    const body=std(dev.body,0.45),trim=std(dev.trim,0.5);
+    const b=rbox(0.5,0.44,0.3,0.035,body,devG);b.position.set(0,0.25,0);
+    mesh(new THREE.BoxGeometry(0.46,0.03,0.28),trim,0,0.03,0); // base
+    // slanted top control panel
+    const panel=new THREE.Group();panel.position.set(0,0.47,0.06);panel.rotation.x=-0.35;devG.add(panel);
+    mesh(new THREE.BoxGeometry(0.4,0.008,0.14),std(dev.id==='akane'?0x2c2f33:0xe6e0d4,0.4),0,0,0,panel);
+    const dc=document.createElement('canvas');dc.width=256;dc.height=96;DV.dctx=dc.getContext('2d');DV.dtex=new THREE.CanvasTexture(dc);
+    const disp=mesh(new THREE.PlaneGeometry(0.15,0.056),new THREE.MeshBasicMaterial({map:DV.dtex}),-0.07,0.006,0,panel,false);disp.rotation.x=-Math.PI/2;
+    DV.btn=mesh(new THREE.CylinderGeometry(0.024,0.024,0.012,20),std(C.getHex(),0.4),0.13,0.008,0,panel);
+    // front: upper louvre with the flame glow behind, lower hot-air outlet
+    DV.glowMat=new THREE.MeshStandardMaterial({color:0x221008,emissive:0x000000,roughness:0.9});
+    mesh(new THREE.PlaneGeometry(0.36,0.13),DV.glowMat,0,0.3,0.151,devG,false);
+    for(let i=0;i<7;i++)mesh(new THREE.BoxGeometry(0.37,0.006,0.012),std(dev.id==='akane'?0x2a2c30:0xcfc7b8,0.4,0.3),0,0.245+i*0.018,0.156,devG,false);
+    mesh(new THREE.PlaneGeometry(0.4,0.08),std(0x14161a,0.9),0,0.1,0.151,devG,false);
+    for(let i=0;i<12;i++)mesh(new THREE.BoxGeometry(0.006,0.075,0.012),std(0x8d9096,0.4,0.5),-0.18+i*0.033,0.1,0.156,devG,false);
+    // tank cap and carry handle at the back
+    mesh(new THREE.CylinderGeometry(0.03,0.03,0.02,18),std(0x2a2c30,0.4),0.15,0.475,-0.1);
+    mesh(new THREE.BoxGeometry(0.16,0.012,0.03),trim,-0.1,0.476,-0.12);
+    const lg=textTex(dev.name,'800 64px "M PLUS Rounded 1c",sans-serif',dev.color,1024,120);
+    mesh(new THREE.PlaneGeometry(0.22,0.026),new THREE.MeshBasicMaterial({map:lg,transparent:true}),-0.02,0.41,0.152,devG,false);
+    DV.light=new THREE.PointLight(0xff8a3c,0,1.6);DV.light.position.set(0,0.2,0.35);devG.add(DV.light);
+    DV.src={o:new THREE.Vector3(0,0.1,0.17),r:0.18,slot:true};
+  }else if(dev.type==='stand'||dev.type==='desk'){
+    const desk=dev.type==='desk',H=desk?0.38:0.95,R=desk?0.15:0.2;
+    const white=std(0xf5f6f4,0.35);
+    if(desk){const base=rbox(0.3,0.08,0.24,0.03,white,devG);base.position.set(0,0.05,0);
+      DV.keys=['切','弱','中','強'].map((k,i)=>{const m=mesh(new THREE.BoxGeometry(0.05,0.02,0.05),std(i?0xeeeeee:0xe5484d,0.4),-0.09+i*0.06,0.1,0.07,devG);return m})}
+    else{mesh(new THREE.CylinderGeometry(0.2,0.22,0.04,32),white,0,0.02,0);}
+    mesh(new THREE.CylinderGeometry(desk?0.024:0.026,desk?0.026:0.03,H-0.04,16),std(0xe7e9ea,0.35),0,(H-0.04)/2+0.03,0);
+    DV.pan=new THREE.Group();DV.pan.position.set(0,H,0);devG.add(DV.pan);
+    DV.tilt=new THREE.Group();DV.pan.add(DV.tilt);
+    mesh(new THREE.CylinderGeometry(R*0.32,R*0.36,R*0.6,20),white,0,0,-R*0.32,DV.tilt).rotation.x=Math.PI/2;
+    const head=new THREE.Group();head.position.z=0.02;DV.tilt.add(head);
+    DV.blades=blades(head,R*0.95,5,0x9fd6ff,0.7);
+    const front=new THREE.Group();front.position.z=0.035;head.add(front);grille(front,R,5);
+    const back=new THREE.Group();back.position.z=-0.03;head.add(back);grille(back,R,4);
+    mesh(new THREE.TorusGeometry(R,0.007,8,48),std(0xe2e5e8,0.3,0.3),0,0,0,head,false);
+    mesh(new THREE.CircleGeometry(R*0.17,24),std(C.getHex(),0.4),0,0,0.04,head,false);
+    DV.src={head,r:R*0.85};
+  }else if(dev.type==='tower'){
+    const body=std(0x2b2f36,0.35),face=std(0xf1f3f5,0.3);
+    mesh(new THREE.CylinderGeometry(0.17,0.19,0.04,32),body,0,0.02,0);
+    DV.pan=new THREE.Group();devG.add(DV.pan);
+    const col=rbox(0.18,0.95,0.16,0.07,face,DV.pan);col.position.set(0,0.53,0);
+    for(let i=0;i<18;i++)mesh(new THREE.BoxGeometry(0.07,0.006,0.012),std(0x3a3f47,0.5),0,0.22+i*0.033,0.083,DV.pan,false);
+    DV.led=new THREE.MeshStandardMaterial({color:0x99a,emissive:0x000000});mesh(new THREE.BoxGeometry(0.06,0.012,0.006),DV.led,0,0.9,0.083,DV.pan,false);
+    DV.src={tower:true,r:0.05};
+  }else{ // circulators
+    const round=dev.type==='round',R=round?0.13:0.12;
+    const shell=std(round?0xf6f6f4:0x22262c,0.35);
+    if(round){mesh(new THREE.CylinderGeometry(0.11,0.13,0.05,28),shell,0,0.025,0);
+      DV.dial=new THREE.Group();DV.dial.position.set(0,0.06,0.09);DV.dial.rotation.x=-0.5;devG.add(DV.dial);
+      mesh(new THREE.CylinderGeometry(0.025,0.027,0.02,20),std(0xdddddd,0.3),0,0,0,DV.dial);mesh(new THREE.BoxGeometry(0.004,0.022,0.03),std(0xd7262e,0.4),0,0.003,0.01,DV.dial,false)}
+    else{mesh(new THREE.CylinderGeometry(0.13,0.14,0.04,28),shell,0,0.02,0)}
+    DV.pan=new THREE.Group();DV.pan.position.set(0,round?0.19:0.24,0);devG.add(DV.pan);
+    // yoke
+    for(const s of[-1,1])mesh(new THREE.BoxGeometry(0.018,round?0.14:0.2,0.03),shell,s*(R+0.03),round?-0.06:-0.09,0,DV.pan);
+    DV.tilt=new THREE.Group();DV.pan.add(DV.tilt);
+    const housing=mesh(new THREE.SphereGeometry(R+0.02,28,18,0,Math.PI*2,0,Math.PI*0.62),shell,0,0,0,DV.tilt);housing.rotation.x=-Math.PI/2;
+    DV.blades=blades(DV.tilt,R*0.9,round?4:5,round?0xd8dde3:0x9aa3ad,0.95);DV.blades.position.z=0.03;
+    const fr=new THREE.Group();fr.position.z=0.06;DV.tilt.add(fr);grille(fr,R+0.01,6,round?0xe9ebee:0x3a3f47);
+    mesh(new THREE.TorusGeometry(R+0.012,0.012,8,48),shell,0,0,0.055,DV.tilt,false);
+    DV.src={head:DV.tilt,r:R*0.8};
+  }
+}
+function _endBuild(){DEFP=null}
+function headDir(obj){const q=new THREE.Quaternion();obj.getWorldQuaternion(q);return new THREE.Vector3(0,0,1).applyQuaternion(q).normalize()}
+function devStrength(){
+  if(!dev||!dst)return 0;
+  if(dev.cat==='heater')return dst.flame>0.5?0.22*(dst.eco?0.7:1):dst.fan*0.08;
+  if(!dst.on)return 0;
+  let s=dev.cat==='circ'?0.25+dst.speed*0.17:dev.type==='desk'?0.18+dst.speed*0.15:0.15+dst.speed*0.12;
+  if(dst.mode==='rhythm')s*=0.55+0.45*Math.sin(t*0.9)**2;
+  if(dst.mode==='nature')s*=0.5+0.5*Math.abs(Math.sin(t*0.37)*Math.sin(t*1.3+1));
+  return s;
+}
+function devSource(){
+  const s=devStrength();if(!devG||s<=0.01)return null;
+  if(dev.cat==='heater'){const o=DV.src.o.clone();devG.localToWorld(o);return {o,d:headDir(devG).add(new THREE.Vector3(0,0.12,0)).normalize(),r:0.17*DEV_K,slotW:0.36*DEV_K,strength:s,col:[1,0.55,0.22],spd:0.7,warm:true,spread0:0.2,spreadK:0.45,len:2.5}}
+  if(DV.src.tower){const o=new THREE.Vector3(0,0.55,0.1);DV.pan.localToWorld(o);return {o,d:headDir(DV.pan),r:0.05,slotH:0.6*DEV_K,strength:s,col:[0.85,0.9,1],spd:1+s*2,spread0:0.25,spreadK:0.3,len:3.5}}
+  const o=new THREE.Vector3(0,0,0.08);DV.src.head.localToWorld(o);
+  const circ=dev.cat==='circ';
+  return {o,d:headDir(DV.src.head),r:DV.src.r*DEV_K,strength:s,col:[0.85,0.9,1],spd:circ?1.6+s*3:1+s*2.2,spread0:DV.src.r,spreadK:circ?0.12:0.28,len:circ?6:4};
+}
+function updateDevice(dt){
+  if(!dev||!devG)return;
+  const s=dst;
+  if(dev.cat==='heater'){
+    s.t+=dt;
+    if(s.phase==='ignite'){ // fan spins up, igniter clicks, then the burner catches
+      s.fan=Math.min(1,s.fan+dt*0.6);
+      if(s.t>0.8&&s.t<4.2&&Math.floor(s.t*7)!==Math.floor((s.t-dt)*7))heaterClick();
+      if(s.t>=4.4){s.phase='burn';s.t=0;heaterWhoomp();startBurner()}
+    }else if(s.phase==='burn'){
+      s.flame=Math.min(1,s.flame+dt*1.5);s.fan=1;
+      s.fuel=Math.max(0,s.fuel-dt*(s.eco?0.0025:0.004));
+      if(s.fuel<=0){s.phase='cool';s.t=0;s.on=false;beepSeq([1800,1800,1800],0.18);renderPanel()}
+    }else if(s.phase==='cool'){ // after shutting off the fan keeps blowing for a while
+      s.flame=Math.max(0,s.flame-dt*1.2);if(s.t>5){s.fan=Math.max(0,s.fan-dt*0.5);if(s.fan<=0)s.phase='off'}
+    }
+    if(burnerG)burnerG.gain.value=muted?0:s.flame*0.05;
+    if(devHumG)devHumG.gain.value=muted?0:s.fan*0.03;
+    const f=s.flame*(0.85+Math.sin(t*23)*0.08+Math.sin(t*7.3)*0.07);
+    DV.glowMat.emissive.setRGB(1*f,0.38*f,0.08*f);DV.light.intensity=f*1.2;
+    drawHeaterDisplay();
+    return;
+  }
+  // fans and circulators
+  const target=s.on?(dev.cat==='circ'?10+s.speed*6:7+s.speed*5)*(devStrength()/(0.15+s.speed*0.12+0.001)):0;
+  s.spin+=(target-s.spin)*Math.min(1,dt*(s.on?1.2:0.5));
+  if(DV.blades)DV.blades.rotation.z-=s.spin*dt;
+  if(devHumG)devHumG.gain.value=muted?0:Math.min(0.06,s.spin*0.0022);
+  if(s.osc||s.osc3d)s.oscP+=dt*(dev.cat==='circ'?0.9:0.6);
+  if(s.oscV||s.osc3d)s.oscVP+=dt*0.7;
+  const pan=(s.osc||s.osc3d)?Math.sin(s.oscP)*(dev.type==='tower'?0.7:0.75):Math.sin(s.oscP)*0; // keeps the last angle when stopped
+  if(!(s.osc||s.osc3d))s.panHold=s.panHold??0;else s.panHold=pan;
+  if(DV.pan)DV.pan.rotation.y=s.panHold??0;
+  const tilt=(s.oscV||s.osc3d)?0.15+0.55*(0.5+0.5*Math.sin(s.oscVP)):s.tilt;
+  if(DV.tilt)DV.tilt.rotation.x=-tilt;
+  if(DV.led){const on=s.on&&s.mode!=='night';DV.led.emissive.setHex(on?0x3fa9ff:0)}
+  if(DV.dial)DV.dial.rotation.y=-(s.on?s.speed:0)*0.9;
+  if(DV.keys)DV.keys.forEach((k,i)=>k.position.y=(s.on?s.speed:0)===i?0.088:0.1);
+}
+
+// ---------- heater sounds ----------
+let burner=null,burnerG=null,devHum=null,devHumG=null;
+function noiseLoop(freq,q){const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;
+  const src=ac.createBufferSource();src.buffer=b;src.loop=true;const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=freq;f.Q.value=q;const g=ac.createGain();g.gain.value=0;src.connect(f).connect(g).connect(OUT());src.start();return g}
+function startBurner(){if(!audio())return;if(!burnerG)burnerG=noiseLoop(260,0.8)}
+function startDevHum(){if(!audio())return;if(!devHumG)devHumG=noiseLoop(900,0.5)}
+function heaterClick(){if(muted||!audio())return;const t0=ac.currentTime,n=ac.sampleRate*0.02,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/(n*0.12));
+  const s=ac.createBufferSource();s.buffer=b;const g=ac.createGain();g.gain.value=0.5;const f=ac.createBiquadFilter();f.type='highpass';f.frequency.value=1500;s.connect(f).connect(g).connect(OUT());s.start(t0)}
+function heaterWhoomp(){if(muted||!audio())return;const t0=ac.currentTime,n=ac.sampleRate*0.6,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/(n*0.25))*Math.min(1,i/(n*0.03));
+  const s=ac.createBufferSource();s.buffer=b;const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.setValueAtTime(900,t0);f.frequency.exponentialRampToValueAtTime(150,t0+0.5);const g=ac.createGain();g.gain.value=0.6;s.connect(f).connect(g).connect(OUT());s.start(t0)}
+function beepSeq(fs,gap=0.12){fs.forEach((f,i)=>beep(f,.09,i*gap))}
+
+// ---------- control panels for the floor appliances ----------
+function dbtn(icon,label,fn,o={}){
+  const b=document.createElement('button');b.className='b'+(o.cls?' '+o.cls:'');b.setAttribute('aria-label',label);
+  b.innerHTML=`<span class="ic">${icon?I2(icon,o.ic||'#2b2f3a',o.sz||26):''}</span>${o.txt?`<span class="tx">${o.txt}</span>`:''}<small>${label}</small>`;
+  if(o.style)b.style.cssText=o.style;
+  b.addEventListener('click',e=>{e.stopPropagation();audio();startDevHum();fn();renderPanel()});return b;
+}
+const DACT={
+  heaterPower(){const s=dst;
+    if(s.phase==='off'||s.phase==='cool'){if(s.fuel<=0){beepSeq([1800,1800,1800],0.18);return}s.on=true;s.phase='ignite';s.t=0;beep(2100,.08);beep(2100,.08,.12)}
+    else{s.on=false;s.phase='cool';s.t=0;beep(1600,.35)}},
+  hUp(){dst.temp=clamp(dst.temp+1,10,28);beep(2100)},hDown(){dst.temp=clamp(dst.temp-1,10,28);beep(2100)},
+  eco(){dst.eco=!dst.eco;beep(2100)},hTimer(){dst.timer=(dst.timer+1)%9;beep(2100)},
+  refill(){if(dst.on){beep(400,.25);return}dst.fuel=1;gurgle()},
+  fanPower(){dst.on=!dst.on;beep(dev.cat==='circ'?1500:1300,dst.on?.08:.25);if(dst.on)beep(1500,.06,.1)},
+  fanSpeed(){const max=dev.type==='desk'?3:dev.cat==='circ'?5:3;dst.speed=dst.speed%max+1;if(!dst.on)dst.on=true;beep(1300)},
+  setSpeed(n){if(n===0){dst.on=false}else{dst.on=true;dst.speed=n}clack()},
+  osc(){dst.osc=!dst.osc;dst.osc3d=false;beep(1300)},oscV(){dst.oscV=!dst.oscV;dst.osc3d=false;beep(1300)},osc3d(){dst.osc3d=!dst.osc3d;dst.osc=false;dst.oscV=false;beep(1300)},
+  rhythm(){dst.mode=dst.mode==='rhythm'?'normal':'rhythm';beep(1300)},nature(){dst.mode=dst.mode==='nature'?'normal':'nature';beep(1300)},night(){dst.mode=dst.mode==='night'?'normal':'night';beep(1300)},
+  fTimer(){dst.timer=(dst.timer+1)%9;beep(1300)},
+  tiltUp(){dst.oscV=false;dst.osc3d=false;dst.tilt=clamp(dst.tilt+0.15,-0.2,dev.cat==='circ'?1.5:0.6);clack()},
+  tiltDown(){dst.oscV=false;dst.osc3d=false;dst.tilt=clamp(dst.tilt-0.15,-0.2,dev.cat==='circ'?1.5:0.6);clack()},
+  dial(){dst.dial=(dst.dial+1)%4;if(dst.dial===0)dst.on=false;else{dst.on=true;dst.speed=[0,1,3,5][dst.dial]}clack()},
+};
+function clack(){if(muted||!audio())return;heaterClick();setTimeout(heaterClick,40)}
+function gurgle(){if(muted||!audio())return;for(let i=0;i<10;i++)setTimeout(()=>{beep(180+Math.random()*120,.08,0,.05)},i*110)}
+function buildPanel(){
+  const host=$('remote');host.innerHTML='';
+  const r=el('div','remote r-panel');r.style.setProperty('--rb',dev.cat==='heater'&&dev.id==='akane'?'#e3e4e6':'#f7f7f5');host.appendChild(r);
+  const C=dev.color,warm='#e5484d',cold='#2f80ed';
+  if(dev.cat==='heater'){
+    r.style.borderRadius='18px';
+    r.appendChild(el('div','logo',dev.name+' 石油ファンヒーター'));
+    const l=lcdBox(dev.id==='akane');l.classList.add('heaterLcd');r.appendChild(l);
+    r.appendChild(dbtn('power','うんてん',DACT.heaterPower,{cls:'pw',ic:'#fff',sz:32,style:`background:linear-gradient(${C},${shade(C,-25)});min-height:64px`}));
+    r.appendChild(grid(2,[dbtn('up','おんど あげる',DACT.hUp,{ic:warm,sz:30}),dbtn('down','おんど さげる',DACT.hDown,{ic:cold,sz:30})]));
+    r.appendChild(grid(3,[dbtn('eco','エコ',DACT.eco,{ic:'#2fa84f'}),dbtn('timer','タイマー',DACT.hTimer),dbtn('fuel','きゅうゆ',DACT.refill,{ic:'#c43b3b'})]));
+  }else if(dev.type==='desk'){
+    r.style.borderRadius='26px 26px 14px 14px';
+    r.appendChild(el('div','logo',dev.name));
+    r.appendChild(el('div','hint','ほんたいの ボタン'));
+    const keys=[['stop','きる',0],['speed','よわ',1],['speed','なか',2],['speed','つよ',3]].map(([ic,lb,n])=>{const k=dbtn(ic,lb,()=>DACT.setSpeed(n),{ic:n?'#2b2f3a':'#e5484d',cls:'piano'});k.dataset.n=n;return k});
+    r.appendChild(grid(4,keys,'4px'));
+    r.appendChild(dbtn('side','くびふり',DACT.osc,{cls:'knob'}));
+  }else if(dev.type==='round'){
+    r.style.borderRadius='999px 999px 30px 30px';
+    r.appendChild(el('div','logo',dev.name));
+    const d=el('button','dialKnob');d.setAttribute('aria-label','ダイヤル');d.innerHTML='<span class="mark"></span><span class="lbl l0">切</span><span class="lbl l1">1</span><span class="lbl l2">2</span><span class="lbl l3">3</span>';
+    d.onclick=e=>{e.stopPropagation();audio();startDevHum();DACT.dial();renderPanel()};r.appendChild(d);
+    r.appendChild(grid(2,[dbtn('tiltUp','うえむき',DACT.tiltUp),dbtn('tiltDown','したむき',DACT.tiltDown)]));
+  }else{
+    r.appendChild(el('div','ir'));
+    const l=lcdBox(dev.id==='tower'||dev.id==='circ3d');r.appendChild(l);
+    r.appendChild(dbtn('power','うんてん',DACT.fanPower,{cls:'pw',ic:'#fff',sz:30,style:`background:linear-gradient(${C},${shade(C,-25)});border-radius:999px`}));
+    const extra=dev.type==='stand'?[dbtn('speed','かぜのつよさ',DACT.fanSpeed),dbtn('side','くびふり',DACT.osc),dbtn('wave','リズム',DACT.rhythm),dbtn('tiltUp','うえむき',DACT.tiltUp),dbtn('tiltDown','したむき',DACT.tiltDown),dbtn('timer','タイマー',DACT.fTimer)]
+      :dev.type==='tower'?[dbtn('speed','かぜのつよさ',DACT.fanSpeed),dbtn('side','くびふり',DACT.osc),dbtn('wave','しぜんかぜ',DACT.nature),dbtn('night','ナイト',DACT.night),dbtn('timer','タイマー',DACT.fTimer)]
+      :[dbtn('speed','かぜのつよさ',DACT.fanSpeed),dbtn('side','さゆう',DACT.osc),dbtn('swing','じょうげ',DACT.oscV),dbtn('three','3D',DACT.osc3d),dbtn('tiltUp','うえむき',DACT.tiltUp),dbtn('tiltDown','したむき',DACT.tiltDown)];
+    r.appendChild(grid(3,extra,'7px'));
+    const lg=el('div','logo',dev.name);lg.style.color=C;r.appendChild(lg);
+  }
+  renderPanel();
+}
+function renderPanel(){
+  if(!dev||dev.cat==='ac')return;
+  const s=dst;
+  document.querySelectorAll('.piano').forEach(k=>k.classList.toggle('down',+k.dataset.n===(s.on?s.speed:0)));
+  const d=document.querySelector('.dialKnob');if(d)d.style.setProperty('--a',(s.on?s.dial:0)*60-90+'deg');
+  const l=$('lcd');if(!l)return;
+  const dark=l.classList.contains('dark'),ink=dark?(dev.id==='akane'?'#ff6b4a':'#8fd0ff'):'#26301f';
+  if(dev.cat==='heater'){
+    const lit=s.phase!=='off';l.classList.toggle('off',!lit&&s.fuel>0);
+    const gauge=`<span class="bars">${[1,2,3,4,5].map(i=>`<i class="${s.fuel>=i/5-0.1?'on':''}" style="height:${4+i*2}px;background:${ink}"></i>`).join('')}</span>`;
+    const status=s.fuel<=0?`<span class="blink">${I2('fuel',ink,22)}</span>`:s.phase==='ignite'?`<span class="blink">${I2('flame',ink,22)}…</span>`:s.phase==='burn'?I2('flame',ink,22):s.phase==='cool'?I2('fan',ink,22):'';
+    l.innerHTML=`<div class="lcd-mode">${status}${s.eco?I2('eco',ink,20):''}</div><div class="lcd-temp">${s.temp}<small>℃</small></div>
+      <div class="lcd-row"><span>${I2('fuel',ink,16)}${gauge}</span><span>へや ${roomT.toFixed(0)}℃</span><span>${s.timer?I2('timer',ink,16)+s.timer+'h':''}</span></div>`;
+    return;
+  }
+  l.classList.toggle('off',!s.on);
+  const bars=`<span class="bars">${[1,2,3,4,5].slice(0,dev.cat==='circ'?5:3).map(i=>`<i class="${i<=s.speed?'on':''}" style="height:${4+i*2}px;background:${ink}"></i>`).join('')}</span>`;
+  l.innerHTML=`<div class="lcd-mode">${I2('fan',ink,30)}</div><div class="lcd-temp" style="font-size:34px">${bars}</div>
+    <div class="lcd-row"><span>${s.osc||s.osc3d?I2('side',ink,18):''}${s.oscV||s.osc3d?I2('swing',ink,18):''}</span><span>${s.mode==='rhythm'||s.mode==='nature'?I2('wave',ink,18):s.mode==='night'?I2('night',ink,18):''}</span><span>${s.timer?I2('timer',ink,16)+s.timer+'h':''}</span></div>`;
+}
+function drawHeaterDisplay(){
+  if(!DV.dctx)return;const c=DV.dctx,s=dst;c.fillStyle=dev.id==='akane'?'#120a08':'#b8c7a6';c.fillRect(0,0,256,96);
+  const ink=dev.id==='akane'?'#ff5b3a':'#26301f';c.fillStyle=ink;c.font='54px "Share Tech Mono",monospace';c.textBaseline='middle';
+  if(s.phase==='off'&&s.fuel>0){DV.dtex.needsUpdate=true;return}
+  if(s.fuel<=0&&Math.floor(t*2)%2){c.font='800 40px "M PLUS Rounded 1c"';c.fillText('給油',60,50)}
+  else if(s.phase==='ignite'){c.font='800 34px "M PLUS Rounded 1c"';c.fillText('点火中'+'.'.repeat(1+Math.floor(t*3)%3),20,50)}
+  else c.fillText(s.temp+'℃',40,50);
+  DV.dtex.needsUpdate=true;
+}
+
+// ---------- selection: categories and models ----------
+const CATS=[{id:'ac',label:'エアコン',icon:'cool'},{id:'heater',label:'ストーブ',icon:'flame'},{id:'fan',label:'せんぷうき',icon:'fan'},{id:'circ',label:'サーキュレーター',icon:'three'}];
+let curCat='ac';
+function buildTabs(){
+  const bar=$('brands');bar.querySelectorAll('.brand').forEach(e=>e.remove());
+  const catRow=$('cats');catRow.innerHTML='';
+  CATS.forEach(c=>{const e=el('button','ctab'+(c.id===curCat?' sel':''),`${I2(c.icon,'#2b2f3a',20)}<span>${c.label}</span>`);e.onclick=()=>{curCat=c.id;buildTabs();const first=c.id==='ac'?brand:DEVICES.find(d=>d.cat===c.id&&d===dev)||DEVICES.find(d=>d.cat===c.id);selectAny(first);audio();beep(900,.04,0,.03)};catRow.appendChild(e)});
+  const list=curCat==='ac'?BRANDS:DEVICES.filter(d=>d.cat===curCat);
+  const cur=curCat==='ac'?brand:dev;
+  list.forEach(b=>{const e=el('button','brand'+(b===cur?' sel':''),b.short);e.dataset.id=b.id;e.style.color=b.color;e.onclick=()=>{selectAny(b);audio();beep(900,.04,0,.03)};bar.insertBefore(e,$('mute'))});
+}
+function selectAny(item){
+  const acMode=!item.cat;if(acG)acG.visible=acMode;if(!acMode&&st.on){st.on=false;flap=0}
+  if(item.cat){ // floor appliance
+    if(dev&&dev!==item&&dst){dst.on=false;if(dev.cat==='heater'){dst.phase='off';dst.flame=0;dst.fan=0}}
+    dev=item;dst=dstates[item.id];curCat=item.cat;buildDevice();buildPanel();setScene(item.cat);
+  }else{if(dev&&dst){dst.on=false;if(dev.cat==='heater'){dst.phase='off';dst.flame=0;dst.fan=0}}if(devG){scene.remove(devG);devG=null}dev=null;dst=null;curCat='ac';selectBrand(item);setScene('ac')}
+  buildTabs();
+}
+let camMode='ac';
+function setScene(mode){ // what is in the room for each mode
+  const fanMode=mode==='fan'||mode==='circ';
+  if(acG)acG.visible=mode==='ac';
+  cabG.visible=mode==='ac';zabG.visible=mode==='heater';
+  towerG.visible=!fanMode;cat.root.visible=!fanMode;bubble.style.display=fanMode?'none':'';
+  if(sofaG)sofaG.visible=!fanMode;
+  camMode=mode==='ac'?'ac':mode==='heater'?'heater':'fan';
 }
 
 function meowSnd(mood){
   if(muted||!audio())return;
-  const p={wind:900,cold:500,hot:420}[mood]||600,t=ac.currentTime,o=ac.createOscillator(),f=ac.createBiquadFilter(),g=ac.createGain();
+  const p={wind:900,cold:500,hot:420,pet:720,cozy:560}[mood]||600,t=ac.currentTime,o=ac.createOscillator(),f=ac.createBiquadFilter(),g=ac.createGain();
   o.type='sawtooth';o.frequency.setValueAtTime(p*0.8,t);o.frequency.linearRampToValueAtTime(p*1.3,t+0.15);o.frequency.linearRampToValueAtTime(p*0.7,t+0.5);
   f.type='bandpass';f.Q.value=4;f.frequency.setValueAtTime(800,t);f.frequency.linearRampToValueAtTime(2000,t+0.18);f.frequency.linearRampToValueAtTime(900,t+0.5);
   g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.09,t+0.04);g.gain.exponentialRampToValueAtTime(0.0001,t+0.5);
@@ -645,9 +1052,9 @@ function meowSnd(mood){
 function selectBrand(b){
   brand=b;st=states[b.id];
   document.querySelectorAll('.brand').forEach(e=>e.classList.toggle('sel',e.dataset.id===b.id));
-  buildAC();buildRemote();parts.length=0;flap=st.on?1:0;
+  buildAC();if(typeof curCat!=='undefined'&&curCat!=='ac')acG.visible=false;buildRemote();parts.length=0;flap=st.on?1:0;
 }
-BRANDS.forEach(b=>{const e=el('button','brand',b.short);e.dataset.id=b.id;e.style.color=b.color;e.onclick=()=>{selectBrand(b);audio();beep(900,.04,0,.03)};$('brands').appendChild(e)});
+
 
 // ---------- loop ----------
 let last=performance.now(),t=0;
@@ -671,15 +1078,17 @@ function frame(now){
       if(st.mode==='cool'&&target>roomT)target=roomT;if(st.mode==='heat'&&target<roomT)target=roomT;
       roomT+=(target-roomT)*Math.min(1,dt*0.04*lvl);
     }else roomT+=(30-roomT)*dt*0.01;
+    if(dev&&dev.cat==='heater'&&dstates[dev.id].flame>0.5){const hs=dstates[dev.id];roomT+=((hs.temp+1)-roomT)*Math.min(1,dt*(hs.eco?0.02:0.035))}
+    if(Math.floor(t*2)!==Math.floor((t-dt)*2)&&dev&&curCat!=='ac')renderPanel();
     $('thermo').textContent=`へや ${roomT.toFixed(1)}℃`;
     const cold=clamp((26-roomT)/8,0,1),hot=clamp((roomT-26)/6,0,1);
     $('tint').style.background=`linear-gradient(rgba(120,190,255,${cold*0.35}),rgba(120,190,255,${cold*0.2})),linear-gradient(rgba(255,150,80,${hot*0.25}),rgba(255,150,80,${hot*0.12}))`;
     if(humG)humG.gain.value=muted?0:(st.on&&flap>0.5?0.02+lvl*0.012:st.clean>0?0.015:0);
-    updateAC(t);stepWind(dt,t);updateCat(dt,t);renderer.render(scene,camera);
+    updateAC(t);updateDevice(dt);stepWind(dt,t);updateCat(dt,t);updateCamera(dt);renderer.render(scene,camera);
   }
   requestAnimationFrame(frame);
 }
-resize();selectBrand(BRANDS[0]);requestAnimationFrame(frame);
+resize();selectBrand(BRANDS[0]);buildTabs();requestAnimationFrame(frame);
 })();
 </script>
 
