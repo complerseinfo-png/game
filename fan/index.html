@@ -358,7 +358,7 @@ function buildHuman(kind){
     for(const sx of[-0.2,0.2]){const gl=mesh(new THREE.TorusGeometry(0.13,0.025,6,14),lam(0x222222),sx,0.05,0.56,head,false)}
     // newspaper held in front
     const tex=canvasTex(128,96,(g,w,h)=>{g.fillStyle='#f2efe6';g.fillRect(0,0,w,h);g.fillStyle='#333';g.font='bold 14px sans-serif';g.fillText('しんぶん',8,18);g.fillStyle='#999';for(let y=26;y<h-6;y+=7){g.fillRect(8,y,52,3);g.fillRect(68,y,52,3)}});
-    paperM=new THREE.Mesh(new THREE.PlaneGeometry(1.9,1.4),new THREE.MeshLambertMaterial({map:tex,side:THREE.DoubleSide}));paperM.position.set(0,4.4,1.2);body.add(paperM);
+    paperM=new THREE.Mesh(new THREE.PlaneGeometry(1.9,1.4),new THREE.MeshLambertMaterial({map:tex,side:THREE.DoubleSide}));paperM.position.set(0,4.3,2.0);body.add(paperM);
   }else{
     mesh(new THREE.SphereGeometry(0.62,16,10,0,Math.PI*2,0,Math.PI*0.55),lam(0x6b3a1e),0,0.04,-0.02,head);
     mesh(new THREE.SphereGeometry(0.3,10,8),lam(0x6b3a1e),0,0.1,-0.65,head);
@@ -366,6 +366,7 @@ function buildHuman(kind){
   return {root,body,legs,arms,head,mouth,wig,paperM};
 }
 const people=[];
+const coughS=[makeLabel('ゴホッ！','#6b6b6b'),makeLabel('ゴホッ！','#6b6b6b')];coughS.forEach(c=>{c.visible=false;scene.add(c)});
 function addPerson(kind,x,z){
   const m=buildHuman(kind);
   const it=newItem(kind,5,x,z,0,0.9,0,m.root,{battery:false,tall:5.8,rest:0.2,human:true,m,state:kind==='dad'?'sit':'walk',t:0,cough:0,heading:Math.PI,phase:0,
@@ -687,7 +688,7 @@ function blowItem(it,s,dt){
       it.size-=1.1;
       if(it.size<0.9){it.out=true;it.gone=true;scene.remove(it.g)}
       else{it.k.scale.setScalar(it.size);it.r=0.65*it.size}
-      for(const p of people)if(Math.hypot(p.x-it.x,p.z-it.z)<6&&!p.out&&p.cough<=0){p.cough=2.2;cough();toast(p.kind==='dad'?'おとうさん「ゴホゴホ！」':'おかあさん「けむたい！」',1.2)}
+      for(const p of people)if(Math.hypot(p.x-it.x,p.z-it.z)<6&&!p.out&&p.cough<=0){p.cough=2.2;cough();toast((p.kind==='dad'?'おとうさん':'おかあさん')+'「ゴホッ！ゴホッ！」',1.4)}
     }
     return;
   }
@@ -907,8 +908,8 @@ function sync(dt){
         m.root.position.y=1.4-2.6;m.root.rotation.set(0,0,0);
         m.legs.forEach(l=>l.rotation.x=-Math.PI/2);
         const spread=it.paperSpread>0;
-        m.arms.forEach((a,i)=>{a.rotation.x=-1.3;a.rotation.z=(i?-1:1)*(spread?0.6:0.15)});
-        if(m.paperM&&it.hasPaper){m.paperM.scale.set(spread?1.7:1,spread?1.3:1,1);m.paperM.position.y=spread?4.6:4.3}
+        m.arms.forEach((a,i)=>{a.rotation.x=-1.2;a.rotation.z=(i?1:-1)*(spread?0.32:0.02)}); // hands hold the paper's edges from behind
+        if(m.paperM&&it.hasPaper){m.paperM.scale.set(spread?1.7:1,spread?1.3:1,1);m.paperM.position.y=spread?4.5:4.3}
         m.head.rotation.x=it.cough>0?Math.sin(now*20)*0.2:0;
         if(it.chance)it.chance.visible=spread&&it.hasPaper&&level>=2;
         if(it.chance)it.chance.position.set(it.x,7.2+Math.sin(now*6)*0.2,it.z+1);
@@ -934,6 +935,8 @@ function sync(dt){
     else if(it.weight<5){it.g.rotation.x=0;it.g.rotation.y+=sp*dt}
     else{it.g.rotation.x*=0.9}
   }
+  people.forEach((p,i)=>{const c=coughS[i];if(!c)return;c.visible=p.cough>0&&!p.out;
+    if(c.visible){const sit=p.state==='sit';c.position.set(p.x+Math.sin(now*9)*0.15,(sit?5.6:7)+Math.abs(Math.sin(now*7))*0.3,p.z+(sit?0.6:0));const k=1+Math.abs(Math.sin(now*14))*0.15;c.scale.set(2.6*k,1*k,1)}});
   // cats
   for(const c of cats){
     const m=c.m;m.root.position.set(c.x,c.y,c.z);
