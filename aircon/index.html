@@ -59,7 +59,9 @@ body{display:flex;flex-direction:column;overflow-x:hidden}
 .cat{width:100%;height:auto;display:block;overflow:visible}
 .bubble{z-index:2;pointer-events:none;position:absolute;transform:translate(-50%,-100%);background:#fff;border:3px solid var(--ink);border-radius:14px;padding:2px 10px;font-weight:800;font-size:clamp(12px,3.2vw,16px);white-space:nowrap}
 .bubble::after{content:"";position:absolute;left:50%;top:100%;margin-left:-7px;border:7px solid transparent;border-top-color:var(--ink)}
-.mute{order:99;margin-left:auto;flex:none;font:inherit;font-weight:800;border:3px solid var(--ink);border-radius:999px;background:#fff;padding:4px 12px;cursor:pointer}
+.mute{order:99;margin-left:6px;}
+#full{margin-left:auto}
+.mute{flex:none;font:inherit;font-weight:800;border:3px solid var(--ink);border-radius:999px;background:#fff;padding:4px 12px;cursor:pointer}
 
 /* ---------- remotes: white plastic, rubber keys, glassy LCD ---------- */
 .remote{position:relative;grid-template-columns:minmax(0,1fr);width:min(250px,88vw);padding:18px 16px 20px;display:grid;gap:10px;user-select:none;-webkit-user-select:none;touch-action:manipulation;
@@ -110,7 +112,7 @@ body{display:flex;flex-direction:column;overflow-x:hidden}
 <body>
 
 <div class="cats" id="cats"></div>
-<div class="brands" id="brands" role="tablist"><button class="mute" id="mute">おと ON</button></div>
+<div class="brands" id="brands" role="tablist"><button class="mute" id="full">全画面</button><button class="mute" id="mute">おと ON</button></div>
 <div class="stage">
   <div class="room" id="room">
     <div class="tint" id="tint"></div>
@@ -154,6 +156,11 @@ function audio(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)
 function beep(f=brand.beep,d=0.08,delay=0,vol=0.06){if(muted||!audio())return;const t=ac.currentTime+delay,o=ac.createOscillator(),g=ac.createGain();o.type='square';o.frequency.value=f;g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(OUT());o.start(t);o.stop(t+d+.02)}
 function startHum(){if(hum||muted||!audio())return;const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);let last=0;for(let i=0;i<n;i++){last=last*0.97+(Math.random()*2-1)*0.03;d[i]=last*6}
   hum=ac.createBufferSource();hum.buffer=b;hum.loop=true;const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=700;humG=ac.createGain();humG.gain.value=0;hum.connect(f).connect(humG).connect(OUT());hum.start()}
+function goFull(){const el=document.documentElement,f=el.requestFullscreen||el.webkitRequestFullscreen;if(!f||document.fullscreenElement||document.webkitFullscreenElement)return;try{const r=f.call(el,{navigationUI:'hide'});if(r&&r.catch)r.catch(()=>{})}catch(e){}}
+function exitFull(){const f=document.exitFullscreen||document.webkitExitFullscreen;if(f&&(document.fullscreenElement||document.webkitFullscreenElement))try{const r=f.call(document);if(r&&r.catch)r.catch(()=>{})}catch(e){}}
+$('full').onclick=e=>{e.stopPropagation();if(document.fullscreenElement||document.webkitFullscreenElement)exitFull();else goFull()};
+addEventListener('pointerdown',function first(){goFull();removeEventListener('pointerdown',first)},{once:true}); // first touch → full screen
+document.addEventListener('fullscreenchange',()=>{$('full').textContent=document.fullscreenElement?'もどす':'全画面';setTimeout(()=>{resize();},100)});
 $('mute').onclick=()=>{muted=!muted;$('mute').textContent=muted?'おと OFF':'おと ON';if(humG)humG.gain.value=0};
 
 // ---------- actions (shared by every remote) ----------
@@ -334,7 +341,7 @@ function resize(){const r=room.getBoundingClientRect();renderer.setSize(r.width,
   const dist=Math.max(portrait?3.9:3.4,need/2/Math.tan(hfov/2)+0.8);
   CAM.ac.pos.set(0,1.5,dist);CAM.ac.look.set(0,1.62,0);
   CAM.heater.pos.set(0.25,1.05,portrait?3.4:2.6);CAM.heater.look.set(0.15,0.45,0.95);
-  CAM.fan.pos.set(0.1,0.95,portrait?3.0:2.3);CAM.fan.look.set(0.05,0.66,0.8);
+  CAM.fan.pos.set(0.15,0.9,portrait?3.3:2.6);CAM.fan.look.set(0.1,0.55,0.9);
   camera.updateProjectionMatrix()}
 const V=()=>new THREE.Vector3(),CAM={ac:{pos:V(),look:V()},heater:{pos:V(),look:V()},fan:{pos:V(),look:V()}};
 const camLook=new THREE.Vector3(0,1.62,0);let camReady=false;
@@ -638,6 +645,46 @@ const pinHead=new THREE.Group();pinHead.position.set(0,0.62,0.03);pin.add(pinHea
   const m=new THREE.Mesh(gg,new THREE.MeshStandardMaterial({color:cols[i],side:THREE.DoubleSide,roughness:0.5}));m.rotation.z=i*Math.PI/2;m.castShadow=true;pinHead.add(m)}
  mesh(new THREE.SphereGeometry(0.014,10,8),std(0xffffff,0.4),0,0,0.01,pinHead)}
 let pinV=0,catPush=0,catMood='';
+const fanCats={fan:buildCat('black'),circ:buildCat('long')};
+Object.values(fanCats).forEach(c=>{c.root.scale.setScalar(0.36);c.root.visible=false});
+const FCAT_POS=new THREE.Vector3(0.62,0,1.45);let fcPush=0,fcMood='',fcPet=0;
+function updateFanCat(dt,t){
+  const kind=curCat==='fan'||curCat==='circ'?curCat:null;
+  Object.entries(fanCats).forEach(([k,c])=>c.root.visible=k===kind);
+  if(!kind)return;
+  const c=fanCats[kind],S=devSource(),w=windAt(FCAT_POS.x,FCAT_POS.z,0.3);
+  if(fcPet>0)fcPet-=dt;
+  const strong=w>(kind==='circ'?0.4:0.33),breeze=w>0.08;
+  const mood=fcPet>0?'pet':strong?'wind':breeze?'breeze':'idle';
+  const d=S?S.d:new THREE.Vector3(0,0,1);
+  fcPush+=((strong?Math.min(0.55,(w-0.25)*0.8):0)-fcPush)*Math.min(1,dt*(strong?0.6:0.8));
+  c.root.position.set(FCAT_POS.x+d.x*fcPush,0,FCAT_POS.z+d.z*fcPush);
+  const face=Math.atan2(-d.x,-d.z); // faces into the wind
+  let dh=(mood==='idle'?-0.9:face)-c.root.rotation.y;while(dh>Math.PI)dh-=Math.PI*2;while(dh<-Math.PI)dh+=Math.PI*2;c.root.rotation.y+=dh*Math.min(1,dt*3);
+  c.body.rotation.set(0,0,0);c.body.position.set(0,0,0);c.body.scale.set(1,1,1);c.head.rotation.set(0,0,0);
+  const legs=c.legs;
+  if(mood==='wind'){
+    c.body.rotation.x=Math.min(0.5,w*0.45);legs.forEach((l,i)=>l.rotation.x=(i<2?0.4:-0.3)+Math.sin(t*30+i)*0.06);c.head.rotation.x=0.35;
+    c.tail.forEach((sg,i)=>{sg.rotation.x=i?-0.1:-0.7;sg.rotation.y=Math.sin(t*16+i)*0.4});
+  }else if(mood==='breeze'){
+    legs.forEach(l=>l.rotation.x=0);c.head.rotation.x=-0.15;c.head.rotation.z=Math.sin(t*1.5)*0.1;
+    c.tail.forEach((sg,i)=>{sg.rotation.x=i?0.2:0.9;sg.rotation.y=Math.sin(t*5+i*0.7)*0.3});
+  }else if(mood==='pet'){
+    legs.forEach(l=>l.rotation.x=0);c.head.rotation.z=Math.sin(fcPet*8)*0.25;c.root.position.y=Math.max(0,Math.sin(fcPet*9))*0.04;
+    c.tail.forEach((sg,i)=>{sg.rotation.x=i?0.25:1.1;sg.rotation.y=Math.sin(t*9+i)*0.2});
+  }else{
+    legs.forEach(l=>l.rotation.x=0);c.head.rotation.y=Math.sin(t*0.8)*0.4;
+    c.tail.forEach((sg,i)=>{sg.rotation.x=i?0.2:0.9;sg.rotation.y=Math.sin(t*2.5+i*0.6)*0.25});
+  }
+  if(kind==='circ'&&breeze){ // long fur ripples in the wind
+    const r=Math.min(1,w*1.5);c.body.scale.set(1+Math.sin(t*28)*0.03*r,1+Math.sin(t*31+1)*0.04*r,1);c.head.scale.setScalar(1+Math.sin(t*26)*0.03*r);
+  }else c.head.scale.setScalar(1);
+  const hp=new THREE.Vector3();c.head.getWorldPosition(hp);hp.y+=0.22;hp.project(camera);
+  const r=room.getBoundingClientRect();bubble.style.left=((hp.x+1)/2*r.width)+'px';bubble.style.top=((1-hp.y)/2*r.height)+'px';
+  const msg={wind:kind==='circ'?'け が〜！ とばされる〜！':'とばされる〜！',breeze:'すずし〜',pet:'にゃ〜♪',idle:kind==='circ'?'もふもふ':'ふわぁ'}[mood];
+  if(mood!==fcMood){const ch=fcMood!==''&&mood!=='pet';fcMood=mood;if(ch&&mood==='wind')meowSnd('wind')}
+  bubble.textContent=msg;
+}
 const catPos=new THREE.Vector3(TOWER.x,TOWER.y+0.04,TOWER.z);let catPath=[],catSeg=null,catOnTower=true,catHeading=-0.4,catPet=0,catWantT=0;
 function catGoal(){ // where the cat wants to be
   if(typeof dev!=='undefined'&&dev&&dev.cat==='heater'&&dstates[dev.id].flame>0.5){
@@ -675,7 +722,8 @@ function moveCat(dt){
   renderer.domElement.addEventListener('pointerdown',e=>{
     const r=renderer.domElement.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-(e.clientY-r.top)/r.height*2+1);
     ray.setFromCamera(ndc,camera);
-    if(ray.intersectObject(cat.root,true).length){audio();catPet=1.4;meowSnd('pet');bubble.textContent='にゃ〜♪'}
+    if(cat.root.visible&&ray.intersectObject(cat.root,true).length){audio();catPet=1.4;meowSnd('pet');bubble.textContent='にゃ〜♪'}
+    for(const fc of Object.values(fanCats))if(fc.root.visible&&ray.intersectObject(fc.root,true).length){audio();fcPet=1.4;meowSnd('pet')}
   });
 }
 const bubble=$('bubble');
@@ -719,6 +767,7 @@ function updateCat(dt,t){
     legs.forEach((l,i)=>l.rotation.x=(i<2?0.35:-0.25)+Math.sin(t*30+i)*0.05);m.head.rotation.x=0.35;
     m.tail.forEach((s,i)=>{s.rotation.x=i?-0.1:-0.6;s.rotation.y=Math.sin(t*14+i)*0.35});
   }
+  if(!cat.root.visible){return}
   // speech bubble follows the cat's head on screen
   const hp=new THREE.Vector3();m.head.getWorldPosition(hp);hp.y+=0.22;hp.project(camera);
   const r=room.getBoundingClientRect();bubble.style.left=((hp.x+1)/2*r.width)+'px';bubble.style.top=((1-hp.y)/2*r.height)+'px';
@@ -739,7 +788,7 @@ const DEVICES=[
 ];
 const dstates={};
 DEVICES.forEach(d=>dstates[d.id]=d.cat==='heater'?{on:false,phase:'off',t:0,temp:22,eco:false,timer:0,fuel:0.85,flame:0,fan:0}
-  :{on:false,speed:1,mode:'normal',osc:false,oscV:false,osc3d:false,tilt:d.cat==='circ'?0.35:0.1,oscP:0,oscVP:0,timer:0,spin:0,dial:0});
+  :{on:false,speed:1,mode:'normal',osc:false,oscV:false,osc3d:false,tilt:d.cat==='circ'?0.02:(d.type==='desk'?0.05:-0.14),oscP:0,oscVP:0,timer:0,spin:0,dial:0});
 let dev=null,dst=null,devG=null,DV={};
 let DEV_POS=new THREE.Vector3(0,0,0.6),DEV_YAW=0,DEV_K=1.6;
 function placeDevice(){if(dev.cat==='heater'){DEV_POS.set(0,0,0.55);DEV_YAW=0;DEV_K=1.6}else{DEV_POS.set(0,0,0.85);DEV_YAW=0.3;DEV_K=dev.type==='stand'||dev.type==='tower'?1.15:1.6}} // stands left of center, angled toward the cat tower
@@ -822,7 +871,7 @@ function buildDeviceInner(){
     DV.light=new THREE.PointLight(0xff8a3c,0,1.6);DV.light.position.set(0,0.18,0.4);devG.add(DV.light);
     DV.src={o:new THREE.Vector3(0,oy,Dp/2+0.1),r:0.18,slot:true};
   }else if(dev.type==='stand'||dev.type==='desk'){
-    const desk=dev.type==='desk',H=desk?0.38:0.95,R=desk?0.15:0.2;
+    const desk=dev.type==='desk',H=desk?0.4:0.68,R=desk?0.2:0.3; // big blades
     const white=std(0xf5f6f4,0.35);
     if(desk){const base=rbox(0.3,0.08,0.24,0.03,white,devG);base.position.set(0,0.05,0);
       DV.keys=['切','弱','中','強'].map((k,i)=>{const m=mesh(new THREE.BoxGeometry(0.05,0.02,0.05),std(i?0xeeeeee:0xe5484d,0.4),-0.09+i*0.06,0.1,0.07,devG);return m})}
@@ -1065,7 +1114,7 @@ function setScene(mode){ // what is in the room for each mode
   const fanMode=mode==='fan'||mode==='circ';
   if(acG)acG.visible=mode==='ac';
   cabG.visible=mode==='ac';zabG.visible=mode==='heater';
-  towerG.visible=!fanMode;cat.root.visible=!fanMode;bubble.style.display=fanMode?'none':'';
+  towerG.visible=!fanMode;cat.root.visible=!fanMode;bubble.style.display='';
   if(sofaG)sofaG.visible=!fanMode;
   camMode=mode==='ac'?'ac':mode==='heater'?'heater':'fan';
 }
@@ -1116,7 +1165,7 @@ function frame(now){
     const cold=clamp((26-roomT)/8,0,1),hot=clamp((roomT-26)/6,0,1);
     $('tint').style.background=`linear-gradient(rgba(120,190,255,${cold*0.35}),rgba(120,190,255,${cold*0.2})),linear-gradient(rgba(255,150,80,${hot*0.25}),rgba(255,150,80,${hot*0.12}))`;
     if(humG)humG.gain.value=muted?0:(st.on&&flap>0.5?0.02+lvl*0.012:st.clean>0?0.015:0);
-    updateAC(t);updateDevice(dt);stepWind(dt,t);updateCat(dt,t);updateCamera(dt);renderer.render(scene,camera);
+    updateAC(t);updateDevice(dt);stepWind(dt,t);updateCat(dt,t);updateFanCat(dt,t);updateCamera(dt);renderer.render(scene,camera);
   }
   requestAnimationFrame(frame);
 }
