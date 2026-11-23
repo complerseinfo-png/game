@@ -192,7 +192,7 @@ function collide(e,onHit){
   const r=e.r;
   if(!e.out){
     if(e.x<-W+r){hit(e,1,0,onHit,null);e.x=-W+r}
-    const inWin=Math.abs(e.z)<WIN-r*0.3&&!e.noExit;
+    const inWin=Math.abs(e.z)<WIN-0.3&&!e.noExit; // the open window lets anything through
     if(e.x>W-r&&!inWin){hit(e,-1,0,onHit,null);e.x=W-r}
     if(e.z<-D+r){hit(e,0,1,onHit,null);e.z=-D+r}
     if(e.z>D-r){hit(e,0,-1,onHit,null);e.z=D-r}
@@ -570,7 +570,7 @@ function buildFan(lv){
 // ---------- wind streaks, dust clouds, sparkles ----------
 const streaks=[];
 const windMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.55});
-for(let i=0;i<40;i++){const m=new THREE.Mesh(new THREE.BoxGeometry(1,0.05,0.05),windMat);scene.add(m);streaks.push({m,t:Math.random(),lat:rand(-1,1),h:Math.random()})}
+for(let i=0;i<64;i++){const m=new THREE.Mesh(new THREE.BoxGeometry(1,0.05,0.05),windMat);scene.add(m);streaks.push({m,t:Math.random(),lat:rand(-1,1),h:Math.random()})}
 const puffs=[];
 for(let i=0;i<60;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(0.4,8,6),new THREE.MeshLambertMaterial({color:0xb0aca6,transparent:true}));m.visible=false;scene.add(m);puffs.push({m,life:0,vx:0,vy:0,vz:0,sp:false})}
 let puffI=0;
@@ -695,6 +695,35 @@ function windAt(x,z,y,r=0){ // returns strength 0..1 if something of radius r at
   if(y>fanHeadH+2+along*0.35)return 0;
   return 1-along/L.len*0.6;
 }
+// where the wind meets a wall it splits and runs along the wall both ways at half strength
+let WH=null; // this frame's wall hit
+function wallHit(){
+  const L=LV[level],fx=Math.sin(camA),fz=-Math.cos(camA);
+  let best=null;
+  const tryWall=(t,hx,hz,nx,nz,tx,tz,isWin)=>{if(t>0&&(!best||t<best.t))best={t,hx,hz,nx,nz,tx,tz,isWin}};
+  if(fx>1e-3){const t=(W-fan.x)/fx,hz=fan.z+fz*t;tryWall(t,W,hz,-1,0,0,1,Math.abs(hz)<WIN-0.3)}
+  if(fx<-1e-3){const t=(-W-fan.x)/fx;tryWall(t,-W,fan.z+fz*t,1,0,0,1,false)}
+  if(fz>1e-3){const t=(D-fan.z)/fz;tryWall(t,fan.x+fx*t,D,0,-1,1,0,false)}
+  if(fz<-1e-3){const t=(-D-fan.z)/fz;tryWall(t,fan.x+fx*t,-D,0,1,1,0,false)}
+  if(!best||best.isWin||best.t>=L.len)return null;
+  best.rem=L.len-best.t;best.band=L.w0+best.t*L.spread;
+  return best;
+}
+function windVec(x,z,y,r=0){ // strongest wind at a point: [strength, dirX, dirZ] or null
+  const fx=Math.sin(camA),fz=-Math.cos(camA);
+  let s0=windAt(x,z,y,r),out=null;
+  if(s0>0&&WH){const along=(x-fan.x)*fx+(z-fan.z)*fz;if(along>WH.t+r)s0=0}
+  if(s0>0)out=[s0,fx,fz];
+  if(WH){
+    const rx=x-WH.hx,rz=z-WH.hz,u=rx*WH.tx+rz*WH.tz,v=rx*WH.nx+rz*WH.nz;
+    if(v>-r&&v<WH.band*0.8+r&&Math.abs(u)<WH.rem+r&&y<fanHeadH+3){
+      const sg=Math.abs(u)<0.2?(Math.random()<0.5?-1:1):Math.sign(u);
+      const s1=0.5*(1-Math.min(1,Math.abs(u)/(WH.rem+0.01))*0.6);
+      if(!out||s1>out[0]||v<1.4+r)out=[s1,WH.tx*sg,WH.tz*sg]; // right at the wall the wind turns sideways
+    }
+  }
+  return out;
+}
 function makeDynamic(it){
   if(!it.static)return;
   it.static=false;
@@ -702,8 +731,8 @@ function makeDynamic(it){
   for(const q of items)if(!q.static&&q!==it){q.ground=false;q.wake=true} // things resting on it fall
   // people sitting on the sofa get up
 }
-function blowItem(it,s,dt){
-  const fx=Math.sin(camA),fz=-Math.cos(camA),L=LV[level];
+function blowItem(it,s,dt,dir){
+  const fx=dir?dir[0]:Math.sin(camA),fz=dir?dir[1]:-Math.cos(camA),L=LV[level];
   if(it.kind==='dust'){
     it.expo+=dt;
     it.k.position.x=Math.sin(time*40)*0.05*it.size; // it shakes in the wind
@@ -718,8 +747,9 @@ function blowItem(it,s,dt){
     return;
   }
   if(it.static)makeDynamic(it);
-  const light=1+(level-it.weight)*0.7;
-  const heavy={5:0.35,4:0.6,3:0.8,2:1}[it.weight]||1;
+  const w=it.out?1:it.weight; // once outside, everything is as light as dust
+  const light=1+(level-w)*0.7;
+  const heavy={5:0.35,4:0.6,3:0.8,2:1}[w]||1;
   it.vx+=fx*L.power*s*light*heavy*dt;it.vz+=fz*L.power*s*light*heavy*dt;
   it.windT=0.3;
   if(it.ground&&Math.random()<dt*4*light){it.vy=rand(2,5)*Math.min(2,light)*heavy;it.ground=false}
@@ -735,6 +765,7 @@ function updatePerson(p,dt){
   if(p.state==='fly'||p.out){
     p.x+=p.vx*dt;p.z+=p.vz*dt;collide(p,null);vertical(p,dt);
     if(p.ground){p.vx*=Math.pow(0.05,dt);p.vz*=Math.pow(0.05,dt)}
+    if(p.out&&p.x<W+3.5){p.vx=Math.max(p.vx,3)}
     if(!p.out&&p.ground&&Math.hypot(p.vx,p.vz)<0.3){p.state='walk';p.t=1;p.noExit=true} // landed inside: get up
     return;
   }
@@ -754,8 +785,8 @@ function updatePerson(p,dt){
   }
   p.x+=p.vx*dt;p.z+=p.vz*dt;collide(p,null);
 }
-function blowPerson(p,s,dt){
-  const fx=Math.sin(camA),fz=-Math.cos(camA);
+function blowPerson(p,s,dt,dir){
+  const fx=dir?dir[0]:Math.sin(camA),fz=dir?dir[1]:-Math.cos(camA);
   if(p.kind==='dad'&&p.state==='sit'){
     if(p.hasPaper&&p.paperSpread>0&&level>=2){ // the newspaper flies off
       p.hasPaper=false;p.m.paperM.visible=false;
@@ -845,21 +876,24 @@ function update(dt){
   if(sp>0.6){let dA=Math.atan2(fan.vx,-fan.vz)-camA;while(dA>Math.PI)dA-=Math.PI*2;while(dA<-Math.PI)dA+=Math.PI*2;camA+=dA*Math.min(1,dt*2.2*Math.min(1,sp/3))}
 
   // wind on things
+  WH=wallHit();
   for(const it of items){
     if(it.out||it.gone||it.human)continue;
-    if(it.weight>level)continue;
-    const s=windAt(it.x,it.z,it.y,it.kind==='dust'?it.r:0);if(s>0)blowItem(it,Math.min(1,s),dt);
+    if(!it.out&&it.weight>level)continue;
+    const wv=windVec(it.x,it.z,it.y,it.kind==='dust'?it.r:0);if(wv)blowItem(it,Math.min(1,wv[0]),dt,[wv[1],wv[2]]);
   }
-  for(const p of people){if(p.out)continue;const s=windAt(p.x,p.z,p.y);if(s>0)blowPerson(p,s,dt)}
+  for(const p of people){if(p.out)continue;const wv=windVec(p.x,p.z,p.y,0.5);if(wv)blowPerson(p,wv[0],dt,[wv[1],wv[2]])}
   for(const c of cats){
     if(c.state==='back'&&c.out)continue;
-    if(level>=3){const s=windAt(c.x,c.z,c.y);if(s>0){
+    if(level>=3){const wv=windVec(c.x,c.z,c.y,0.3);if(wv){const s=wv[0];
       if(c.state!=='fly'){c.state='fly';c.ground=false;c.vy=rand(4,7);meow(c.voice*1.3,0.35,0.1)}
-      const fx=Math.sin(camA),fz=-Math.cos(camA);c.vx+=fx*L.power*s*0.8*dt;c.vz+=fz*L.power*s*0.8*dt}}
+      c.vx+=wv[1]*L.power*s*0.8*dt;c.vz+=wv[2]*L.power*s*0.8*dt}}
   }
   // things move
   for(const it of items){
     if(it.gone||it.static||it.human)continue;
+    // things that made it outside slide off into the garden so the window stays clear
+    if(it.out&&it.x<W+it.r+2.5){it.vx=Math.max(it.vx,4);it.windT=0.2}
     if(it.ground&&!it.vx&&!it.vz&&!it.vy&&!it.wake)continue;
     it.wake=false;
     // the fan pushes light things it bumps
@@ -912,10 +946,19 @@ function sync(dt){
   if(fanG){fanG.position.set(fan.x,0,fan.z);fanG.rotation.y=Math.PI-camA;if(blades)blades.rotation.z-=dt*(state==='play'?(14+level*4):3)}
   // wind streaks in the cone
   const L=LV[level],fx=Math.sin(camA),fz=-Math.cos(camA);
+  const wh=state==='play'?wallHit():null;
   streaks.forEach((s,i)=>{
+    if(i>=44){ // wind running along the wall
+      const on=!!wh&&i<44+6+level*2;s.m.visible=on;if(!on)return;
+      s.t+=dt*(0.9+level*0.15);if(s.t>1){s.t-=1;s.lat=Math.random();s.h=Math.random()}
+      const sg=i%2?1:-1,u=sg*(0.3+s.t*wh.rem),v=0.3+s.lat*wh.band*0.7;
+      s.m.position.set(wh.hx+wh.tx*u+wh.nx*v,0.2+s.h*(fanHeadH+0.5),wh.hz+wh.tz*u+wh.nz*v);
+      s.m.rotation.y=wh.tx?0:Math.PI/2;s.m.scale.set(0.6+level*0.3,1,1);
+      return;
+    }
     const on=state==='play'&&i<12+level*6;s.m.visible=on;if(!on)return;
     s.t+=dt*(0.9+level*0.15);if(s.t>1){s.t-=1;s.lat=rand(-1,1);s.h=Math.random()}
-    const along=0.5+s.t*L.len,lat=s.lat*(L.w0+along*L.spread);
+    const along=0.5+s.t*(wh?Math.min(L.len,wh.t):L.len),lat=s.lat*(L.w0+along*L.spread);
     s.m.position.set(fan.x+fx*along+fz*lat,0.2+s.h*(fanHeadH+0.5),fan.z+fz*along-fx*lat);
     s.m.rotation.y=Math.PI/2-camA;s.m.scale.set(0.8+level*0.4,1,1);
   });
