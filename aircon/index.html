@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="エアコン">
+<meta name="apple-mobile-web-app-title" content="エアコン リモコン ごっこ">
 <meta name="theme-color" content="#f4f1ea">
 <title>エアコン リモコン ごっこ</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -61,6 +61,9 @@ body{display:flex;flex-direction:column;overflow-x:hidden}
 .bubble::after{content:"";position:absolute;left:50%;top:100%;margin-left:-7px;border:7px solid transparent;border-top-color:var(--ink)}
 .mute{order:99;margin-left:6px;}
 #full{margin-left:auto}
+#bye{position:fixed;inset:0;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(30,40,60,.82);color:#fff;font-weight:800;text-align:center;opacity:0;transition:opacity 1.5s}
+#bye.show{opacity:1}#bye .big{font-size:clamp(40px,10vw,84px)}#bye .sm{font-size:clamp(18px,4vw,28px)}
+#warn{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:50;background:#fff7d6;color:#7a4b00;border:3px solid #f0b000;border-radius:999px;padding:6px 18px;font-weight:800;font-size:20px;box-shadow:0 3px 0 rgba(0,0,0,.2)}
 .mute{flex:none;font:inherit;font-weight:800;border:3px solid var(--ink);border-radius:999px;background:#fff;padding:4px 12px;cursor:pointer}
 
 /* ---------- remotes: white plastic, rubber keys, glassy LCD ---------- */
@@ -112,7 +115,7 @@ body{display:flex;flex-direction:column;overflow-x:hidden}
 <body>
 
 <div class="cats" id="cats"></div>
-<div class="brands" id="brands" role="tablist"><button class="mute" id="full">全画面</button><button class="mute" id="mute">おと ON</button></div>
+<div id="warn" hidden>あと 1ぷん で おしまい だよ</div><div id="bye" hidden><div class="big">おしまい！</div><div class="sm">10ぷん あそんだよ。またね！</div></div><div class="brands" id="brands" role="tablist"><button class="mute" id="full">全画面</button><button class="mute" id="mute">おと ON</button></div>
 <div class="stage">
   <div class="room" id="room">
     <div class="tint" id="tint"></div>
@@ -1138,8 +1141,9 @@ function selectBrand(b){
 
 
 // ---------- loop ----------
-let last=performance.now(),t=0;
+let last=performance.now(),t=0,playT=0,warned=false;
 function frame(now){
+  playT+=Math.min(3,Math.max(0,(now-last)/1000)); // real time, not slowed by low fps
   const dt=Math.min(0.05,(now-last)/1000);last=now;t+=dt;
   if(!document.hidden){
     if(st.clean>0){st.clean-=dt;if(st.clean<=0){st.clean=0;beep(brand.beep,.06);renderLCD()}}
@@ -1167,7 +1171,21 @@ function frame(now){
     if(humG)humG.gain.value=muted?0:(st.on&&flap>0.5?0.02+lvl*0.012:st.clean>0?0.015:0);
     updateAC(t);updateDevice(dt);stepWind(dt,t);updateCat(dt,t);updateFanCat(dt,t);updateCamera(dt);renderer.render(scene,camera);
   }
+  if(!ended){
+    if(!warned&&playT>=PLAY_LIMIT-60){warned=true;{$('warn').hidden=false;beep(1200,.12);beep(1200,.12,.2);setTimeout(()=>$('warn').hidden=true,6000)}}
+    if(playT>=PLAY_LIMIT)endPlay();
+  }
   requestAnimationFrame(frame);
+}
+// ---------- 10-minute auto end ----------
+const PLAY_LIMIT=600;let ended=false;
+function endPlay(){ended=true;
+  if(st.on){st.on=false;st.powerful=false;st.special=false}
+  if(dev&&dst){dst.on=false;if(dev.cat==='heater'){dst.phase='cool';dst.t=0}renderPanel()}
+  $('warn').hidden=true;const b=$('bye');b.hidden=false;requestAnimationFrame(()=>b.classList.add('show'));
+  [784,659,523].forEach((f,i)=>beep(f,.25,i*0.3));
+  const block=e=>{e.stopPropagation();e.preventDefault()};
+  ['pointerdown','pointerup','click','touchstart','touchend'].forEach(ev=>b.addEventListener(ev,block,{passive:false}));
 }
 resize();selectBrand(BRANDS[0]);buildTabs();requestAnimationFrame(frame);
 })();
