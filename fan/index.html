@@ -144,7 +144,7 @@ function makeLabel(text,color='#ff5a5a'){
 }
 
 // ---------- room: 1 unit ≈ 30cm. The big window on the right wall is wide open ----------
-const W=16,D=12,WIN=5; // window opening: x=+W, |z|<WIN
+const W=16,D=12,WIN0=5;let WIN=WIN0; // window opening: x=+W, |z|<WIN (the whole wall once it is blown away)
 const obs=[];
 const box=(x,z,w,d,h,o={})=>{const b={t:'box',x,z,hx:w/2,hz:d/2,b:o.b||0,h,solid:o.solid!==false,platform:!!o.platform};obs.push(b);return b};
 const circ=(x,z,r,h,o={})=>{const c={t:'circ',x,z,r,b:o.b||0,h,solid:o.solid!==false,platform:!!o.platform};obs.push(c);return c};
@@ -171,20 +171,47 @@ const circ=(x,z,r,h,o={})=>{const c={t:'circ',x,z,r,b:o.b||0,h,solid:o.solid!==f
   const wm=lam(0xeef3f7),bm=lam(0xffffff);
   const wall=(x,z,w,d,h)=>{mesh(new THREE.BoxGeometry(w,h,d),wm,x,h/2,z);mesh(new THREE.BoxGeometry(w+0.02,0.5,d+0.08),bm,x,0.25,z)};
   wall(0,-D-0.2,W*2+0.8,0.4,10);wall(-W-0.2,0,0.4,D*2,10);wall(0,D+0.2,W*2+0.8,0.4,10);
-  // right wall with the open window
-  wall(W+0.2,-(D+WIN)/2,0.4,D-WIN,10);wall(W+0.2,(D+WIN)/2,0.4,D-WIN,10);
-  mesh(new THREE.BoxGeometry(0.4,2.4,WIN*2),wm,W+0.2,8.8,0);
-  // window frame + glass panels slid fully open
-  mesh(new THREE.BoxGeometry(0.5,0.25,WIN*2+0.4),lam(0x9aa7b5),W+0.2,7.55,0);
-  for(const s of[-1,1]){mesh(new THREE.BoxGeometry(0.5,7.6,0.25),lam(0x9aa7b5),W+0.2,3.8,s*WIN);
-    const glass=mesh(new THREE.BoxGeometry(0.1,7.2,2.2),new THREE.MeshLambertMaterial({color:0xcdeeff,transparent:true,opacity:0.35}),W+0.45,3.7,s*(WIN+1.3),scene,false)}
-  // curtains blowing outward
-  for(const s of[-1,1]){const c=mesh(new THREE.BoxGeometry(0.15,7,1.4),lam(0xffd9a8),W-0.3,4,s*(WIN+0.6));c.name='curtain'+s}
   const wl=makeLabel('まど','#2b7bff');wl.position.set(W-0.6,8.5,0);wl.scale.set(3.4,1.3,1);scene.add(wl);
   // floor arrows toward the window
   for(let i=0;i<3;i++){const a=new THREE.Mesh(new THREE.ConeGeometry(0.6,1.2,3),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0.55}));a.rotation.set(-Math.PI/2,0,-Math.PI/2);a.position.set(W-6+i*1.8,0.03,0);scene.add(a)}
   mesh(new THREE.BoxGeometry(0.12,1.6,2.4),lam(0xe9785a),-W+0.06,5,-4,scene,false);
 }
+
+// ---------- the right wall with the open window (blown away by the giant fan) ----------
+let rightWall=null;const wallBits=[];
+function buildRightWall(){
+  if(rightWall)scene.remove(rightWall);
+  wallBits.forEach(b=>scene.remove(b.m));wallBits.length=0;
+  WIN=WIN0;rightWall=new THREE.Group();scene.add(rightWall);
+  const wm=lam(0xeef3f7),bm=lam(0xffffff),fm=lam(0x9aa7b5),P=rightWall;
+  const seg=(z,w)=>{mesh(new THREE.BoxGeometry(0.4,10,w),wm,W+0.2,5,z,P);mesh(new THREE.BoxGeometry(0.48,0.5,w),bm,W+0.2,0.25,z,P)};
+  seg(-(D+WIN)/2,D-WIN);seg((D+WIN)/2,D-WIN);
+  mesh(new THREE.BoxGeometry(0.4,2.4,WIN*2),wm,W+0.2,8.8,0,P);
+  mesh(new THREE.BoxGeometry(0.5,0.25,WIN*2+0.4),fm,W+0.2,7.55,0,P);
+  for(const s of[-1,1]){mesh(new THREE.BoxGeometry(0.5,7.6,0.25),fm,W+0.2,3.8,s*WIN,P);
+    mesh(new THREE.BoxGeometry(0.1,7.2,2.2),new THREE.MeshLambertMaterial({color:0xcdeeff,transparent:true,opacity:0.35}),W+0.45,3.7,s*(WIN+1.3),P,false);
+    mesh(new THREE.BoxGeometry(0.15,7,1.4),lam(0xffd9a8),W-0.3,4,s*(WIN+0.6),P)}
+}
+function blowAwayWall(){
+  // break the wall into chunks that tumble out into the garden
+  scene.remove(rightWall);rightWall=null;WIN=D+2;
+  const cols=[0xeef3f7,0xeef3f7,0xeef3f7,0x9aa7b5,0xffd9a8];
+  for(let z=-D+1;z<D;z+=2)for(let y=1;y<10;y+=2.2){
+    const m=mesh(new THREE.BoxGeometry(0.4,2.1,1.9),lam(pick(cols)),W+0.2,y,z);
+    wallBits.push({m,vx:rand(8,18),vy:rand(3,10),vz:rand(-3,3),rx:rand(-5,5),rz:rand(-5,5),life:3.5});
+  }
+  puff(W,3,0,30,0xd8dde2);puff(W,6,-6,20,0xd8dde2);puff(W,6,6,20,0xd8dde2);
+  shake=1;tone(90,.8,'sawtooth',.12,-50);tone(160,.6,'square',.08,-100,.1);
+  setTimeout(()=>toast('かべごと ふきとんだ！<br><span style="font-size:.6em">かべ ぜんぶが まどに なったよ</span>',2.4),2700);
+}
+function updateWallBits(dt){
+  for(let i=wallBits.length-1;i>=0;i--){const b=wallBits[i];b.life-=dt;b.vy-=G*0.6*dt;
+    b.m.position.x+=b.vx*dt;b.m.position.y=Math.max(0.2,b.m.position.y+b.vy*dt);b.m.position.z+=b.vz*dt;
+    if(b.m.position.y<=0.2){b.vx*=0.9;b.vz*=0.9;b.vy=0}
+    b.m.rotation.x+=b.rx*dt;b.m.rotation.z+=b.rz*dt;
+    if(b.life<=0){scene.remove(b.m);wallBits.splice(i,1)}}
+}
+buildRightWall();
 
 // ---------- physics helpers ----------
 const G=24,STEP=0.3;
@@ -652,6 +679,7 @@ function updateHud(){
 function resetWorld(){
   for(const it of items)scene.remove(it.g);items.length=0;WOBS.clear();OBS2IT.clear();obs.length=0;people.length=0;
   for(const p of pickups)scene.remove(p.g);pickups.length=0;
+  buildRightWall();
   buildHouse();
   addPerson('dad',-6,-9.3);addPerson('mom',6,-1);
   const dad=people[0];dad.y=1.4;dad.heading=0;
@@ -674,6 +702,7 @@ function levelUp(){
   const what=['','','かみゴミと つつみがみ が とばせる！','ペットボトルと かん が とばせる！','こものが ぜんぶ とばせる！','かぐも にんげんも とばせる！！'][level];
   toast(`パワーアップ！<br>${LV[level].name}<br><span style="font-size:.6em">${what}</span>`,2.6);
   setWind();
+  if(level===5)setTimeout(()=>{if(state==='play')blowAwayWall()},1400);
 }
 function gameClear(){
   state='over';overAt=performance.now();setWind();
@@ -844,6 +873,7 @@ function update(dt){
   if(shake>0)shake-=dt;
   for(const p of puffs){if(p.life<=0)continue;p.life-=dt;p.vy-=(p.sp?10:1)*dt;p.m.position.x+=p.vx*dt;p.m.position.y+=p.vy*dt;p.m.position.z+=p.vz*dt;
     p.m.material.opacity=Math.min(1,p.life*1.5);if(!p.sp)p.m.scale.multiplyScalar(1+dt*0.8);if(p.life<=0)p.m.visible=false}
+  updateWallBits(dt);
   if(state==='menu'){camA+=dt*0.15;return}
   if(state!=='play')return;
   time+=dt;
