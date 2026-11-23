@@ -117,7 +117,8 @@ const pick=a=>a[Math.floor(Math.random()*a.length)];
 // ---------- renderer / scene ----------
 const canvas=$('c');
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
-renderer.setPixelRatio(Math.min(2,window.devicePixelRatio||1));
+let quality=Math.min(1.5,window.devicePixelRatio||1); // drawing detail; lowered automatically on slow devices
+renderer.setPixelRatio(quality);
 renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 const scene=new THREE.Scene();
 scene.background=new THREE.Color(0x9fd8ff);
@@ -126,7 +127,7 @@ function resize(){const w=innerWidth,h=innerHeight;renderer.setSize(w,h,false);c
 addEventListener('resize',resize);resize();
 scene.add(new THREE.HemisphereLight(0xffffff,0x8a8a7a,0.8));
 const sun=new THREE.DirectionalLight(0xfff6e0,0.7);
-sun.position.set(14,26,8);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+sun.position.set(14,26,8);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);
 Object.assign(sun.shadow.camera,{left:-26,right:30,top:20,bottom:-20,near:1,far:80});sun.shadow.bias=-0.0008;
 scene.add(sun);
 
@@ -285,6 +286,7 @@ const items=[];
 const WOBS=new Map(); // furniture item -> its static obstacles
 const OBS2IT=new Map();
 function newItem(kind,weight,x,z,y,r,lift,g,o={}){
+  if(weight<=3)g.traverse(n=>{if(n.isMesh){n.castShadow=false}});
   const it=Object.assign({kind,weight,x,z,y,vx:0,vz:0,vy:0,r,lift,g,rest:0.3,ground:true,step:0.12,out:false,static:false,
     roll:false,count:weight>=2,battery:weight<=4,moved:false,expo:0,windT:0,spin:0,ox:x,oz:z,tall:1.2},o);
   g.position.set(x,y+lift,z);items.push(it);return it;
@@ -1142,11 +1144,23 @@ function sync(dt){
 // ---------- start ----------
 resetWorld();
 state='menu';camSnap=true;
+const perf={t:0,n:0,step:0};let last0=performance.now();
 let last=performance.now();
 function frame(now){
+  last0=last;
   const dt=Math.min(1/30,(now-last)/1000);last=now;
   if(!document.hidden){
     update(dt/2);update(dt/2);sync(dt);renderer.render(scene,camera);
+    perf.t+=now-last0;perf.n++;
+    if(perf.n>=90){ // every ~1.5 s
+      const avg=perf.t/perf.n;perf.t=0;perf.n=0;
+      if(avg>26&&perf.step<3){
+        perf.step++;
+        if(perf.step===1){quality=Math.max(1,quality*0.8);renderer.setPixelRatio(quality);resize()}
+        else if(perf.step===2){renderer.shadowMap.enabled=false;scene.traverse(n=>{if(n.material){const m=Array.isArray(n.material)?n.material:[n.material];m.forEach(x=>x.needsUpdate=true)}})}
+        else{quality=Math.max(0.75,quality*0.8);renderer.setPixelRatio(quality);resize()}
+      }
+    }
     if(!frame.shown){frame.shown=true;$('loading').hidden=true;$('menu').hidden=false}
   }
   requestAnimationFrame(frame);
