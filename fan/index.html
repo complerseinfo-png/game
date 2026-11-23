@@ -262,8 +262,8 @@ function dust(x,z,size=rand(1.8,3.8)){
   k.scale.setScalar(size);
   return newItem('dust',1,x,z,0,0.65*size,0,g,{count:false,size,k});
 }
-function paper(x,z,y=0){const g=grp();mesh(new THREE.IcosahedronGeometry(0.32,0),phongFlat(pick([0xf4f4f0,0xe8e2d0,0xdfe9f2])),0,0,0,g,false);return newItem('paper',2,x,z,y,0.32,0.3,g,{roll:true,battery:Math.random()<0.35})}
-function tissue(x,z,y=0){const g=grp();const m=mesh(new THREE.IcosahedronGeometry(0.24,0),TISM,0,0,0,g,false);m.scale.set(1,0.8,1.1);m.rotation.set(rand(0,3),rand(0,3),0);return newItem('tissue',2,x,z,y,0.24,0.2,g,{roll:true,battery:Math.random()<0.33})}
+function paper(x,z,y=0){const g=grp();mesh(new THREE.IcosahedronGeometry(0.32,0),phongFlat(pick([0xf4f4f0,0xe8e2d0,0xdfe9f2])),0,0,0,g,false);return newItem('paper',2,x,z,y,0.32,0.3,g,{roll:true,battery:Math.random()<0.5})}
+function tissue(x,z,y=0){const g=grp();const m=mesh(new THREE.IcosahedronGeometry(0.24,0),TISM,0,0,0,g,false);m.scale.set(1,0.8,1.1);m.rotation.set(rand(0,3),rand(0,3),0);return newItem('tissue',2,x,z,y,0.24,0.2,g,{roll:true,battery:Math.random()<0.5})}
 function wrap(x,z,y=0){const g=grp();const c=pick([0xff6fae,0x6fd6ff,0xffd23a,0x9dff6f]);mesh(new THREE.BoxGeometry(1.0,0.04,0.8),lam(c),0,0,0,g);mesh(new THREE.BoxGeometry(1.02,0.05,0.12),lam(0xffffff),0,0.01,0,g);return newItem('wrap',2,x,z,y,0.5,0.03,g)}
 function bottle(x,z,y=0){const g=grp();mesh(new THREE.CylinderGeometry(0.18,0.19,0.75,12),new THREE.MeshLambertMaterial({color:0xbfe8ff,transparent:true,opacity:0.8}),0,0,0,g);mesh(new THREE.CylinderGeometry(0.08,0.08,0.14,8),lam(0x3f8fe0),0,0.44,0,g);return newItem('bottle',3,x,z,y,0.25,0.38,g)}
 function can(x,z,y=0){const g=grp();mesh(new THREE.CylinderGeometry(0.18,0.18,0.48,12),lam(pick([0xe9402a,0x3f8fe0,0xf2c14e,0x6fbf5a])),0,0,0,g);return newItem('can',3,x,z,y,0.22,0.24,g)}
@@ -511,10 +511,10 @@ $('mute').addEventListener('click',e=>{e.stopPropagation();muted=!muted;$('mute'
 
 // ---------- the fan (player) ----------
 const LV=[null,
-  {name:'ハンディせんぷうき',size:0.5,len:5,spread:0.25,w0:0.6,power:14,speed:5.5,need:8,battName:'でんち'},
-  {name:'たくじょうせんぷうき',size:0.9,len:7.5,spread:0.28,w0:0.9,power:20,speed:6,need:9,battName:'おおきい でんち'},
-  {name:'かていよう せんぷうき',size:1.5,len:10,spread:0.3,w0:1.2,power:28,speed:6.5,need:6,battName:'でんち'},
-  {name:'ぎょうむよう せんぷうき',size:2.4,len:13,spread:0.32,w0:1.8,power:38,speed:7,need:8,battName:'バッテリー'},
+  {name:'ハンディせんぷうき',size:0.5,len:5,spread:0.25,w0:0.6,power:14,speed:5.5,need:6,battName:'でんち'},
+  {name:'たくじょうせんぷうき',size:0.9,len:7.5,spread:0.28,w0:0.9,power:20,speed:6,need:7,battName:'おおきい でんち'},
+  {name:'かていよう せんぷうき',size:1.5,len:10,spread:0.3,w0:1.2,power:28,speed:6.5,need:5,battName:'でんち'},
+  {name:'ぎょうむよう せんぷうき',size:2.4,len:13,spread:0.32,w0:1.8,power:38,speed:7,need:6,battName:'バッテリー'},
   {name:'ちょうきょだい せんぷうき',size:4.2,len:22,spread:0.38,w0:3,power:60,speed:7.5,need:0,battName:''},
 ];
 const fan={x:0,z:6,y:0,vx:0,vz:0,vy:0,r:0.5,rest:0.2,ground:true,noExit:true};
@@ -563,13 +563,21 @@ function puff(x,y,z,n,col=0xb0aca6,sp=false){
 // ---------- batteries ----------
 const pickups=[];
 const BATT_STYLE=[null,{c:0x7be04a,s:0.8},{c:0xff8a1f,s:1.15},{c:0x3f8fe0,s:1.35},{c:0x222222,s:1.6}];
+// nearest floor spot the fan can reach (not inside furniture)
+function freeSpot(x,z){
+  const blocked=(x,z)=>obs.some(o=>o.solid&&o.h>0.3&&(o.t==='circ'?Math.hypot(x-o.x,z-o.z)<o.r+0.9:Math.abs(x-o.x)<o.hx+0.9&&Math.abs(z-o.z)<o.hz+0.9));
+  x=clamp(x,-W+1.2,W-1.2);z=clamp(z,-D+1.2,D-1.2);
+  if(!blocked(x,z))return [x,z];
+  for(let r=1;r<14;r+=0.7)for(let a=0;a<6.28;a+=0.5){const nx=clamp(x+Math.cos(a)*r,-W+1.2,W-1.2),nz=clamp(z+Math.sin(a)*r,-D+1.2,D-1.2);if(!blocked(nx,nz))return [nx,nz]}
+  return [fan.x,fan.z];
+}
 function spawnBattery(x,z,tier){
   const st=BATT_STYLE[clamp(tier,1,4)];
   const g=grp();const k=new THREE.Group();k.scale.setScalar(st.s);g.add(k);
   if(tier>=4){mesh(new THREE.BoxGeometry(0.9,0.55,0.55),lam(0x333a44),0,0,0,k);mesh(new THREE.BoxGeometry(0.5,0.1,0.3),lam(0xffcc33),0,0.32,0,k);mesh(new THREE.BoxGeometry(0.3,0.25,0.02),lam(0x7be04a),0,0,0.29,k)}
   else{mesh(new THREE.CylinderGeometry(0.2,0.2,0.75,14),lam(st.c),0,0,0,k);mesh(new THREE.CylinderGeometry(0.2,0.2,0.2,14),lam(0x333333),0,-0.3,0,k);mesh(new THREE.CylinderGeometry(0.07,0.07,0.1,8),lam(0xdddddd),0,0.42,0,k)}
   const glow=new THREE.Mesh(new THREE.TorusGeometry(0.6*st.s,0.05,6,24),new THREE.MeshBasicMaterial({color:0xffee55}));glow.rotation.x=Math.PI/2;glow.position.y=-0.4;g.add(glow);
-  x=clamp(x,-W+1,W-1);z=clamp(z,-D+1,D-1);
+  [x,z]=freeSpot(x,z);
   const p={x,z,y:0,vy:6,tier,g,t:0};g.position.set(x,0.6,z);pickups.push(p);
 }
 
@@ -860,6 +868,16 @@ function update(dt){
     }
   }
   if(Math.floor(time*4)!==Math.floor((time-dt)*4))updateHud();
+  // safety net: never run out of batteries
+  if(level<5&&Math.floor(time/3)!==Math.floor((time-dt)/3)){
+    let pot=pickups.length;
+    for(const it of items){if(it.out||it.gone)continue;
+      if(it.kind==='dust')pot+=Math.max(1,Math.floor((it.size-0.9)/1.1)+1);
+      else if(it.battery&&!it.moved&&it.weight===level)pot++}
+    const short=LV[level].need-batt-pot;
+    for(let k=0;k<short+1&&short>=0;k++){const a=rand(0,6.28);spawnBattery(fan.x+Math.cos(a)*3,fan.z+Math.sin(a)*3,level)}
+    if(short>=0)toast('でんちが でてきたよ！',1.2);
+  }
   if(remaining()===0&&state==='play')gameClear();
 }
 
