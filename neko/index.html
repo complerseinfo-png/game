@@ -85,7 +85,8 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
 @keyframes hop{0%,100%{transform:none}50%{transform:translateY(-6px)}}
 .ltitle{margin:0;font-size:clamp(30px,9vw,44px);font-weight:800;color:var(--ball);-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:0 4px 0 var(--ink)}
 @media (prefers-reduced-motion:reduce){.lball,.lcat,.ltext i{animation:none}.lball{left:60%}.lcat{left:20%}}
-.stages{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stages{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media (max-width:420px){.stages{grid-template-columns:repeat(2,1fr)}}
 .stg{font:inherit;display:grid;justify-items:center;gap:4px;padding:8px 4px;border:3px solid var(--ink);border-radius:16px;background:#fff;
   color:var(--ink);cursor:pointer;box-shadow:0 4px 0 var(--ink);min-width:0}
 .stg b{font-size:clamp(13px,3.8vw,17px)}
@@ -98,6 +99,8 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
 .th1{background:linear-gradient(#dcefe6 0 55%,#b9d3dc 55%)}
 .th1::after{content:"";position:absolute;right:10%;bottom:20%;width:28%;height:70%;background:#f4f7f9;border:2px solid #9aa;border-radius:3px}
 .th2{background:linear-gradient(#dbe7f5 0 55%,#cdb3c4 55%)}
+.th3{background:linear-gradient(#d9eef4 0 55%,#cfe3ea 55%)}
+.th3::after{content:"";position:absolute;right:8%;bottom:18%;width:55%;height:34%;background:#fff;border:2px solid #9cc;border-radius:6px;box-shadow:inset 0 10px 0 #7fd0ff}
 .th2::after{content:"";position:absolute;left:10%;bottom:25%;width:60%;height:30%;background:#fff;border-top:6px solid #f3a5b5;border-radius:4px}
 .btn2{background:#fff;font-size:18px;padding:8px 18px}
 [hidden]{display:none!important}
@@ -131,6 +134,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
       <button class="stg" data-i="1"><span class="thumb th1"></span><b>キッチン</b><small id="rec1"></small></button>
       <button class="stg" data-i="0"><span class="thumb th0"></span><b>リビング</b><small id="rec0"></small></button>
       <button class="stg" data-i="2"><span class="thumb th2"></span><b>しんしつ</b><small id="rec2"></small></button>
+      <button class="stg" data-i="3"><span class="thumb th3"></span><b>おふろ</b><small id="rec3"></small></button>
     </div>
     <div class="modes">
       <button class="mode" data-lives="3">やさしい <span style="color:#ff4f4f">♥♥♥</span></button>
@@ -237,6 +241,9 @@ function prop(kind,x,z,y=0){
   else if(kind==='bottle'){r=0.2;roll=false;lift=0.36;mesh(new THREE.CylinderGeometry(0.16,0.17,0.62,12),new THREE.MeshLambertMaterial({color:0xbfe8ff,transparent:true,opacity:0.8}),0,0,0,g);mesh(new THREE.CylinderGeometry(0.07,0.07,0.12,8),lam(0x3f8fe0),0,0.37,0,g)}
   else if(kind==='car'){r=0.34;roll=false;lift=0.16;mesh(new THREE.BoxGeometry(0.65,0.2,0.36),lam(pick([0xe9402a,0x3f8fe0,0xf2c14e])),0,0,0,g);mesh(new THREE.BoxGeometry(0.32,0.16,0.3),lam(0xbfe8ff),-0.05,0.17,0,g);for(const[a,b]of[[0.22,0.19],[-0.22,0.19],[0.22,-0.19],[-0.22,-0.19]]){const w=mesh(new THREE.CylinderGeometry(0.09,0.09,0.06,10),lam(0x222222),a,-0.08,b,g);w.rotation.x=Math.PI/2}}
   else if(kind==='slipper'){r=0.36;roll=false;lift=0.07;mesh(new THREE.BoxGeometry(0.75,0.14,0.36),lam(0xf3a5b5),0,0,0,g);mesh(new THREE.BoxGeometry(0.3,0.16,0.38),lam(0xffffff),0.18,0.08,0,g)}
+  else if(kind==='duck'){r=0.34;roll=false;lift=0.22;mesh(new THREE.SphereGeometry(0.3,14,10),lam(0xffd93b),0,0,0,g).scale.set(1.15,0.8,1);mesh(new THREE.SphereGeometry(0.19,12,9),lam(0xffd93b),0,0.28,0.2,g);mesh(new THREE.ConeGeometry(0.07,0.16,8),lam(0xff8a1f),0,0.27,0.4,g).rotation.x=Math.PI/2;for(const sx of[-1,1])mesh(new THREE.SphereGeometry(0.03,6,5),lam(0x222222),sx*0.08,0.34,0.36,g,false)}
+  else if(kind==='pail'){r=0.45;roll=false;lift=0.25;mesh(new THREE.CylinderGeometry(0.42,0.32,0.5,16,1,true),new THREE.MeshLambertMaterial({color:pick([0xff7aa8,0x4fb3e8,0x8ad16b]),side:THREE.DoubleSide}),0,0,0,g);mesh(new THREE.CircleGeometry(0.32,16),lam(0x666666),0,-0.24,0,g).rotation.x=-Math.PI/2}
+  else if(kind==='soap'){r=0.3;roll=false;lift=0.09;const m=mesh(new THREE.BoxGeometry(0.5,0.18,0.32),new THREE.MeshPhongMaterial({color:pick([0xffc4d8,0xfff3b0,0xc9f0ff]),shininess:120}),0,0,0,g);m.geometry.translate(0,0,0)}
   else if(kind==='block'){r=0.3;roll=false;lift=0.25;mesh(new THREE.BoxGeometry(0.5,0.5,0.5),lam(pick([0xe9785a,0x4f9fb8,0xf2c14e,0x6fa07f])),0,0,0,g)}
   const p={kind,x,z,y,vx:0,vz:0,vy:0,r,rest:0.35,ground:true,step:0.12,roll,lift:roll?r:lift,g,rampCd:0};
   props.push(p);g.position.set(x,y+p.lift,z);return p;
@@ -626,16 +633,94 @@ function buildBedroom(){
   fan(-15.8,11.6,1,0,-10.5,11.6);
 }
 
+// ----- stage 4: bathroom (water, soap, shower) -----
+const WATERS=[]; // {x,z,hx,hz,y}: water you can roll through
+let SHOWER=null;
+function inWater(e){for(const w of WATERS)if(Math.abs(e.x-w.x)<w.hx&&Math.abs(e.z-w.z)<w.hz&&e.y<w.y+0.15)return w;return null}
+function bathTex(){return canvasTex(256,256,(g,w)=>{
+  const s=32;for(let i=0;i<8;i++)for(let j=0;j<8;j++){g.fillStyle=(i*7+j*3)%5===0?'#cfe3ea':'#e9f2f5';g.fillRect(i*s,j*s,s,s)}
+  g.strokeStyle='rgba(110,140,150,.55)';g.lineWidth=2;for(let i=0;i<=8;i++){g.beginPath();g.moveTo(i*s,0);g.lineTo(i*s,w);g.moveTo(0,i*s);g.lineTo(w,i*s);g.stroke()}
+},10,7)}
+function waterPlane(x,z,w,d,y){
+  const puddle=y<0.1; // floor puddles are round, the tub water is rectangular
+  const m=mesh(puddle?new THREE.CircleGeometry(0.5,40):new THREE.PlaneGeometry(w,d),new THREE.MeshPhongMaterial({color:0x5fc4ff,transparent:true,opacity:0.55,shininess:120,specular:0xffffff}),x,y,z,null,false);
+  if(puddle)m.scale.set(w,d,1);
+  m.rotation.x=-Math.PI/2;m.renderOrder=2;WATERS.push({x,z,hx:w/2,hz:d/2,y,m});return m;
+}
+function buildBath(){
+  room(bathTex(),0xd9eef4);
+  // tiled back wall
+  {const t=canvasTex(256,256,(g,w)=>{const s=32;g.fillStyle='#f4fafc';g.fillRect(0,0,w,w);g.strokeStyle='rgba(120,160,175,.45)';g.lineWidth=2;for(let i=0;i<=8;i++){g.beginPath();g.moveTo(i*s,0);g.lineTo(i*s,w);g.moveTo(0,i*s);g.lineTo(w,i*s);g.stroke()}},6,3);
+   mesh(new THREE.PlaneGeometry(W*2,9),new THREE.MeshLambertMaterial({map:t}),0,4.5,-D+0.01,null,false)}
+  door('L',8);
+  // bathtub: white rim you can walk on, warm water inside
+  const tx=11,tz=-9.3,tw=10,td=6.6,rimH=1.4,rimT=0.5;
+  const white=lam(0xfafcff);
+  solidBox(tx,tz-td/2+rimT/2,tw,rimT,rimH,0xfafcff,{platform:true});
+  solidBox(tx,tz+td/2-rimT/2,tw,rimT,rimH,0xfafcff,{platform:true});
+  solidBox(tx-tw/2+rimT/2,tz,rimT,td-rimT*2,rimH,0xfafcff,{platform:true});
+  solidBox(tx+tw/2-rimT/2,tz,rimT,td-rimT*2,rimH,0xfafcff,{platform:true});
+  box(tx,tz,tw-rimT*2,td-rimT*2,0.4,{solid:false,platform:true}); // tub floor
+  mesh(new THREE.BoxGeometry(tw-rimT*2,0.4,td-rimT*2),lam(0xdff1f8),tx,0.2,tz);
+  waterPlane(tx,tz,tw-rimT*2,td-rimT*2,1.1);
+  solidBox(tx-tw/2+rimT+0.8,tz,1.6,td-rimT*2,0.9,0xe9f5fa,{platform:true}); // step inside the tub
+  // stool + wash bowl as steps up to the rim
+  solidBox(3.9,-9,1.4,1.4,0.5,0xf2c14e,{platform:true});
+  circ(5.2,-9,0.6,0.95,{platform:true});
+  mesh(new THREE.CylinderGeometry(0.62,0.5,0.95,18),lam(0x4fb3e8),5.2,0.475,-9);
+  // faucet and mirror
+  mesh(new THREE.BoxGeometry(0.3,0.3,1.2),new THREE.MeshPhongMaterial({color:0xd0d6dc,shininess:90}),tx+tw/2-0.2,2.4,tz-1.5);
+  mesh(new THREE.PlaneGeometry(5,3.6),new THREE.MeshPhongMaterial({color:0xcfe0ea,shininess:150,specular:0xffffff}),-6,5.2,-D+0.03,null,false);
+  // shower on the back wall + its button on the floor
+  SHOWER={x:-6,z:-8,r:3.2,on:0,cd:0,bx:-1.5,bz:-10.8,br:0.8};
+  mesh(new THREE.CylinderGeometry(0.08,0.08,4,8),lam(0xc9d0d6),-6,5,-D+0.3);
+  const head=mesh(new THREE.CylinderGeometry(0.5,0.3,0.25,18),new THREE.MeshPhongMaterial({color:0xd8dee4,shininess:100}),-6,7,-D+1);head.rotation.x=0.6;
+  mesh(new THREE.TorusGeometry(1.2,0.06,6,20,Math.PI),lam(0xb9c2ca),-6,5.8,-D+0.7).rotation.y=Math.PI/2;
+  circ(SHOWER.bx,SHOWER.bz,SHOWER.br,0.15,{platform:true});
+  mesh(new THREE.CylinderGeometry(SHOWER.br+0.1,SHOWER.br+0.15,0.12,24),lam(0xdddddd),SHOWER.bx,0.06,SHOWER.bz);
+  SHOWER.btn=mesh(new THREE.CylinderGeometry(SHOWER.br-0.1,SHOWER.br-0.1,0.15,24),lam(0x3f8fe0),SHOWER.bx,0.15,SHOWER.bz);
+  label('シャワー',SHOWER.bx,1.8,SHOWER.bz,'#2b7bff');
+  // puddles on the floor
+  waterPlane(-6,-6.5,6.5,4,0.03);
+  waterPlane(-10,6,5,3.5,0.03);
+  waterPlane(3,3,4,3,0.03);
+  // a ramp that jumps into the tub
+  ramp(10,-1.6,0,-1,{vy:10,sp:6});
+  // bath mat, plant
+  {const m=mesh(new THREE.PlaneGeometry(4,2.6),lam(0x9bd0a8),8,0.015,-3.6,null,false);m.rotation.x=-Math.PI/2;m.receiveShadow=true}
+  // toys and soap all over the floor
+  prop('duck',-2,4);prop('duck',4,6);prop('duck',-12,2);prop('duck',12,-3.5);prop('duck',9,-9,1.1);prop('duck',13,-8,1.1);
+  prop('pail',0,-6);prop('pail',-13,-9);prop('bottle',-15,-11);prop('bottle',-14.3,-11.3);prop('bottle',15,5);prop('block',6,8);prop('tennis',-6,9);
+  prop('soap',-3,1);prop('soap',7,3);prop('soap',-9,-3);prop('soap',2,9);prop('soap',-14,5);prop('soap',3.9,-9,0.5);
+  cardboard(-13,10,'e');
+}
+// slip on soap
+function slipOn(e,amt,isBall){
+  if((e.slip||0)>0.3)return;
+  e.slip=amt;const v=Math.hypot(e.vx,e.vz)||1,k=Math.min(isBall?13:14,Math.max(7,v*1.7))/v;e.vx*=k;e.vz*=k;
+  toast('つるっ！',0.9);tone(900,.25,'sine',.06,-600);
+}
+// splash droplets
+const drops=[];
+for(let i=0;i<50;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(0.09,6,5),new THREE.MeshBasicMaterial({color:0x8fd8ff,transparent:true}));m.visible=false;scene.add(m);drops.push({m,vx:0,vy:0,vz:0,life:0})}
+let dropI=0,splashT=0;
+function splash(x,y,z,n,up=4){
+  for(let k=0;k<n;k++){const d=drops[dropI++%drops.length],a=rand(0,6.28),sp=rand(1,3);Object.assign(d,{vx:Math.cos(a)*sp,vz:Math.sin(a)*sp,vy:rand(up*0.5,up),life:rand(0.4,0.8)});d.m.position.set(x,y,z);d.m.visible=true}
+}
+function updateDrops(dt){for(const d of drops){if(d.life<=0)continue;d.life-=dt;d.vy-=20*dt;d.m.position.x+=d.vx*dt;d.m.position.y+=d.vy*dt;d.m.position.z+=d.vz*dt;d.m.material.opacity=Math.min(1,d.life*2);if(d.life<=0)d.m.visible=false}}
+function waterSound(){tone(rand(500,900),.12,'sine',.05,-300);tone(rand(1200,1800),.06,'sine',.03,-500,.05)}
+
 const STAGES=[
   {name:'リビング',build:buildLiving,ball:[0,7],cats:[[-15,-3],[14,-2],[3,-9.5]],grip:1},
   {name:'キッチン',build:buildKitchen,ball:[1,6.5],cats:[[-14,-6],[12,-5],[-1,-8.5]],grip:0.5},
   {name:'しんしつ',build:buildBedroom,ball:[-1,6],cats:[[-13,0],[14,-6],[1,-6]],grip:1},
+  {name:'おふろ',build:buildBath,ball:[-2,8],cats:[[-14,-1],[14,2],[0,-3]],grip:0.85},
 ];
 let loadedStage=-1;
 function loadStage(i){
   if(stage){scene.remove(stage);stage.traverse(n=>{if(n.geometry)n.geometry.dispose()})}
   stage=new THREE.Group();scene.add(stage);
-  obs.length=0;ramps.length=0;roofs.length=0;labels.length=0;hideBoxes.length=0;props.length=0;
+  obs.length=0;ramps.length=0;roofs.length=0;labels.length=0;hideBoxes.length=0;props.length=0;WATERS.length=0;SHOWER=null;
   FAN=null;BTN={x:999,z:999,r:0};TRAMP=null;REMOTE={x:999,z:999,y:-99,cd:0};TV_SPOTS=null;DOOR=null;
   blades=new THREE.Group();btnTop=new THREE.Object3D();trampMat=new THREE.Object3D();TV.on=0;
   DEF_PARENT=stage;STAGES[i].build();DEF_PARENT=scene;
@@ -1011,7 +1096,7 @@ let sel=0;
 function getRec(i){try{return JSON.parse(localStorage.getItem('neko-rec-'+i))||{}}catch(e){return {}}}
 function setRec(i,r){try{localStorage.setItem('neko-rec-'+i,JSON.stringify(r))}catch(e){}}
 function showBest(){
-  for(let i=0;i<3;i++){const r=getRec(i);$('rec'+i).textContent=r.clear?`★クリア ${r.bonks||0}かい`:'まだ'}
+  for(let i=0;i<4;i++){const r=getRec(i);$('rec'+i).textContent=r.clear?`★クリア ${r.bonks||0}かい`:'まだ'}
   document.querySelectorAll('.stg').forEach(b=>b.classList.toggle('sel',+b.dataset.i===sel));
   document.querySelectorAll('.mode').forEach(b=>b.classList.toggle('sel',+b.dataset.lives===maxLives));
 }
@@ -1158,17 +1243,47 @@ function update(dt){
   // held arrow keys keep accelerating gently
   let kx=0,kz=0;if(keys.ArrowLeft||keys.KeyA)kx--;if(keys.ArrowRight||keys.KeyD)kx++;if(keys.ArrowUp||keys.KeyW)kz--;if(keys.ArrowDown||keys.KeyS)kz++;
   if(kx||kz){[kx,kz]=toWorld(kx,kz);ball.vx+=kx*6*dt;ball.vz+=kz*6*dt;const v=Math.hypot(ball.vx,ball.vz);if(v>MAXV){ball.vx*=MAXV/v;ball.vz*=MAXV/v}}
-  if(ball.ground){const f=Math.pow(0.4,dt);ball.vx*=f;ball.vz*=f}
+  ball.slip=(ball.slip||0)-dt;
+  if(ball.ground){const f=Math.pow(ball.slip>0?0.93:0.4,dt);ball.vx*=f;ball.vz*=f}
   ball.rampCd-=dt;
   if(tryRamp(ball)){sfx.jump();toast('ジャンプ！')}
   ball.x+=ball.vx*dt;ball.z+=ball.vz*dt;
   collide(ball,(sp,o)=>{if(o&&o.tv&&sp>1.5)tvOn();if(o&&o.bouncy){sfx.boing();ball.vy=Math.max(ball.vy,3)}else if(sp>4){sfx.land();shake=.08}});
   vertical(ball,dt);
+  // rolling through water: a little slower, with splashes
+  {const wz=inWater(ball);splashT-=dt;
+   if(wz){const f=Math.pow(0.7,dt);ball.vx*=f;ball.vz*=f;const sp=Math.hypot(ball.vx,ball.vz);
+     if(sp>1.5&&splashT<=0){splash(ball.x,wz.y+0.1,ball.z,Math.min(8,2+Math.round(sp)),3+sp*0.3);if(Math.random()<0.5)waterSound();splashT=0.18}
+     if(!ball.wasWet){ball.wasWet=true;toast('ぱしゃっ！',0.7);splash(ball.x,wz.y+0.1,ball.z,10,5);waterSound()}}
+   else ball.wasWet=false}
+  // shower: press the button, cats run away from the spray
+  if(SHOWER){SHOWER.cd-=dt;
+    if(SHOWER.cd<=0&&ball.y<0.5&&Math.hypot(ball.x-SHOWER.bx,ball.z-SHOWER.bz)<SHOWER.br){SHOWER.on=5;SHOWER.cd=9;toast('シャワー じゃー！',1.2);hiss(0.05,5)}
+    if(SHOWER.on>0){SHOWER.on-=dt;
+      for(let k=0;k<3;k++){const a=rand(0,6.28),r=Math.sqrt(Math.random())*SHOWER.r;const d=drops[dropI++%drops.length];Object.assign(d,{vx:Math.cos(a)*r*0.25,vz:Math.sin(a)*r*0.25,vy:-6,life:0.9});d.m.position.set(-6+Math.cos(a)*0.3,6.8,-D+1.2+Math.sin(a)*0.3);d.m.visible=true}
+      for(const c of cats){if(c.state==='stun'||c.state==='flee')continue;const dd=Math.hypot(c.x-SHOWER.x,c.z-SHOWER.z);
+        if(dd<SHOWER.r+1.2){c.state='flee';c.t=2.6;c.ring.visible=false;c.fx=(c.x-SHOWER.x)/(dd||1);c.fz=(c.z-SHOWER.z)/(dd||1);meow(c.voice*1.5,0.3,0.12);toast('ギャッ！',0.9)}}}
+    SHOWER.btn.position.y=SHOWER.on>0?0.07:0.15}
+  updateDrops(dt);
 
   // cats
   const bsp=Math.hypot(ball.vx,ball.vz);
   for(const c of cats){
-    c.rampCd-=dt;c.jumpCd-=dt;c.atkCd=(c.atkCd||0)-dt;
+    c.rampCd-=dt;c.jumpCd-=dt;c.atkCd=(c.atkCd||0)-dt;c.slip=(c.slip||0)-dt;
+    // a cat that steps into water panics and runs around
+    if(WATERS.length&&c.state!=='stun'&&c.state!=='panic'&&c.state!=='flee'&&c.state!=='leap'&&inWater(c)){
+      c.state='panic';c.t=3;c.ring.visible=false;c.pt=0;splash(c.x,0.4,c.z,10,5);waterSound();meow(c.voice*1.6,0.35,0.13);toast('ニャッ！？',0.9);
+    }
+    if(c.state==='panic'||c.state==='flee'){
+      c.t-=dt;c.pt=(c.pt||0)-dt;
+      if(c.state==='panic'&&c.pt<=0){const a=rand(0,6.28);c.fx=Math.cos(a);c.fz=Math.sin(a);c.pt=rand(0.3,0.6)}
+      const sp=c.max*1.5;if(c.ground){c.vx+=(c.fx*sp-c.vx)*Math.min(1,dt*6);c.vz+=(c.fz*sp-c.vz)*Math.min(1,dt*6)}
+      c.x+=c.vx*dt;c.z+=c.vz*dt;
+      collide(c,(spd,o,nx,nz)=>{c.fx=nx+rand(-0.5,0.5);c.fz=nz+rand(-0.5,0.5)});vertical(c,dt);
+      if(inWater(c)&&Math.random()<dt*8)splash(c.x,0.4,c.z,2,3);
+      if(c.t<=0){c.state='chase';c.atkCd=1}
+      continue;
+    }
     if(c.state==='windup'||c.state==='leap'||c.state==='recover'){
       c.t-=dt;c.punchT=(c.punchT||0)-dt;
       const dx=ball.x-c.x,dz=ball.z-c.z,dd=Math.hypot(dx,dz)||1;
@@ -1262,7 +1377,7 @@ function update(dt){
     if(c.sideT>0){c.sideT-=dt;const sx=-ddz*c.side,sz=ddx*c.side;ddx=ddx*.3+sx;ddz=ddz*.3+sz}
     const max=ready?c.max*diff:0;
     if(c.ground){
-      const turn=c.turn*GRIP;
+      const turn=c.turn*GRIP*(c.slip>0?0:1); // no steering while sliding on soap
       c.vx+=(ddx*max-c.vx)*Math.min(1,turn*dt);
       c.vz+=(ddz*max-c.vz)*Math.min(1,turn*dt);
     }
@@ -1354,6 +1469,7 @@ function updateProps(dt){
     if(d<p.r+BALL_R+0.05&&Math.abs(dy)<p.r+BALL_R){
       const nx=d?dx/d:1,nz=d?dz/d:0,bs=Math.hypot(ball.vx,ball.vz);
       const vn=(ball.vx-p.vx)*nx+(ball.vz-p.vz)*nz;
+      if(p.kind==='soap'&&Math.hypot(ball.vx,ball.vz)>1){slipOn(ball,1.2,true);p.vx=ball.vx*1.2;p.vz=ball.vz*1.2}
       if(vn>0){p.vx+=nx*vn*1.6+ball.vx*0.3;p.vz+=nz*vn*1.6+ball.vz*0.3;if(bs>3){p.vy=Math.max(p.vy,1.5+bs*0.25);p.ground=false}ball.vx*=0.85;ball.vz*=0.85;if(bs>2)tone(500+Math.random()*300,.05,'triangle',.04)}
       p.x=ball.x+nx*(p.r+BALL_R+0.06);p.z=ball.z+nz*(p.r+BALL_R+0.06);
     }
@@ -1363,6 +1479,7 @@ function updateProps(dt){
       if(cd<p.r+c.r&&hy>-0.4&&hy<1.6){
         const nx=cd?cx/cd:1,nz=cd?cz/cd:0;
         const ps=Math.hypot(p.vx,p.vz),toward=-(p.vx*nx+p.vz*nz);
+        if(p.kind==='soap'&&c.state!=='stun'&&Math.hypot(c.vx,c.vz)>1){slipOn(c,1.5,false);p.vx=c.vx*1.1;p.vz=c.vz*1.1;continue}
         if(c.state!=='stun'&&(toward>5||(p.vy<-5&&hy>0.6))){stunCat(c,8,-nx,-nz,pick(['ゴチン！','コツン！','あたった！']));p.vx*=-0.3;p.vz*=-0.3}
         else{const cs=Math.hypot(c.vx,c.vz),k=Math.max(ps*0.5,cs*1.2+1);p.vx=nx*k;p.vz=nz*k;if(cs>3){p.vy=Math.max(p.vy,2);p.ground=false}}
         p.x=c.x+nx*(p.r+c.r+0.02);p.z=c.z+nz*(p.r+c.r+0.02);
