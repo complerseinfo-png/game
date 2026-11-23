@@ -697,7 +697,14 @@ function resetWorld(){
   level=1;batt=0;lvT=0;blown=0;buildFan(1);camS=LV[1].cam;time=0;shake=0;total=remaining();camSnap=true;
   updateHud();
 }
+// full screen on start (helps browsers without "add to home screen", e.g. Silk on Fire tablets)
+function goFull(){
+  const el=document.documentElement,f=el.requestFullscreen||el.webkitRequestFullscreen;
+  if(!f||document.fullscreenElement||document.webkitFullscreenElement)return;
+  try{const r=f.call(el,{navigationUI:'hide'});if(r&&r.catch)r.catch(()=>{})}catch(e){}
+}
 function start(){
+  goFull();
   resetWorld();state='play';$('menu').hidden=true;$('over').hidden=true;startWind();setWind();
   tone(523,.1,'square',.05);tone(784,.15,'square',.05,0,.1);
   toast('ほこりに かぜを あてよう！',2);
@@ -1144,6 +1151,7 @@ function frame(now){
 requestAnimationFrame(frame);
 })();
 </script>
+
 <script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));</script>
 </body>
 </html>

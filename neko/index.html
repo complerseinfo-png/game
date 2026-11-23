@@ -1062,7 +1062,14 @@ function reset(){
   sw=null;time=0;bonks=0;caughtBy=null;caughtT=0;shake=0;if(FAN){FAN.on=0;FAN.cd=0}TV.on=0;REMOTE.cd=0;drawTV(0);
   updateHud();
 }
+// full screen on start (helps browsers without "add to home screen", e.g. Silk on Fire tablets)
+function goFull(){
+  const el=document.documentElement,f=el.requestFullscreen||el.webkitRequestFullscreen;
+  if(!f||document.fullscreenElement||document.webkitFullscreenElement)return;
+  try{const r=f.call(el,{navigationUI:'hide'});if(r&&r.catch)r.catch(()=>{})}catch(e){}
+}
 function start(){
+  goFull();
   reset();state='play';$('menu').hidden=true;$('over').hidden=true;
   tone(523,.1,'square',.05);tone(784,.15,'square',.05,0,.1);
   toast(STAGES[stageIdx].name+'  よーい ドン！',1.6);
@@ -1607,6 +1614,7 @@ function frame(now){
 requestAnimationFrame(frame);
 })();
 </script>
+
 <script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));</script>
 </body>
 </html>
