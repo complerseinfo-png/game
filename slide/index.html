@@ -231,7 +231,7 @@ function update(dt,t){
     boy.g.position.set(B.x,B.v>0?Math.abs(Math.sin(t*12))*0.1:0,B.z);boy.g.rotation.set(0,B.h,0);const s=B.v>0?Math.sin(t*12):0;boy.legs.forEach((l,i)=>l.rotation.x=(i?1:-1)*s*0.7);boy.arms.forEach((a,i)=>a.rotation.x=(i?-1:1)*s*0.6);
     marker.scale.setScalar(1+Math.sin(t*6)*0.12);
     if(rotDir){camYaw+=rotDir*dt*1.8;camAutoT=2.5}if(camAutoT>0)camAutoT-=dt;else if(B.v>0){let d=(B.h+Math.PI)-camYaw;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;camYaw+=d*Math.min(1,dt*1.2)}
-    const ns=nearSlide();if(ns&&ns!==lastPad&&go.target){go.target={x:ns.ladderBase.x,z:ns.ladderBase.z};go.stuck=0;marker.visible=false;tone(1046,.12,'sine',.06);tone(1568,.15,'sine',.05,0,.08)}lastPad=ns;$('act').hidden=!ns;if(ns)$('act').textContent=ns.name+'に のぼる！';$('rot').hidden=false;
+    const ns=nearSlide();if(ns&&ns!==lastPad&&go.target){go.target={x:ns.ladderBase.x,z:ns.ladderBase.z};go.stuck=0;marker.visible=false;tone(1046,.12,'sine',.06);tone(1568,.15,'sine',.05,0,.08)}lastPad=ns;if(ns&&!go.target&&B.v===0){P.padT=(P.padT||0)+dt;if(P.padT>0.35){P.padT=0;startClimb(ns);return}}else P.padT=0;$('act').hidden=!ns;if(ns)$('act').textContent=ns.name+'に のぼる！';$('rot').hidden=false;
   }
   else if(state==='climb'){const S=cur;P.climbT+=dt;const spd=S.H>8?2.6:1.8;const k=clamp(P.climbT*spd/(S.H+1),0,1);
     const a=S.ladderBase,b=S.ladderTop;const y=k*S.H;const hx=a.x+(b.x-a.x)*Math.min(1,k*4),hz=a.z+(b.z-a.z)*Math.min(1,k*4);
@@ -239,7 +239,7 @@ function update(dt,t){
     const c=Math.sin(P.climbT*9);boy.arms.forEach((q,i)=>q.rotation.x=-2.6+(i?c:-c)*0.5);boy.legs.forEach((q,i)=>q.rotation.x=-0.6+(i?-c:c)*0.6);
     if(Math.floor(P.climbT*4)!==Math.floor((P.climbT-dt)*4))tone(rand(400,500),.05,'square',.03);
     if(k>=1){state='top';P.topT=0;resetPose();const f=S.frames[0];boy.g.position.copy(S.seat);boy.g.rotation.set(0,Math.atan2(f.t.x,f.t.z),0);$('act').hidden=false;$('act').textContent='すべる！';toast(S.H>10?'たか〜い！ こわい〜':'てっぺん！',1.6)}}
-  else if(state==='top'){P.topT+=dt;boy.legs.forEach(l=>l.rotation.x=-1.45);boy.root.position.y=-0.42;boy.arms.forEach((a,i)=>a.rotation.z=(i?1:-1)*0.6);if(P.topT>6)startSlide()}
+  else if(state==='top'){P.topT+=dt;boy.legs.forEach(l=>l.rotation.x=-1.45);boy.root.position.y=-0.42;boy.arms.forEach((a,i)=>a.rotation.z=(i?1:-1)*0.6);if(P.topT>3)startSlide()}
   else if(state==='slide'||state==='fallen'){
     const S=cur;P.t+=dt;const f=frameAt(P.s);const slope=-f.t.y;
     P.v+=(9.8*slope*(state==='fallen'?0.95:1)-0.25*P.v-0.015*P.v*P.v)*dt;if(P.v<1.2)P.v=1.2;
