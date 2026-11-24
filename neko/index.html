@@ -1148,6 +1148,7 @@ function buildHospital(){
    mesh(new THREE.BoxGeometry(0.25,0.03,0.9),new THREE.MeshBasicMaterial({color:0xffffff}),V.bx,0.24,V.bz,null,false);
    label('せんせいを よぶ',V.bx,1.8,V.bz,'#ff4f5e')}
   // stretchers and a wheelchair
+  rabbitDoc(0,-10);
   cart('bed',3,3,Math.PI/2);cart('bed',-14.5,9.5,0);cart('chair',13.5,7,-Math.PI/2);
   // IV stands and a water cooler
   for(const[x,z]of[[13,-11],[-2.5,-11.5]]){circ(x,z,0.3,4);mesh(new THREE.CylinderGeometry(0.05,0.05,4,6),lam(0xc9d0d6),x,2,z);mesh(new THREE.BoxGeometry(0.4,0.6,0.15),new THREE.MeshLambertMaterial({color:0xcff0ff,transparent:true,opacity:0.8}),x+0.3,3.6,z,null,false);mesh(new THREE.CylinderGeometry(0.5,0.5,0.1,10),lam(0x888888),x,0.05,z)}
@@ -1161,6 +1162,101 @@ function buildHospital(){
   prop('bandage',7,-10,2.2);prop('pill',9.5,-9.6,2.2);prop('bandage',-4,7);prop('bandage',6,-2);prop('pill',-1,2);prop('pill',2,-1.5);
   prop('plush',-6,1.5,1.3);prop('book',-9.5,5,1.3);prop('cup',-10.5,1.5,1.3);prop('tennis',10,5);prop('yarn',-15,-3);prop('slipper',0,11);prop('slipper',0.8,11.6);
 }
+// rabbit doctor: wanders by the exam room, chases cats with a big syringe when called
+function rabbitDoc(x,z){
+  const d={x,z,y:0,vx:0,vz:0,vy:0,r:0.75,rest:0.2,ground:true,step:0.3,head:0,state:'idle',t:0,home:[x,z],pi:0,greet:0,hop:0,shots:0};
+  const g=new THREE.Group();stage.add(g);d.g=g;
+  const fur=lam(0xfbf7f2),pink=lam(0xffb3c6),coat=new THREE.MeshLambertMaterial({color:0xffffff}),blue=lam(0x6fb6ff);
+  const body=new THREE.Group();g.add(body);d.body=body;
+  // legs + feet
+  for(const s of[-1,1]){mesh(new THREE.CylinderGeometry(0.17,0.2,0.7,10),lam(0x8fb0d8),s*0.26,0.45,0,body);mesh(new THREE.SphereGeometry(0.26,10,8),fur,s*0.26,0.12,0.15,body).scale.set(1,0.55,1.5)}
+  // lab coat
+  mesh(new THREE.CylinderGeometry(0.5,0.68,1.25,16),coat,0,1.35,0,body);
+  mesh(new THREE.BoxGeometry(0.12,1.1,0.06),blue,0,1.35,0.6,body,false); // shirt line
+  for(const s of[-1,1]){const c=mesh(new THREE.BoxGeometry(0.22,0.5,0.06),lam(0xe8f2ff),s*0.2,1.8,0.47,body,false);c.rotation.z=s*0.35} // collar
+  mesh(new THREE.BoxGeometry(0.25,0.18,0.05),lam(0xff6b8a),0.28,1.55,0.6,body,false); // pocket pen tag
+  // stethoscope
+  {const t=mesh(new THREE.TorusGeometry(0.34,0.035,6,18,Math.PI),lam(0x555a66),0,1.75,0.3,body,false);t.rotation.z=Math.PI;t.rotation.x=-0.5;
+   mesh(new THREE.CylinderGeometry(0.09,0.09,0.05,12),lam(0xc9d0d6),0.0,1.36,0.62,body,false).rotation.x=Math.PI/2}
+  // arms
+  d.arms=[];for(const s of[-1,1]){const piv=new THREE.Group();piv.position.set(s*0.58,1.85,0);body.add(piv);
+    mesh(new THREE.CylinderGeometry(0.14,0.13,0.75,8),coat,0,-0.35,0,piv);mesh(new THREE.SphereGeometry(0.15,8,6),fur,0,-0.75,0,piv);d.arms.push(piv)}
+  // syringe in the right hand (shown when chasing)
+  {const sy=new THREE.Group();sy.position.set(0,-0.8,0.2);d.arms[1].add(sy);
+   mesh(new THREE.CylinderGeometry(0.1,0.1,0.7,10),new THREE.MeshLambertMaterial({color:0xcff0ff,transparent:true,opacity:0.85}),0,0,0.25,sy,false).rotation.x=Math.PI/2;
+   mesh(new THREE.CylinderGeometry(0.08,0.08,0.4,8),lam(0x7fd0ff),0,0,0.2,sy,false).rotation.x=Math.PI/2;
+   mesh(new THREE.CylinderGeometry(0.015,0.015,0.35,5),lam(0xc9d0d6),0,0,0.78,sy,false).rotation.x=Math.PI/2;
+   mesh(new THREE.BoxGeometry(0.3,0.05,0.05),lam(0xffffff),0,0,-0.12,sy,false);sy.visible=false;d.syringe=sy}
+  // head
+  const head=new THREE.Group();head.position.y=2.35;body.add(head);d.headG=head;
+  mesh(new THREE.SphereGeometry(0.5,18,14),fur,0,0,0,head).scale.set(1,0.95,0.95);
+  for(const s of[-1,1]){mesh(new THREE.SphereGeometry(0.17,10,8),lam(0xffffff),s*0.15,-0.18,0.38,head,false);
+    mesh(new THREE.SphereGeometry(0.075,8,6),lam(0x3a2618),s*0.2,0.08,0.42,head,false);
+    mesh(new THREE.SphereGeometry(0.025,6,5),lam(0xffffff),s*0.2+0.02,0.11,0.49,head,false);
+    mesh(new THREE.SphereGeometry(0.08,8,6),lam(0xffc0cf),s*0.32,-0.08,0.36,head,false)}
+  mesh(new THREE.SphereGeometry(0.07,8,6),pink,0,-0.07,0.47,head,false);
+  // round glasses
+  for(const s of[-1,1]){const r=mesh(new THREE.TorusGeometry(0.13,0.02,6,16),lam(0x5a4a3a),s*0.2,0.08,0.47,head,false)}
+  mesh(new THREE.BoxGeometry(0.12,0.02,0.02),lam(0x5a4a3a),0,0.1,0.5,head,false);
+  // head mirror
+  mesh(new THREE.TorusGeometry(0.48,0.03,6,24),lam(0x6fb6ff),0,0.2,0,head,false).rotation.x=Math.PI/2-0.25;
+  mesh(new THREE.CylinderGeometry(0.15,0.15,0.03,16),new THREE.MeshPhongMaterial({color:0xe6eef5,shininess:150}),0,0.33,0.43,head,false).rotation.x=Math.PI/2-0.3;
+  // long ears
+  d.ears=[];for(const s of[-1,1]){const piv=new THREE.Group();piv.position.set(s*0.2,0.38,-0.05);piv.rotation.z=-s*0.15;head.add(piv);
+    mesh(new THREE.SphereGeometry(0.16,10,8),fur,0,0.5,0,piv).scale.set(1,3.6,0.6);mesh(new THREE.SphereGeometry(0.1,8,6),pink,0,0.5,0.06,piv,false).scale.set(1,3.6,0.4);d.ears.push(piv)}
+  // fluffy tail
+  mesh(new THREE.SphereGeometry(0.2,10,8),fur,0,0.9,-0.62,body);
+  // name tag that follows
+  {const c=document.createElement('canvas');c.width=360;c.height=96;const q=c.getContext('2d');
+   q.fillStyle='#fffaf0';q.strokeStyle='#3a2618';q.lineWidth=8;q.beginPath();q.roundRect?q.roundRect(8,8,344,64,30):q.rect(8,8,344,64);q.fill();q.stroke();
+   q.fillStyle='#ff6b8a';q.font='800 38px "M PLUS Rounded 1c",sans-serif';q.textAlign='center';q.textBaseline='middle';q.fillText('うさぎせんせい',180,42);
+   const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false}));sp.scale.set(3.4,0.9,1);sp.position.y=4.0;sp.renderOrder=10;g.add(sp)}
+  g.position.set(x,0,z);KID.doc=d;return d;
+}
+const DOC_PATROL=[[0,-10],[-4,-6],[2,-3],[-1,-8],[4,-6.5]];
+function docSay(t,d=1.4){toast('うさぎせんせい「'+t+'」',d)}
+function updateDoc(dt){
+  const d=KID.doc;if(!d)return;
+  d.greet-=dt;d.t-=dt;
+  let tx,tz,sp=1.6;
+  if(d.state==='shot'){
+    let best=null,bd=1e9;for(const c of cats){if(c.state==='stun'||c.y>1)continue;const q=Math.hypot(c.x-d.x,c.z-d.z);if(q<bd){bd=q;best=c}}
+    if(best){tx=best.x;tz=best.z;sp=6.5}else{tx=d.x;tz=d.z;sp=0}
+    if(d.t<=0){d.state='back';docSay('おだいじに〜',1.2)}
+  }else{
+    if(d.state==='back'){const h=DOC_PATROL[0];if(Math.hypot(h[0]-d.x,h[1]-d.z)<0.6){d.state='idle';d.pi=0}}
+    const p=d.state==='back'?DOC_PATROL[0]:DOC_PATROL[d.pi];tx=p[0];tz=p[1];sp=d.state==='back'?3:1.6;
+    if(d.state==='idle'&&Math.hypot(tx-d.x,tz-d.z)<0.5){if(d.t<=0){d.t=rand(1.5,3)}if(d.t<0.1)d.pi=(d.pi+1)%DOC_PATROL.length;sp=0}
+  }
+  const dx=tx-d.x,dz=tz-d.z,dl=Math.hypot(dx,dz);
+  const want=dl>0.3?sp:0;
+  d.vx+=((dl?dx/dl:0)*want-d.vx)*Math.min(1,dt*6);d.vz+=((dl?dz/dl:0)*want-d.vz)*Math.min(1,dt*6);
+  d.x+=d.vx*dt;d.z+=d.vz*dt;collide(d,null);vertical(d,dt);
+  // shots!
+  if(d.state==='shot')for(const c of cats){if(c.state==='stun')continue;
+    if(Math.hypot(c.x-d.x,c.z-d.z)<d.r+c.r+0.35&&Math.abs(c.y-d.y)<1.5){stunCat(c,7,(c.x-d.x),(c.z-d.z),'ちゅうしゃ プスッ！');d.shots++;tone(1800,.08,'sine',.05);tone(2400,.06,'sine',.04,0,.08);c.t+=1.2}}
+  else for(const c of cats){const qx=c.x-d.x,qz=c.z-d.z,q=Math.hypot(qx,qz);if(q<d.r+c.r&&q>0&&Math.abs(c.y-d.y)<1.5){c.x=d.x+qx/q*(d.r+c.r);c.z=d.z+qz/q*(d.r+c.r)}}
+  // ball bumps into the doctor: say hello
+  {const qx=ball.x-d.x,qz=ball.z-d.z,q=Math.hypot(qx,qz);
+   if(q<d.r+BALL_R&&ball.y<2&&q>0){const nx=qx/q,nz=qz/q;ball.x=d.x+nx*(d.r+BALL_R);ball.z=d.z+nz*(d.r+BALL_R);const vn=ball.vx*nx+ball.vz*nz;if(vn<0){ball.vx-=1.6*vn*nx;ball.vz-=1.6*vn*nz}
+     if(d.greet<=0){d.greet=4;d.hop=1;docSay(pick(['こんにちは！','げんき かな？','ボールくん いらっしゃい','ねこちゃんたち げんきすぎるね']));tone(880,.08,'sine',.05);tone(1175,.1,'sine',.05,0,.09)}}}
+}
+function callDoc(){const d=KID.doc;if(!d)return;d.state='shot';d.t=10;d.hop=1;docSay('ちゅうしゃ しますよ〜！',1.8)}
+function animDoc(dt,now){
+  const d=KID.doc;if(!d)return;
+  const sp=Math.hypot(d.vx,d.vz);
+  if(sp>0.3){let a=Math.atan2(d.vx,d.vz),q=a-d.head;while(q>Math.PI)q-=Math.PI*2;while(q<-Math.PI)q+=Math.PI*2;d.head+=q*Math.min(1,dt*6)}
+  else if(Math.hypot(ball.x-d.x,ball.z-d.z)<8){let a=Math.atan2(ball.x-d.x,ball.z-d.z),q=a-d.head;while(q>Math.PI)q-=Math.PI*2;while(q<-Math.PI)q+=Math.PI*2;d.head+=q*Math.min(1,dt*3)}
+  d.hop=Math.max(0,d.hop-dt*1.5);
+  const hopY=sp>0.3?Math.abs(Math.sin(now*(d.state==='shot'?11:7)))*0.35:d.hop>0?Math.sin(d.hop*Math.PI)*0.6:0;
+  d.g.position.set(d.x,d.y+hopY,d.z);d.body.rotation.y=d.head;
+  d.syringe.visible=d.state==='shot';
+  d.arms[1].rotation.x=d.state==='shot'?-1.3+Math.sin(now*10)*0.2:Math.sin(now*3)*0.1;
+  d.arms[0].rotation.x=sp>0.3?Math.sin(now*7)*0.5:0;
+  d.arms[0].rotation.z=d.greet>3?-2.4+Math.sin(now*14)*0.4:0; // wave hello
+  for(let i=0;i<2;i++)d.ears[i].rotation.x=-0.1+Math.sin(now*(sp>0.3?9:2)+i)*(sp>0.3?0.25:0.06);
+}
+
 function scaleShow(txt){
   const sc=KID.scale,g=sc.cv.getContext('2d');g.clearRect(0,0,320,128);
   g.fillStyle='#2a3a3a';g.beginPath();g.roundRect?g.roundRect(6,6,308,116,22):g.rect(6,6,308,116);g.fill();
@@ -1196,10 +1292,12 @@ function updateHospital(dt){
    if(txt!==sc.last){sc.last=txt;scaleShow(txt);if(who){tone(1500,.07,'square',.04);tone(1500,.07,'square',.04,0,.12);if(who==='ball')toast('ボール 0.3キロ！ かるい！',1.1);else{toast(txt.replace(' kg','キロ')+'！ ちょっと ふとった？',1.1);who.state!=='stun'&&meow(who.voice*0.8,0.4,0.08)}}}}
   // vet call
   {const V=KID.vet;V.cd-=dt;V.btn.position.y=V.cd>9?0.07:0.15;
-   if(V.cd<=0&&ball.y<0.5&&Math.hypot(ball.x-V.bx,ball.z-V.bz)<V.br){V.cd=12;toast('「ちゅうしゃの じかん ですよ〜」',1.8);
+   if(V.cd<=0&&ball.y<0.5&&Math.hypot(ball.x-V.bx,ball.z-V.bz)<V.br){V.cd=12;
      tone(784,.35,'sine',.07);tone(622,.5,'sine',.07,0,.35);
      for(const c of cats){if(c.state==='stun')continue;const dx=c.x,dz=c.z+D,dd=Math.hypot(dx,dz)||1;
-       c.state='flee';c.t=4;c.ring.visible=false;c.fx=dx/dd;c.fz=dz/dd;setTimeout(()=>hiss(0.08,0.5),200+Math.random()*400)}}}
+       c.state='flee';c.t=3;c.ring.visible=false;c.fx=dx/dd;c.fz=dz/dd;setTimeout(()=>hiss(0.08,0.5),200+Math.random()*400)}
+     callDoc()}}
+  updateDoc(dt);
 }
 function animHospital(dt){
   for(const c of KID.carts){const sp=Math.hypot(c.vx,c.vz);
@@ -2156,7 +2254,7 @@ function sync(dt){
     }
   }
   if(TV.on>0&&now-TV.lastDraw>0.08){TV.lastDraw=now;drawTV(now)}
-  if(KID)animKid(dt,now);if(KID&&KID.carts)animHospital(dt);trampSquash*=Math.pow(0.004,dt);if(TRAMP){trampMat.position.y=TRAMP.h-0.03-trampSquash*0.6;trampMat.scale.set(1,1+trampSquash*4,1)}
+  if(KID)animKid(dt,now);if(KID&&KID.carts){animHospital(dt);animDoc(dt,now)}trampSquash*=Math.pow(0.004,dt);if(TRAMP){trampMat.position.y=TRAMP.h-0.03-trampSquash*0.6;trampMat.scale.set(1,1+trampSquash*4,1)}
   updateBursts(dt);
   for(const p of props){
     p.g.position.set(p.x,p.y+p.lift,p.z);
