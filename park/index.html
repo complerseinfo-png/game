@@ -24,7 +24,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#8fd0ff;font-family:va
 #hud>*{pointer-events:auto}
 .pill{position:absolute;font:800 15px var(--font);padding:6px 12px;border-radius:999px;border:3px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer}
 #mute{top:10px;left:10px}#full{top:10px;left:100px}
-#map{position:absolute;top:10px;right:10px;width:min(30vw,230px);border:4px solid var(--ink);border-radius:14px;background:#cde9a0;box-shadow:0 4px 0 var(--ink)}
+#map{cursor:pointer;position:absolute;top:10px;right:10px;width:min(30vw,230px);border:4px solid var(--ink);border-radius:14px;background:#cde9a0;box-shadow:0 4px 0 var(--ink)}
 #toast{position:absolute;left:50%;top:16%;transform:translateX(-50%);font:800 clamp(20px,4vw,38px) var(--font);color:#fff;-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:0 3px 0 var(--ink);white-space:nowrap;opacity:0;transition:opacity .3s;pointer-events:none}
 #area{position:absolute;left:50%;top:10px;transform:translateX(-50%);font:800 18px var(--font);background:rgba(255,255,255,.9);border:3px solid var(--ink);border-radius:999px;padding:4px 16px;pointer-events:none;white-space:nowrap}
 #act{position:absolute;left:50%;bottom:7%;transform:translateX(-50%);font:800 clamp(22px,4.5vw,36px) var(--font);padding:12px 34px;border-radius:999px;border:5px solid var(--ink);background:#ffcc33;color:var(--ink);box-shadow:0 6px 0 var(--ink);cursor:pointer;white-space:nowrap}
@@ -782,7 +782,11 @@ function drawIcon(g,type,S){const c=S/2;g.lineCap='round';g.lineJoin='round';con
 const iconTex={};
 function iconCanvas(type,bg){const S=256,cv=document.createElement('canvas');cv.width=S;cv.height=S;const g=cv.getContext('2d');g.fillStyle=bg;g.beginPath();g.arc(S/2,S/2,S/2-6,0,7);g.fill();g.lineWidth=10;g.strokeStyle='#2a2430';g.stroke();g.save();g.translate(S*0.12,S*0.1);g.scale(0.76,0.76);drawIcon(g,type,S);g.restore();return cv}
 const PADS=[];
-for(const r of RIDES){const type=ICON_OF[r.name]||'coaster';
+function freeSpot(x,z,margin){for(const o of OBST){if(o.e){const c=Math.cos(-o.rot),sn=Math.sin(-o.rot);const dx=x-o.x,dz=z-o.z;const lx=dx*c-dz*sn,lz=dx*sn+dz*c;if(Math.hypot(lx/(o.a+margin),lz/(o.b+margin))<1)return false}else if(o.r>0.95||o.r<0.5){if(Math.hypot(x-o.x,z-o.z)<o.r+margin)return false}}
+  return inPoly(x/K+940,z/K+700,PARK)}
+function findSpot(x,z,margin,avoid=[]){const cx=0,cz=0;for(let rad=0;rad<40;rad+=1){let best=null,bd=1e9;const n=rad?24:1;for(let i=0;i<n;i++){const a=i/n*Math.PI*2,px=x+Math.cos(a)*rad,pz=z+Math.sin(a)*rad;
+    if(!freeSpot(px,pz,margin))continue;if(avoid.some(q=>Math.hypot(q.x-px,q.z-pz)<6.5))continue;const ix=px/K+940,iy=pz/K+700;const[rr,gg,bb]=groundColor(ix,iy);const onPath=rr>200&&gg>190&&bb>140?0:30;const d=Math.hypot(px-cx,pz-cz)*0.05+onPath;if(d<bd){bd=d;best={x:px,z:pz}}}if(best)return best}return{x,z}}
+for(const r of RIDES){const type=ICON_OF[r.name]||'coaster';{const sp=findSpot(r.x,r.z,2.8,PADS.map(p=>p.r));r.x=sp.x;r.z=sp.z}
   const cv=iconCanvas(type,'#fff6d8');const tex=new THREE.CanvasTexture(cv);
   const pad=mesh(new THREE.CylinderGeometry(2.4,2.5,0.18,32),[lam(0xffcc33),new THREE.MeshLambertMaterial({map:tex}),lam(0xffcc33)],r.x,0.09,r.z);
   pad.rotation.y=Math.PI/2;
@@ -923,6 +927,13 @@ function drawMap(){const w=mapC.width,h=mapC.height;mg.drawImage(GT,0,0,w,h);con
   for(const r of RIDES){const x=(r.x+GW/2)*sx,y=(r.z+GD/2)*sz;mg.fillStyle=r.open?'#ff3a6a':'#ffffff';mg.strokeStyle='#2a2430';mg.lineWidth=3;mg.beginPath();mg.arc(x,y,r.open?9:6,0,7);mg.fill();mg.stroke()}
   {const x=(FW.x+GW/2)*sx,y=(FW.z+GD/2)*sz;mg.fillStyle='#2a2430';mg.fillText('かんらんしゃ',x,y-14)}
   const bx=(B.x+GW/2)*sx,by=(B.z+GD/2)*sz;mg.save();mg.translate(bx,by);mg.rotate(-B.head+Math.PI);mg.fillStyle='#ffd23b';mg.strokeStyle='#2a2430';mg.lineWidth=3;mg.beginPath();mg.moveTo(0,-12);mg.lineTo(9,9);mg.lineTo(-9,9);mg.closePath();mg.fill();mg.stroke();mg.restore()}
+
+mapC.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();if(mode!=='walk'||!started)return;const rc=mapC.getBoundingClientRect();const mx=(e.clientX-rc.left)/rc.width,my=(e.clientY-rc.top)/rc.height;
+  let x=mx*GW-GW/2,z=my*GD-GD/2;let label=null;
+  for(const r of RIDES){const px=(r.x+GW/2)/GW,pz=(r.z+GD/2)/GD;if(Math.hypot((px-mx)*rc.width,(pz-my)*rc.height)<14){x=r.x;z=r.z;label=r.name;break}}
+  if(!label){const sp=findSpot(x,z,1.2);x=sp.x;z=sp.z}
+  B.x=x;B.z=z;go.target=null;marker.visible=false;camYaw=B.head+Math.PI;camera.position.set(B.x+Math.sin(camYaw)*9,5,B.z+Math.cos(camYaw)*9);
+  toast(label?label+'へ ワープ！':'ワープ！',1.4);[880,1320,1760].forEach((f,i)=>tone(f,.12,'sine',.06,0,i*.06))});
 
 // ================= area names =================
 const AREAS=[['ゴーカート',560,755,90],['スプラッシュ',1050,230,90],['メインゲート',480,1210,110],['フラワーコート',620,1140,90],['マジカルラグーン',660,1000,120],['パームウォーク',960,820,120],['ハブプラザ',1110,575,90],['こどもエリア',1300,680,140],['バラの にわ',1100,1120,150],['かんらんしゃ ひろば',520,400,110],['ようせいの もり',1000,490,80],['ちびっこタウン',740,200,120],['のりもの ひろば',1180,400,130],['あそびば',430,770,110],['もくもくコースター',760,545,150]];
