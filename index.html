@@ -43,6 +43,9 @@ a.game:focus-visible{outline:4px solid #2b7bff;outline-offset:3px}
 .parkicon{background:#8fd0ff}
 .parkicon::before{left:12px;top:6px;width:44px;height:44px;border-radius:50%;background:transparent;border:5px dotted #ff5a8a}
 .parkicon::after{left:0;top:50px;width:66px;height:16px;border-radius:0;border:0;background:#8fd06a;box-shadow:none}
+.slideicon{background:#9fd8ff}
+.slideicon::before{left:8px;top:10px;width:10px;height:48px;border-radius:2px;background:#ffd23b;border:0}
+.slideicon::after{left:14px;top:12px;width:52px;height:12px;border-radius:6px;border:0;background:#ff5a8a;transform:rotate(40deg);transform-origin:left center;box-shadow:none}
 .name{font-size:24px;font-weight:800;margin:0}
 .desc{margin:4px 0 0;font-size:15px;line-height:1.5}
 </style>
@@ -69,6 +72,10 @@ a.game:focus-visible{outline:4px solid #2b7bff;outline-offset:3px}
   <a class="game" href="park/">
     <span class="icon parkicon" aria-hidden="true"></span>
     <span><p class="name">ひらひらパーク</p><p class="desc">ゆうえんちを あるいて 21この のりものに のろう！</p></span>
+  </a>
+  <a class="game" href="slide/">
+    <span class="icon slideicon" aria-hidden="true"></span>
+    <span><p class="name">すべりだい だいすき</p><p class="desc">いろんな すべりだいを すべろう！ ぐらぐらしたら へんな かっこうで おちちゃう</p></span>
   </a>
 </div>
 <script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
