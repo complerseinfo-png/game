@@ -54,7 +54,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#8fd0ff;font-family:va
   <div id="joy" hidden><div id="knob"></div></div>
   <div id="hint">ひだりで あるく ・ みぎで みまわす</div>
 </div>
-<div class="ov" id="title"><div class="card"><h1>ひらひらパーク</h1><p>ゆうえんちを あるいて のりものに のろう！</p><p>いまは かんらんしゃに のれるよ</p><button class="big" id="startBtn">あそぶ！</button></div></div>
+<div class="ov" id="title"><div class="card"><h1>ひらひらパーク</h1><p>ゆうえんちを あるいて のりものに のろう！</p><p>ぜんぶで 15この のりものに のれるよ！</p><button class="big" id="startBtn">あそぶ！</button></div></div>
 <div id="loading">よみこみちゅう…</div>
 <script>
 (()=>{
@@ -447,6 +447,7 @@ const FW={};
     const k=Math.floor(t*4);for(let i=0;i<FW.bulbs.length;i++)FW.bulbs[i].visible=((i+k)%3)!==0});
 }
 // ---------- coasters (shared) ----------
+const _cx=new THREE.Vector3(),_cy=new THREE.Vector3(),_cm=new THREE.Matrix4();
 function coaster(pts,opt){
   const curve=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(p[0],p[1],p[2])),true,'catmullrom',0.4);
   const L=curve.getLength();const N=Math.floor(L/1.2);
@@ -471,11 +472,13 @@ function coaster(pts,opt){
     if(i===0)boxm(1.5,0.6,0.5,lam(opt.car2||opt.car),0,0.6,1.1,c);
     // riders
     for(const zz of[0.3,-0.7]){ball(0.32,lam(pick([0xffd9b8,0xf0c8a0])),0,1.25,zz,c);ball(0.33,lam(pick([0x3a2a1a,0x7a4a2a,0xffd23b])),0,1.4,zz-0.05,c,1,0.7,1)}cars.push(c)}
-  const C={curve,L,cars,s:0,v:opt.v||10,lift:opt.lift,opt};
+  const NS=800,ups=[];{let prev=new THREE.Vector3(0,1,0);const W0=new THREE.Vector3(0,1,0);for(let i=0;i<NS;i++){const tt=curve.getTangentAt(i/NS);const p=W0.clone().addScaledVector(tt,-tt.y);if(p.length()<0.35){p.copy(prev).addScaledVector(tt,-tt.dot(prev))}p.normalize();if(p.dot(prev)<0)p.negate();prev=p;ups.push(p.clone())}}
+  const C={curve,L,cars,s:0,v:opt.v||10,lift:opt.lift,opt,ups,NS};
   let hmax=0;for(const p of pts)hmax=Math.max(hmax,p[1]);C.hmax=hmax;
   ANIM.push((dt)=>{const u0=C.s/L,p=curve.getPointAt(u0);const inLift=opt.lift&&u0>opt.lift[0]&&u0<opt.lift[1];
     let v=inLift?4:Math.sqrt(Math.max(16,2*9.8*(C.hmax+1-p.y)))*(opt.speed||1);if(opt.station&&u0<opt.station)v=3;C.v=v;C.s=(C.s+v*dt)%L;
-    cars.forEach((c,i)=>{const s=((C.s-i*2.5)%L+L)%L,u=s/L;const q=curve.getPointAt(u),t=curve.getTangentAt(u);c.position.copy(q);c.lookAt(q.x+t.x,q.y+t.y,q.z+t.z)})});
+    cars.forEach((c,i)=>{const s=((C.s-i*2.5)%L+L)%L,u=s/L;const q=curve.getPointAt(u),t=curve.getTangentAt(u);c.position.copy(q);
+      const up=ups[Math.floor(u*NS)%NS];_cx.crossVectors(up,t).normalize();_cy.crossVectors(t,_cx);_cm.makeBasis(_cx,_cy,t);c.quaternion.setFromRotationMatrix(_cm)})});
   return C;
 }
 // wooden coaster (big oval with a figure-eight, in the middle of the park)
@@ -486,8 +489,8 @@ function coaster(pts,opt){
     const x=cx+lx*Math.cos(rot)-lz*Math.sin(rot),z=cz+lx*Math.sin(rot)+lz*Math.cos(rot);pts.push([x,H[i],z])}
   const C=coaster(pts,{rail:0x8a6a4a,sup:0xa8845a,car:0xd84a3a,car2:0xffd23b,cars:5,wood:true,lift:[0.06,0.2],station:0.04});
   OBST.push({e:1,x:cx,z:cz,a:21,b:11.5,rot});
-  const st=grp(...[pts[0][0],0,pts[0][2]]);boxm(7,3.5,5,lam(0x8a5a3a),0,1.75,0,st);cone(5.5,2.2,lam(0xd84a3a),0,4.6,0,st,4).rotation.y=Math.PI/4;
-  RIDES.push({name:'もくもくコースター',x:pts[0][0],z:pts[0][2],r:7});
+  const st=grp(...[pts[0][0],0,pts[0][2]]);for(const[a,b]of[[3.5,2.5],[-3.5,2.5],[3.5,-2.5],[-3.5,-2.5]])cyl(0.25,0.25,6,lam(0x8a5a3a),a,3,b,st,8);cone(5.5,2.2,lam(0xd84a3a),0,7.1,0,st,4).rotation.y=Math.PI/4;
+  RIDES.push({name:'もくもくコースター',x:pts[0][0],z:pts[0][2],r:7,open:true,board:()=>startRide(coasterRide(C,'もくもくコースター'))});
   floatSign('もくもくコースター',cx,28,cz,'#a86a3a',11)}
 // big steel coaster with loops (north)
 {const raw=[[900,400,5],[860,330,9],[845,250,19],[845,150,30],[880,60,31],[960,30,24],[1060,55,6],[1150,95,4],[1230,150,'L'],[1320,90,16],[1430,45,12],[1460,120,14],[1380,190,5],[1300,240,'L'],[1260,330,12],[1220,420,4],[1130,470,9],[1030,460,6],[950,430,4]];
@@ -497,51 +500,51 @@ function coaster(pts,opt){
       for(let k=0;k<10;k++){const a=-Math.PI/2+k/10*Math.PI*2;const off=(k/10-0.5)*3;pts.push([x+dx*Math.cos(a)*R+sx*off,4+R+Math.sin(a)*R,z+dz*Math.cos(a)*R+sz*off])}}
     else pts.push([x,h,z])}
   const C=coaster(pts,{rail:0xf4f4f4,sup:0xe0e4e8,car:0xe02a3a,car2:0x2a2a3a,cars:6,lift:[0.03,0.16],station:0.02,speed:1.1});
-  const[sx,sz]=W(905,395);const st=grp(sx,0,sz);boxm(9,4,6,lam(0xd84a3a),0,2,0,st);boxm(9.4,0.6,6.4,lam(0xffffff),0,4.2,0,st);blockW(sx,sz,4.5);
-  RIDES.push({name:'まっかっか ファルコン',x:sx,z:sz,r:7});floatSign('まっかっか ファルコン',sx,10,sz,'#e02a3a',11)}
+  const[sx,sz]=W(905,395);const st=grp(sx,0,sz);for(const[a,b]of[[4,2.8],[-4,2.8],[4,-2.8],[-4,-2.8]])cyl(0.25,0.25,6,lam(0xffffff),a,3,b,st,8);boxm(9.4,0.6,6.4,lam(0xd84a3a),0,6.2,0,st);
+  RIDES.push({name:'まっかっか ファルコン',x:sx,z:sz,r:7,open:true,board:()=>startRide(coasterRide(C,'まっかっか ファルコン'))});floatSign('まっかっか ファルコン',sx,10,sz,'#e02a3a',11)}
 // swing tower
 {const[x,z]=W(1210,385);const g=grp(x,0,z);cyl(1.2,1.6,22,lam(0xff8a3a),0,11,0,g,12);const top=grp(0,18,0,g);cone(6,2.5,lam(0xffd23b),0,1.5,0,top,16);const chairs=[];
   for(let i=0;i<16;i++){const a=i/16*Math.PI*2;const arm=grp(Math.cos(a)*5.5,0,Math.sin(a)*5.5,top);cyl(0.03,0.03,5,lam(0x555555),0,-2.5,0,arm,4);const ch=boxm(0.8,0.2,0.6,lam(pick([0xff5a5a,0x6ab8ff,0xffd23b])),0,-5,0,arm);arm.rotation.set(0,-a,0.5);chairs.push(arm)}
-  blockW(x,z,7.5);RIDES.push({name:'くるくる ブランコ',x,z,r:10});floatSign('くるくる ブランコ',x,26,z,'#ff8a3a',9);
+  blockW(x,z,7.5);RIDES.push({name:'くるくる ブランコ',x,z,r:10,open:true,board:()=>startRide({name:'くるくる ブランコ',seat:()=>chairs[0],eye:new THREE.Vector3(0,-4.3,0),fwd:new THREE.Vector3(0,0,-1),me:new THREE.Vector3(0,-5.6,0),meS:0.6,dur:32,out:12,sfx:'swing'})});floatSign('くるくる ブランコ',x,26,z,'#ff8a3a',9);
   ANIM.push((dt,t)=>{top.rotation.y=t*0.9;top.position.y=14+Math.sin(t*0.3)*4})}
 // umbrella ride + pirate ship + octopus
-{const[x,z]=W(1150,455);const g=grp(x,0,z);cyl(0.6,0.8,7,lam(0xffffff),0,3.5,0,g);const um=grp(0,7,0,g);const cs=[0xffffff,0x3a7ae8];for(let i=0;i<12;i++){const s=mesh(new THREE.CylinderGeometry(0,6,2,3,1,true,i/12*Math.PI*2,Math.PI*2/12),new THREE.MeshLambertMaterial({color:cs[i%2],side:THREE.DoubleSide}),0,0.6,0,um);}
-  for(let i=0;i<10;i++){const a=i/10*Math.PI*2;cyl(0.03,0.03,3,lam(0x555555),Math.cos(a)*5,-1.5,Math.sin(a)*5,um,4);boxm(1,0.6,0.8,lam(pick([0xff5a8a,0xffd23b])),Math.cos(a)*5,-3.2,Math.sin(a)*5,um)}
-  blockW(x,z,6);RIDES.push({name:'かさ グルグル',x,z,r:8});ANIM.push((dt,t)=>{um.rotation.y=t*1.2;um.rotation.z=Math.sin(t*0.5)*0.25})}
+{const[x,z]=W(1150,455);const g=grp(x,0,z);cyl(0.6,0.8,7,lam(0xffffff),0,3.5,0,g);const um=grp(0,7,0,g);const ucars=[];const cs=[0xffffff,0x3a7ae8];for(let i=0;i<12;i++){const s=mesh(new THREE.CylinderGeometry(0,6,2,3,1,true,i/12*Math.PI*2,Math.PI*2/12),new THREE.MeshLambertMaterial({color:cs[i%2],side:THREE.DoubleSide}),0,0.6,0,um);}
+  for(let i=0;i<10;i++){const a=i/10*Math.PI*2;cyl(0.03,0.03,3,lam(0x555555),Math.cos(a)*5,-1.5,Math.sin(a)*5,um,4);const cg=grp(Math.cos(a)*5,-3.2,Math.sin(a)*5,um);cg.rotation.y=-a;boxm(0.8,0.6,1,lam(pick([0xff5a8a,0xffd23b])),0,0,0,cg);ucars.push(cg)}
+  blockW(x,z,6);RIDES.push({name:'かさ グルグル',x,z,r:8,open:true,board:()=>startRide({name:'かさ グルグル',seat:()=>ucars[0],eye:new THREE.Vector3(0,0.9,0),fwd:new THREE.Vector3(0,0,-1),me:new THREE.Vector3(0,-0.2,0),meS:0.5,dur:28,out:12})});ANIM.push((dt,t)=>{um.rotation.y=t*1.2;um.rotation.z=Math.sin(t*0.5)*0.25})}
 {const[x,z]=W(1150,330);const g=grp(x,0,z);g.rotation.y=0.5;for(const s of[-1,1]){const a=cyl(0.3,0.3,10,lam(0x3a7ae8),s*3,4,2,g);a.rotation.x=0.35;const b=cyl(0.3,0.3,10,lam(0x3a7ae8),s*3,4,-2,g);b.rotation.x=-0.35}cyl(0.3,0.3,7,lam(0x3a7ae8),0,8.5,0,g).rotation.z=Math.PI/2;
   const sw=grp(0,8.5,0,g);const ship=grp(0,-6.5,0,sw);const hull=mesh(new THREE.CylinderGeometry(2,2,9,12,1,false,0,Math.PI),lam(0x8a4a2a),0,0,0,ship);hull.rotation.z=Math.PI/2;hull.rotation.y=Math.PI/2;boxm(0.2,4,0.2,lam(0x6a3a1a),0,2,0,ship);mesh(new THREE.PlaneGeometry(3,2.5),new THREE.MeshLambertMaterial({color:0xffffff,side:THREE.DoubleSide}),0,2.5,0.2,ship);
-  blockW(x,z,6);RIDES.push({name:'かいぞくせん',x,z,r:8});ANIM.push((dt,t)=>{sw.rotation.z=Math.sin(t*0.9)*0.9})}
+  blockW(x,z,6);RIDES.push({name:'かいぞくせん',x,z,r:8,open:true,board:()=>startRide({name:'かいぞくせん',seat:()=>ship,eye:new THREE.Vector3(0,1.6,1.2),fwd:new THREE.Vector3(1,0,0),me:new THREE.Vector3(0,0.3,1),meS:0.8,dur:28,out:16,sfx:'ship'})});ANIM.push((dt,t)=>{sw.rotation.z=Math.sin(t*0.9)*0.9})}
 {const[x,z]=W(1272,565);const g=grp(x,0,z);const body=grp(0,0,0,g);ball(2.2,phong(0xe8402a,40),0,6,0,body,1,1.15,1);for(const s of[-1,1]){ball(0.5,lam(0xffffff),s*0.8,6.5,1.9,body);ball(0.25,lam(0x111111),s*0.8,6.5,2.3,body)}
-  const arms=[];for(let i=0;i<8;i++){const a=i/8*Math.PI*2;const arm=grp(0,4,0,body);arm.rotation.y=a;const t=cyl(0.35,0.5,6,phong(0xe8402a,40),3,0,0,arm,8);t.rotation.z=Math.PI/2+0.4;const car=grp(6,-2,0,arm);cyl(0.9,0.9,0.8,lam(pick([0xffd23b,0x6ab8ff,0x8ad06a])),0,0,0,car,12);arms.push(arm)}
-  blockW(x,z,7);RIDES.push({name:'くるくる タコ',x,z,r:9});ANIM.push((dt,t)=>{body.rotation.y=t*0.8;arms.forEach((a,i)=>a.position.y=4+Math.sin(t*2+i)*1.2)})}
+  const arms=[],ocars=[];for(let i=0;i<8;i++){const a=i/8*Math.PI*2;const arm=grp(0,4,0,body);arm.rotation.y=a;const t=cyl(0.35,0.5,6,phong(0xe8402a,40),3,0,0,arm,8);t.rotation.z=Math.PI/2+0.4;const car=grp(6,-2,0,arm);cyl(0.9,0.9,0.8,lam(pick([0xffd23b,0x6ab8ff,0x8ad06a])),0,0,0,car,12);arms.push(arm);ocars.push(car)}
+  blockW(x,z,7);RIDES.push({name:'くるくる タコ',x,z,r:9,open:true,board:()=>startRide({name:'くるくる タコ',seat:()=>ocars[0],eye:new THREE.Vector3(0,1.3,0),fwd:new THREE.Vector3(0,0,-1),me:new THREE.Vector3(0,0.4,0),meS:0.7,dur:28,out:14})});ANIM.push((dt,t)=>{body.rotation.y=t*0.8;arms.forEach((a,i)=>a.position.y=4+Math.sin(t*2+i)*1.2)})}
 // kids area: carousel, teacups, planes, mini drop tower
 {const[x,z]=W(1255,665);const g=grp(x,0,z);cyl(5.5,5.5,0.6,lam(0xfff0f5),0,0.3,0,g,24);cyl(0.5,0.5,6,lam(0xffd23b),0,3,0,g);const roof=cone(6.5,2.5,lam(0xff5a8a),0,7.2,0,g,24);cyl(6.4,6.4,0.6,lam(0xffffff),0,5.8,0,g,24);
-  const rot=grp(0,0,0,g);const horses=[];for(let i=0;i<10;i++){const a=i/10*Math.PI*2;const h=grp(Math.cos(a)*4,1.6,Math.sin(a)*4,rot);h.rotation.y=-a;cyl(0.06,0.06,5,lam(0xffd23b),0,1.6,0,h,6);const c=pick([0xffffff,0xffc0d8,0xc8e8ff]);ball(0.55,lam(c),0,0,0,h,0.7,0.6,1.3);ball(0.3,lam(c),0,0.5,0.6,h,0.7,1,1.1);horses.push(h)}
-  blockW(x,z,6);RIDES.push({name:'メリーゴーラウンド',x,z,r:8});floatSign('メリーゴーラウンド',x,11,z,'#ff5a8a',9);ANIM.push((dt,t)=>{rot.rotation.y=t*0.6;horses.forEach((h,i)=>h.position.y=1.6+Math.sin(t*3+i)*0.5)})}
+  const rot=grp(0,0,0,g);const horses=[];for(let i=0;i<10;i++){const a=i/10*Math.PI*2;const h=grp(Math.cos(a)*4,1.6,Math.sin(a)*4,rot);h.rotation.y=-a+Math.PI;cyl(0.06,0.06,5,lam(0xffd23b),0,1.6,0,h,6);const c=pick([0xffffff,0xffc0d8,0xc8e8ff]);ball(0.55,lam(c),0,0,0,h,0.7,0.6,1.3);ball(0.3,lam(c),0,0.5,0.6,h,0.7,1,1.1);horses.push(h)}
+  blockW(x,z,6);RIDES.push({name:'メリーゴーラウンド',x,z,r:8,open:true,board:()=>startRide({name:'メリーゴーラウンド',seat:()=>horses[0],eye:new THREE.Vector3(0,1.5,0.1),fwd:new THREE.Vector3(0,0,1),me:new THREE.Vector3(0,0.25,-0.1),meS:0.6,dur:32,out:10,sfx:'organ'})});floatSign('メリーゴーラウンド',x,11,z,'#ff5a8a',9);ANIM.push((dt,t)=>{rot.rotation.y=t*0.6;horses.forEach((h,i)=>h.position.y=1.6+Math.sin(t*3+i)*0.5)})}
 {const[x,z]=W(1200,720);const g=grp(x,0,z);cyl(5,5,0.4,lam(0xb8e0ff),0,0.2,0,g,24);const plate=grp(0,0.4,0,g);const cups=[];for(let i=0;i<5;i++){const a=i/5*Math.PI*2;const c=grp(Math.cos(a)*3,0,Math.sin(a)*3,plate);const cm=lam(pick([0xff8ad8,0xffd23b,0x8ad06a,0x6ab8ff,0xff9a2a]));mesh(new THREE.CylinderGeometry(1.1,0.8,1.2,16,1,true),new THREE.MeshLambertMaterial({color:cm.color,side:THREE.DoubleSide}),0,0.6,0,c);mesh(new THREE.TorusGeometry(0.4,0.1,6,12),cm,1.2,0.7,0,c);cups.push(c)}
-  blockW(x,z,5.5);RIDES.push({name:'コーヒーカップ',x,z,r:7});ANIM.push((dt,t)=>{plate.rotation.y=t*0.7;cups.forEach((c,i)=>c.rotation.y=t*(2+i*0.4))})}
-{const[x,z]=W(1150,785);const g=grp(x,0,z);cyl(0.5,0.6,5,lam(0x6ab8ff),0,2.5,0,g);const top=grp(0,4.5,0,g);const pl=[];for(let i=0;i<6;i++){const a=i/6*Math.PI*2;const arm=boxm(4,0.15,0.15,lam(0x888888),Math.cos(a)*2,0,Math.sin(a)*2,top);arm.rotation.y=-a;const p=grp(Math.cos(a)*4,-1,Math.sin(a)*4,top);p.rotation.y=-a;ball(0.6,lam(pick([0xff5a5a,0xffd23b,0x6fdc6f])),0,0,0,p,0.6,0.6,1.8);boxm(2.4,0.1,0.6,lam(0xffffff),0,0.1,0,p)}
-  blockW(x,z,5);RIDES.push({name:'ひこうき',x,z,r:7});ANIM.push((dt,t)=>{top.rotation.y=-t*1.1;top.position.y=4+Math.sin(t*0.8)*1.2})}
+  blockW(x,z,5.5);RIDES.push({name:'コーヒーカップ',x,z,r:7,open:true,board:()=>startRide({name:'コーヒーカップ',seat:()=>cups[0],eye:new THREE.Vector3(-0.4,1.4,0),fwd:new THREE.Vector3(1,0,0),me:new THREE.Vector3(-0.4,0.2,0),meS:0.6,dur:26,out:9,sfx:'waltz'})});ANIM.push((dt,t)=>{plate.rotation.y=t*0.7;cups.forEach((c,i)=>c.rotation.y=t*(2+i*0.4))})}
+{const[x,z]=W(1150,785);const g=grp(x,0,z);cyl(0.5,0.6,5,lam(0x6ab8ff),0,2.5,0,g);const top=grp(0,4.5,0,g);const pl=[],planes=[];for(let i=0;i<6;i++){const a=i/6*Math.PI*2;const arm=boxm(4,0.15,0.15,lam(0x888888),Math.cos(a)*2,0,Math.sin(a)*2,top);arm.rotation.y=-a;const p=grp(Math.cos(a)*4,-1,Math.sin(a)*4,top);p.rotation.y=-a;planes.push(p);ball(0.6,lam(pick([0xff5a5a,0xffd23b,0x6fdc6f])),0,0,0,p,0.6,0.6,1.8);boxm(2.4,0.1,0.6,lam(0xffffff),0,0.1,0,p)}
+  blockW(x,z,5);RIDES.push({name:'ひこうき',x,z,r:7,open:true,board:()=>startRide({name:'ひこうき',seat:()=>planes[0],eye:new THREE.Vector3(0,0.9,0),fwd:new THREE.Vector3(0,0,1),me:new THREE.Vector3(0,-0.2,0),meS:0.55,dur:26,out:10,sfx:'plane'})});ANIM.push((dt,t)=>{top.rotation.y=-t*1.1;top.position.y=4+Math.sin(t*0.8)*1.2})}
 {const[x,z]=W(1370,740);const g=grp(x,0,z);cyl(0.9,1.1,14,lam(0xffffff),0,7,0,g,12);for(let i=0;i<5;i++)cyl(0.95,0.95,1,lam(0xe02a3a),0,1.5+i*2.8,0,g,12);ball(1.2,basic(0xfff2a0),0,14.8,0,g);const seat=grp(0,2,0,g);cyl(1.6,1.6,0.8,lam(0x6ab8ff),0,0,0,seat,16);
-  blockW(x,z,2.2);RIDES.push({name:'ストン タワー',x,z,r:5});ANIM.push((dt,t)=>{const c=(t*0.25)%1;seat.position.y=c<0.6?2+c/0.6*10:c<0.7?12-(c-0.6)/0.1*10:2})}
+  blockW(x,z,2.2);const DT={c:0};RIDES.push({name:'ストン タワー',x,z,r:5,open:true,board:()=>{DT.c=0;startRide({name:'ストン タワー',seat:()=>seat,eye:new THREE.Vector3(0,1.1,1.9),fwd:new THREE.Vector3(0,-0.1,1),me:new THREE.Vector3(0,0.4,1.6),meS:0.6,dur:16,out:12,sfx:'drop',drop:DT})}});ANIM.push((dt,t)=>{DT.c=(DT.c+dt*0.13)%1;const c=DT.c;seat.position.y=c<0.55?2+c/0.55*10:c<0.6?12:c<0.66?12-(c-0.6)/0.06*10:2})}
 // mini train around the kids coaster area
 {const pts=MINITRAIN.map(([ix,iy])=>{const[x,z]=W(ix,iy);return new THREE.Vector3(x,0.3,z)});const curve=new THREE.CatmullRomCurve3(pts,true);const L=curve.getLength();const cars=[];
   for(let i=0;i<4;i++){const c=grp();boxm(1.6,1.4,2.6,lam(i?pick([0x6ab8ff,0xffd23b,0xff8ad8]):0x2a6a3a),0,0.9,0,c);if(!i){cyl(0.35,0.35,1,lam(0x222222),0,2,0.6,c);ball(0.25,basic(0xfff2a0),0,1.2,1.35,c)}cars.push(c)}
   let s=0;ANIM.push((dt)=>{s=(s+5*dt)%L;cars.forEach((c,i)=>{const u=(((s-i*2.9)%L)+L)%L/L;const p=curve.getPointAt(u),t=curve.getTangentAt(u);c.position.copy(p);c.lookAt(p.x+t.x,p.y,p.z+t.z)})});
-  const[x,z]=W(1270,900);RIDES.push({name:'ミニきしゃ',x,z,r:6});floatSign('ミニきしゃ',x,6,z,'#2a6a3a',7)}
+  const MT={L,get s(){return s}};const[x,z]=W(1270,900);RIDES.push({name:'ミニきしゃ',x,z,r:6,open:true,board:()=>startRide({name:'ミニきしゃ',seat:()=>cars[1],eye:new THREE.Vector3(0,2.1,0),fwd:new THREE.Vector3(0,0,1),me:new THREE.Vector3(0,1.2,0),meS:0.6,lap:MT,out:10,sfx:'train'})});floatSign('ミニきしゃ',x,6,z,'#2a6a3a',7)}
 // kids coaster with a red barn
-{const[cx,cz]=W(1235,905);const pts=[];for(let i=0;i<12;i++){const a=i/12*Math.PI*2;pts.push([cx+Math.cos(a)*9,[2,2,5,7,4,2,3,5,3,2,2,2][i],cz+Math.sin(a)*6])}coaster(pts,{rail:0xff6a3a,sup:0xffd23b,car:0x3fa9f5,cars:3,v:6,speed:0.7});
+{const[cx,cz]=W(1235,905);const pts=[];for(let i=0;i<12;i++){const a=i/12*Math.PI*2;pts.push([cx+Math.cos(a)*9,[2,2,5,7,4,2,3,5,3,2,2,2][i],cz+Math.sin(a)*6])}const KC=coaster(pts,{rail:0xff6a3a,sup:0xffd23b,car:0x3fa9f5,cars:3,v:6,speed:0.7});RIDES.push({name:'こどもコースター',x:pts[0][0]+2.5,z:pts[0][2],r:4.5,open:true,board:()=>startRide(coasterRide(KC,'こどもコースター'))});
   const[bx,bz]=W(1225,830);boxm(5,4,4,lam(0xd84a3a),bx,2,bz);const r=cone(3.8,2,lam(0xffffff),bx,5,bz,null,4);r.rotation.y=Math.PI/4;blockW(bx,bz,3)}
 // peekaboo kids town with a little ferris wheel
-{const[x,z]=W(760,175);const g=grp(x,0,z);const w=grp(0,6,0,g);for(let i=0;i<8;i++){const a=i/8*Math.PI*2;boxm(0.15,5,0.15,lam(0xffd23b),Math.cos(a)*2.5,Math.sin(a)*2.5,0,w).rotation.z=a+Math.PI/2;boxm(0.9,0.9,0.9,lam(pick([0xff5a5a,0x6ab8ff,0x8ad06a])),Math.cos(a)*5,Math.sin(a)*5,0,w)}cyl(0.3,0.3,6,lam(0xffffff),0,3,0,g);
+{const[x,z]=W(760,175);const g=grp(x,0,z);const w=grp(0,6,0,g);const mcars=[];for(let i=0;i<8;i++){const a=i/8*Math.PI*2;boxm(0.15,5,0.15,lam(0xffd23b),Math.cos(a)*2.5,Math.sin(a)*2.5,0,w).rotation.z=a+Math.PI/2;mcars.push(boxm(0.9,0.9,0.9,lam(pick([0xff5a5a,0x6ab8ff,0x8ad06a])),Math.cos(a)*5,Math.sin(a)*5,0,w))}cyl(0.3,0.3,6,lam(0xffffff),0,3,0,g);
   ANIM.push((dt,t)=>{w.rotation.z=t*0.4;w.children.forEach((c,i)=>{if(c.geometry.parameters.width===0.9)c.rotation.z=-t*0.4})});blockW(x,z,3);
   for(let i=0;i<4;i++){const[hx,hz]=W(680+i*28,240+(i%2)*30);boxm(3,2.5,3,lam(pick([0xffe0a0,0xc8e8ff,0xffc8d8])),hx,1.25,hz);cone(2.6,1.6,lam(pick([0xff5a5a,0x3a7ae8])),hx,3.3,hz,null,4).rotation.y=Math.PI/4;blockW(hx,hz,2)}
-  RIDES.push({name:'ちびっこタウン',x,z,r:7});floatSign('ちびっこタウン',x,13,z,'#ff9a2a',8)}
+  RIDES.push({name:'ちびっこ かんらんしゃ',x,z,r:7,open:true,board:()=>startRide({name:'ちびっこ かんらんしゃ',seat:()=>mcars[0],eye:new THREE.Vector3(0,0.5,0),fwd:new THREE.Vector3(0,0,1),me:new THREE.Vector3(0,-0.4,0),meS:0.45,dur:22,out:9})});floatSign('ちびっこタウン',x,13,z,'#ff9a2a',8)}
 // river ride boats
 {const pts=RIVER.map(([ix,iy])=>{const[x,z]=W(ix,iy);return new THREE.Vector3(x,0.35,z)});const curve=new THREE.CatmullRomCurve3(pts,false);const L=curve.getLength();const boats=[];
   for(let i=0;i<4;i++){const b=grp();cyl(1.4,1.4,0.7,lam(pick([0xffd23b,0xff5a5a,0x3fa9f5])),0,0,0,b,14);mesh(new THREE.TorusGeometry(1.4,0.25,6,16),lam(0x333333),0,0.35,0,b).rotation.x=Math.PI/2;boats.push(b)}
-  ANIM.push((dt,t)=>{boats.forEach((b,i)=>{const u=((t*0.03+i*0.25)%1);const p=curve.getPointAt(u);b.position.set(p.x,0.3+Math.sin(t*3+i)*0.1,p.z);b.rotation.y=t*(1+i*0.3)})});
-  const[x,z]=W(800,880);RIDES.push({name:'ぐるぐる ラフティング',x,z,r:6})}
+  const RB={};ANIM.push((dt,t)=>{RB.u0=((t*0.03)%1);boats.forEach((b,i)=>{const u=((t*0.03+i*0.25)%1);const p=curve.getPointAt(u);b.position.set(p.x,0.3+Math.sin(t*3+i)*0.1,p.z);b.rotation.y=t*(1+i*0.3)})});
+  const[x,z]=W(800,880);RIDES.push({name:'ぐるぐる ラフティング',x,z,r:6,open:true,board:()=>startRide({name:'ぐるぐる ラフティング',seat:()=>boats[0],eye:new THREE.Vector3(0,1.4,0.9),fwd:new THREE.Vector3(0,-0.15,1),me:new THREE.Vector3(0,0.3,0.8),meS:0.6,raft:RB,out:9,sfx:'water'})})}
 // rose garden bushes + stage
 {const g=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.7,0),flat(0x4a9a4a),120);const m4=new THREE.Matrix4();let n=0;for(let i=0;i<600&&n<120;i++){const ix=rand(930,1270),iy=rand(1000,1270);if(!inPoly(ix,iy,ROSE))continue;const[x,z]=W(ix,iy);m4.makeScale(1,0.7,1);m4.setPosition(x,0.4,z);g.setMatrixAt(n++,m4)}g.count=n;scene.add(g);
   const[x,z]=W(1100,1180);floatSign('バラの にわ',x,5,z,'#ff4a7a',7)}
@@ -610,12 +613,49 @@ function rideFerris(){
   // our gondola gets a little passenger (the boy) when seen from outside
   const gd=FW.gs[best];ride.me=makeBoy();scene.remove(ride.me.g);gd.add(ride.me.g);ride.me.g.position.set(0,-1.45,0.7);ride.me.g.scale.setScalar(0.9);ride.me.g.rotation.y=0;
 }
+const _q=new THREE.Quaternion(),_q2=new THREE.Quaternion(),_q3=new THREE.Quaternion(),_e=new THREE.Euler(),_p=new THREE.Vector3();
+function coasterRide(C,name){return{name,seat:()=>C.cars[0],eye:new THREE.Vector3(0,1.55,0.3),fwd:new THREE.Vector3(0,0,1),me:new THREE.Vector3(0,0.2,0.3),meS:0.55,coaster:C,out:12,
+  onStart(r){C.s=0;r.dist=0;r.tick=0;r.scd=0},
+  update(dt,r){r.dist+=C.v*dt;const u=C.s/C.L,tg=C.curve.getTangentAt(u);r.tick-=dt;r.scd-=dt;
+    const inLift=C.opt.lift&&u>C.opt.lift[0]&&u<C.opt.lift[1];
+    if(r.tick<=0){if(inLift){r.tick=0.3;tone(320,.04,'square',.04)}else{r.tick=clamp(1.2/C.v,0.04,0.3);noise(.04,.05+C.v*0.003,900,2)}}
+    if(r.scd<=0&&tg.y<-0.4&&C.v>9){r.scd=4;toast(pick(['きゃ〜〜！','うわ〜〜！','ひゃっほ〜！','はや〜い！']),1.6);tone(900,.6,'sine',.05,-400)}
+    if(inLift&&!r.liftMsg){r.liftMsg=1;toast('カタカタ… のぼってる…',2)}
+    windOn(Math.min(0.14,C.v*0.006))},
+  done(r){return r.dist>=C.L-1}}}
+function startRide(cfg){
+  ride={kind:'gen',cfg,t:0,entry:nearRide};mode='ride';rideView='in';rideYaw=0;ridePitch=0;
+  $('act').hidden=true;$('ridebar').hidden=false;$('viewBtn').textContent='そとから みる';$('joy').hidden=true;joy.id=null;
+  boy.g.visible=false;chime();toast(cfg.name+'に のったよ！',2);
+  const seat=cfg.seat();ride.seat=seat;ride.me=makeBoy();scene.remove(ride.me.g);seat.add(ride.me.g);ride.me.g.position.copy(cfg.me);ride.me.g.scale.setScalar(cfg.meS||0.6);ride.me.g.rotation.y=Math.atan2(cfg.fwd.x,cfg.fwd.z);
+  ride.me.legs.forEach(l=>l.rotation.x=-1.3);
+  if(cfg.onStart)cfg.onStart(ride);if(cfg.lap)ride.lastS=cfg.lap.s,ride.dist=0;if(cfg.raft)ride.lastU=cfg.raft.u0;
+  musicVol=0.015;
+}
+function rideSfx(cfg,r,dt){r.st=(r.st||0)-dt;if(r.st>0)return;
+  switch(cfg.sfx){
+    case'organ':r.st=0.25;{const n=[N.G4,N.C5,N.E5,N.C5,N.D5,N.F5,N.E5,N.C5][Math.floor(r.t*4)%8];tone(n,.3,'square',.035);tone(n/2,.3,'triangle',.03)}break;
+    case'waltz':r.st=0.35;{const n=[N.C5,N.E5,N.G5,N.F5,N.D5,N.B4][Math.floor(r.t/0.35)%6];tone(n,.4,'triangle',.05);if(Math.floor(r.t/0.35)%3===0)tone(N.C4,.4,'sine',.05)}break;
+    case'train':r.st=0.35;noise(.06,.06,700,2);noise(.06,.05,500,2,0.15);if(Math.random()<0.04){tone(880,.5,'square',.04);tone(1100,.5,'square',.03);toast('ポッポー！',1)}break;
+    case'water':r.st=0.6;noise(.5,.04,800,0.6);break;
+    case'plane':r.st=0.5;tone(180,.5,'sawtooth',.02,20);break;
+    case'swing':r.st=1;windOn(0.06);break;
+    case'ship':r.st=0.2;{const a=Math.abs(r.seat.parent.rotation.z);windOn(a*0.1);if(a>0.85&&!r.peak){r.peak=1;toast(pick(['ふわっ！','きゃ〜！','たか〜い！']),1)}if(a<0.3)r.peak=0}break;
+    case'drop':r.st=0.1;{const c=cfg.drop.c;if(c>0.55&&c<0.6&&!r.top){r.top=1;toast('てっぺん… ドキドキ…',1.2)}if(c>0.6&&c<0.66&&!r.fall){r.fall=1;toast('ストーーン！！',1.2);tone(700,.6,'sine',.06,-500);windOn(0.14)}if(c<0.1){r.top=0;r.fall=0;windOn(0.02)}}break;
+  }}
 function endRide(early){
   if(ride&&ride.me){ride.me.g.parent&&ride.me.g.parent.remove(ride.me.g)}
-  ride=null;mode='walk';$('ridebar').hidden=true;boy.g.visible=true;B.x=FW.px+FW.nx*3;B.z=FW.pz+FW.nz*3;B.head=Math.atan2(FW.nx,FW.nz);camYaw=B.head+Math.PI;windOn(0);
+  if(ride&&ride.kind==='gen'&&ride.entry){const e=ride.entry;const ang=Math.atan2(B.x-e.x,B.z-e.z);B.x=e.x+Math.sin(ang)*(e.r-0.5);B.z=e.z+Math.cos(ang)*(e.r-0.5);B.head=ang;camYaw=B.head+Math.PI}
+  else{B.x=FW.px+FW.nx*3;B.z=FW.pz+FW.nz*3;B.head=Math.atan2(FW.nx,FW.nz);camYaw=B.head+Math.PI}
+  ride=null;mode='walk';$('ridebar').hidden=true;boy.g.visible=true;windOn(0);
   toast(early?'おりたよ':'おつかれさま！ たのしかったね',2);chime();musicVol=0.035;
 }
 function updateRide(dt,t){
+  if(ride.kind==='gen'){const c=ride.cfg;ride.t+=dt;if(c.update)c.update(dt,ride);if(c.sfx)rideSfx(c,ride,dt);
+    let done=false;if(c.done)done=c.done(ride);else if(c.dur)done=ride.t>=c.dur;
+    if(c.lap){const s=c.lap.s;let d=s-ride.lastS;if(d<0)d+=c.lap.L;ride.dist+=d;ride.lastS=s;done=ride.dist>=c.lap.L-1}
+    if(c.raft){if(c.raft.u0<ride.lastU-0.5)done=true;ride.lastU=c.raft.u0}
+    if(done){endRide(false);return}return}
   if(ride.kind==='ferris'){
     const a=((ride.g/FW.n*Math.PI*2+FW.ang)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
     const h=Math.sin(a);// -1 bottom, 1 top
@@ -659,7 +699,7 @@ function updateWalk(dt,t){
   // the camera drifts back behind the boy while walking
   if(camAutoT>0)camAutoT-=dt;else if(B.v>0){let d=(B.head+Math.PI)-camYaw;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;camYaw+=d*Math.min(1,dt*1.2)}
   // near a ride?
-  nearRide=null;for(const r of RIDES){if(Math.hypot(B.x-r.x,B.z-r.z)<r.r){nearRide=r;break}}
+  nearRide=null;{let bd=1e9;for(const r of RIDES){const d=Math.hypot(B.x-r.x,B.z-r.z);if(d<r.r&&d/r.r<bd){bd=d/r.r;nearRide=r}}}
   if(nearRide&&nearRide.open){$('act').hidden=false;$('act').textContent=nearRide.name+'に のる！'}else $('act').hidden=true;
   if(nearRide&&!nearRide.open&&(!lastSoon[nearRide.name]||t-lastSoon[nearRide.name]>25)){lastSoon[nearRide.name]=t;toast(nearRide.name+' … もうすぐ のれるよ！',2.4)}
   const an=areaName();if($('area').textContent!==an)$('area').textContent=an;
@@ -668,6 +708,9 @@ const _v=new THREE.Vector3();
 function updateCamera(dt,t){
   if(mode==='walk'){const cx=B.x+Math.sin(camYaw)*camDist*Math.cos(camPitch),cz=B.z+Math.cos(camYaw)*camDist*Math.cos(camPitch),cy=1.4+camDist*Math.sin(camPitch);
     camera.position.lerp(_v.set(cx,cy,cz),Math.min(1,dt*6));camera.lookAt(B.x,1.6,B.z)}
+  else if(ride&&ride.kind==='gen'){const c=ride.cfg,seat=ride.seat;ride.me.g.visible=rideView!=='in';
+    if(rideView==='in'){seat.updateWorldMatrix(true,false);camera.position.copy(c.eye);seat.localToWorld(camera.position);seat.getWorldQuaternion(_q);const fv=c.fwd.clone().normalize();_e.set(Math.asin(fv.y)+ridePitch,Math.atan2(-fv.x,-fv.z)+rideYaw,0,'YXZ');_q3.setFromEuler(_e);camera.quaternion.copy(_q).multiply(_q3)}
+    else{const wp=seat.getWorldPosition(_p);const d=c.out||10;const a=rideYaw+camYaw;camera.position.set(wp.x+Math.sin(a)*d,wp.y+d*0.45+ridePitch*6,wp.z+Math.cos(a)*d);camera.lookAt(wp)}}
   else if(ride&&ride.kind==='ferris'){const gd=FW.gs[ride.g];const wp=gd.getWorldPosition(_v);
     if(ride.me)ride.me.g.visible=rideView!=='in';
     if(rideView==='in'){const base=Math.atan2(FW.nx,FW.nz)+rideYaw;const hx=Math.sin(base),hz=Math.cos(base);camera.position.set(wp.x+hx*1.05,wp.y+0.3,wp.z+hz*1.05);const fx=hx*Math.cos(ridePitch),fz=hz*Math.cos(ridePitch),fy=Math.sin(ridePitch);camera.lookAt(camera.position.x+fx,camera.position.y+fy,camera.position.z+fz)}
