@@ -45,7 +45,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
   pointer-events:none;opacity:0;transition:opacity .15s;box-shadow:0 0 0 3px rgba(58,38,24,.35)}
 .overlay{position:fixed;inset:0;display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-left,0px));background:rgba(58,38,24,.3);overflow:auto}
 .card{background:var(--paper);border:4px solid var(--ink);border-radius:28px;box-shadow:0 8px 0 var(--ink);
-  padding:24px 22px;max-width:440px;width:100%;text-align:center;display:grid;gap:12px}
+  padding:24px 22px;max-width:580px;width:100%;text-align:center;display:grid;gap:12px}
 .card h1{margin:0;font-size:clamp(28px,8vw,48px);line-height:1.1;font-weight:800;color:var(--ball);
   -webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:0 4px 0 var(--ink);text-wrap:balance}
 .card p{margin:0;font-size:16px;line-height:1.6;font-weight:500}
@@ -85,8 +85,8 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
 @keyframes hop{0%,100%{transform:none}50%{transform:translateY(-6px)}}
 .ltitle{margin:0;font-size:clamp(30px,9vw,44px);font-weight:800;color:var(--ball);-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:0 4px 0 var(--ink)}
 @media (prefers-reduced-motion:reduce){.lball,.lcat,.ltext i{animation:none}.lball{left:60%}.lcat{left:20%}}
-.stages{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
-@media (max-width:520px){.stages{grid-template-columns:repeat(3,1fr)}}
+.stages{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+@media (max-width:640px){.stages{grid-template-columns:repeat(3,1fr)}}
 .stg{font:inherit;display:grid;justify-items:center;gap:4px;padding:8px 4px;border:3px solid var(--ink);border-radius:16px;background:#fff;
   color:var(--ink);cursor:pointer;box-shadow:0 4px 0 var(--ink);min-width:0}
 .stg b{font-size:clamp(10px,2.2vw,14px);white-space:nowrap;letter-spacing:-.02em}
@@ -102,6 +102,8 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
 .th3{background:linear-gradient(#d9eef4 0 55%,#cfe3ea 55%)}
 .th3::after{content:"";position:absolute;right:8%;bottom:18%;width:55%;height:34%;background:#fff;border:2px solid #9cc;border-radius:6px;box-shadow:inset 0 10px 0 #7fd0ff}
 .th2::after{content:"";position:absolute;left:10%;bottom:25%;width:60%;height:30%;background:#fff;border-top:6px solid #f3a5b5;border-radius:4px}
+.th5{background:linear-gradient(#9fd8ff 0 50%,#8fd06a 50%)}
+.th5::after{content:"";position:absolute;left:52%;bottom:30%;width:30%;height:55%;border-radius:50% 50% 10% 10%;background:linear-gradient(#4fa64a 0 60%,#8a5a3a 60% 100%)}
 .th4{background:linear-gradient(#fff1c9 0 55%,#ffb0ba 55% 70%,#a8d6ff 70%)}
 .th4::after{content:"";position:absolute;left:12%;bottom:12%;width:46%;height:30%;border-radius:50%;background:radial-gradient(circle at 30% 40%,#ff5a5a 0 12%,transparent 13%),radial-gradient(circle at 60% 35%,#ffd23b 0 12%,transparent 13%),radial-gradient(circle at 45% 65%,#4fb3ff 0 12%,transparent 13%),#ffe08a;border:3px solid #ff7aa8}
 .btn2{background:#fff;font-size:18px;padding:8px 18px}
@@ -138,6 +140,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
       <button class="stg" data-i="2"><span class="thumb th2"></span><b>しんしつ</b><small id="rec2"></small></button>
       <button class="stg" data-i="3"><span class="thumb th3"></span><b>おふろ</b><small id="rec3"></small></button>
       <button class="stg" data-i="4"><span class="thumb th4"></span><b>こどもべや</b><small id="rec4"></small></button>
+      <button class="stg" data-i="5"><span class="thumb th5"></span><b>こうえん</b><small id="rec5"></small></button>
     </div>
     <div class="modes">
       <button class="mode" data-lives="3">やさしい <span style="color:#ff4f4f">♥♥♥</span></button>
@@ -360,10 +363,10 @@ function rugAt(x,z,r){
   m.rotation.x=-Math.PI/2;m.receiveShadow=true;
 }
 const tunnelMat=new THREE.MeshLambertMaterial({color:0x6a4fc4,side:THREE.DoubleSide});
-function tunnel(x,z,len,alongX){
+function tunnel(x,z,len,alongX,mat=tunnelMat){
   const R=0.9,g=group();
   const inner=new THREE.Group();inner.position.set(x,0,z);inner.rotation.y=alongX?Math.PI/2:0;g.add(inner);
-  const m=new THREE.Mesh(new THREE.CylinderGeometry(R,R,len,24,6,true,0,Math.PI),tunnelMat);
+  const m=new THREE.Mesh(new THREE.CylinderGeometry(R,R,len,24,6,true,0,Math.PI),mat);
   m.castShadow=true;m.receiveShadow=true;m.rotation.set(Math.PI/2,Math.PI/2,0);inner.add(m);
   for(let i=0;i<=4;i++){
     const r=new THREE.Mesh(new THREE.TorusGeometry(R,0.06,6,24,Math.PI),lam(0xf2c14e));
@@ -714,7 +717,7 @@ function splash(x,y,z,n,up=4){
 function updateDrops(dt){for(const d of drops){if(d.life<=0)continue;d.life-=dt;d.vy-=20*dt;d.m.position.x+=d.vx*dt;d.m.position.y+=d.vy*dt;d.m.position.z+=d.vz*dt;d.m.material.opacity=Math.min(1,d.life*2);if(d.life<=0)d.m.visible=false}}
 function waterSound(){tone(rand(500,900),.12,'sine',.05,-300);tone(rand(1200,1800),.06,'sine',.03,-500,.05)}
 
-// ----- stage 5: kids' room (ball pit, swing, RC car, floor piano) -----
+// ----- playground pieces shared by the kids' room and the park -----
 let KID=null;
 const PB_COLORS=[0xff5a5a,0xffd23b,0x4fb3ff,0x6fdc6f,0xff8ad8,0xff9a2a];
 function kidTex(){return canvasTex(256,256,(g,w)=>{ // puzzle play mat
@@ -723,14 +726,69 @@ function kidTex(){return canvasTex(256,256,(g,w)=>{ // puzzle play mat
   for(let i=0;i<4;i++)for(let j=0;j<4;j++){g.fillStyle=cs[(i+j*2+1)%4];g.beginPath();g.arc(i*s+s,j*s+s/2,9,0,7);g.fill();g.fillStyle=cs[(i+j*2+2)%4];g.beginPath();g.arc(i*s+s/2,j*s+s,9,0,7);g.fill()}
   g.strokeStyle='rgba(0,0,0,.1)';g.lineWidth=3;for(let i=0;i<=4;i++){g.beginPath();g.moveTo(i*s,0);g.lineTo(i*s,w);g.moveTo(0,i*s);g.lineTo(w,i*s);g.stroke()}
 },9,6.5)}
+function kidInit(){KID={pballs:[],spillCd:0,slides:[]}}
+// a sloped slide surface along x (x0 = top end)
+function slideRun(x0,x1,z,h0,h1,hw,bedColor,railColor){
+  const o={t:'slope',x0,x1,z,hz:hw,h0,h1,x:(x0+x1)/2,hx:Math.abs(x1-x0)/2,h:Math.max(h0,h1),solid:false,platform:true};obs.push(o);KID.slides.push(o);
+  const L=Math.hypot(x1-x0,h0-h1),ang=Math.atan2(h1-h0,x1-x0),cx=(x0+x1)/2,cy=(h0+h1)/2;
+  const bed=mesh(new THREE.BoxGeometry(L,0.12,hw*2),new THREE.MeshPhongMaterial({color:bedColor,shininess:80}),cx,cy-0.06,z);bed.rotation.z=ang;
+  for(const sz of[-1,1]){const r=mesh(new THREE.BoxGeometry(L,0.5,0.12),lam(railColor),cx,cy+0.2,z+sz*(hw+0.06));r.rotation.z=ang}
+  for(const sz of[-1,1])mesh(new THREE.CylinderGeometry(0.1,0.1,cy,8),lam(0xdddddd),cx,cy/2,z+sz*hw);
+  for(let i=0;i<4;i++){const a=x0+(x1-x0)*i/4,b=x0+(x1-x0)*(i+1)/4,top=Math.max(h0+(h1-h0)*i/4,h0+(h1-h0)*(i+1)/4)+0.45;for(const sz of[-1,1])box((a+b)/2,z+sz*(hw+0.08),Math.abs(b-a),0.16,top)}
+  return o;
+}
+// deck at the top of a slide with rainbow steps going toward +z
+function slideTower(x,z,h,col){
+  solidBox(x,z,1.8,2.4,h,col,{platform:true});
+  const n=Math.round(h/0.5);const cs=[0x4fb3ff,0xffd23b,0x6fdc6f,0xff9a2a,0xff5a5a,0xb36ad1,0x4fb3ff,0xffd23b];
+  for(let i=0;i<n-1;i++)solidBox(x,z+1.7+i,1.8,1.0,h-0.5*(i+1),cs[i%cs.length],{platform:true});
+  box(x,z-1.25,1.8,0.12,h+1.0);mesh(new THREE.BoxGeometry(1.8,0.12,0.12),lam(0xffffff),x,h+1.0,z-1.25);
+  for(const px of[-0.8,0.8])mesh(new THREE.CylinderGeometry(0.06,0.06,1.0,6),lam(0xffffff),x+px,h+0.5,z-1.25);
+}
+function kidSwing(x,z,col=0xff6a4f){
+  const S={x,z,top:6.2,L:5.3,th:0.45,w:0,cd:0};KID.swing=S;
+  for(const sx of[-2.5,2.5]){
+    circ(S.x+sx,S.z-1.2,0.22,S.top);circ(S.x+sx,S.z+1.2,0.22,S.top);
+    for(const sz of[-1,1]){const leg=mesh(new THREE.CylinderGeometry(0.13,0.13,S.top+0.4,8),lam(col),S.x+sx,S.top/2,S.z+sz*0.6);leg.rotation.x=sz*0.2}
+  }
+  {const bar=mesh(new THREE.CylinderGeometry(0.16,0.16,5.4,10),lam(0x3fa9f5),S.x,S.top,S.z);bar.rotation.z=Math.PI/2}
+  S.pivot=new THREE.Group();S.pivot.position.set(S.x,S.top,S.z);stage.add(S.pivot);
+  for(const sx of[-0.85,0.85])mesh(new THREE.CylinderGeometry(0.04,0.04,S.L,6),lam(0x888899),sx,-S.L/2,0,S.pivot);
+  mesh(new THREE.BoxGeometry(2,0.22,1.1),lam(0xffd23b),0,-S.L,0,S.pivot);
+  label('ブランコ',S.x,S.top+1.4,S.z,'#e07000');
+}
+function kidHorse(x,z,col=0xc98d52,name='もくば',spring=false){
+  const H={x,z,rock:0,w:0};KID.horse=H;
+  const o=circ(H.x,H.z,1.0,1.6,{bouncy:true});o.horse=true;
+  H.g=new THREE.Group();H.g.position.set(H.x,0,H.z);stage.add(H.g);
+  const brown=lam(col);
+  if(spring){for(let i=0;i<6;i++){const t=mesh(new THREE.TorusGeometry(0.35,0.06,6,14),lam(0xdddddd),0,0.15+i*0.13,0,H.g);t.rotation.x=Math.PI/2}}
+  else for(const sz of[-0.45,0.45]){const r=mesh(new THREE.TorusGeometry(2.2,0.08,6,24,1.2),lam(0xe9402a),0,2.25,sz,H.g);r.rotation.z=-Math.PI/2-0.6}
+  mesh(new THREE.BoxGeometry(1.9,0.75,0.8),brown,0,1.25,0,H.g);
+  mesh(new THREE.BoxGeometry(0.55,1.0,0.6),brown,0.85,1.85,0,H.g).rotation.z=-0.35;
+  mesh(new THREE.BoxGeometry(0.8,0.45,0.55),brown,1.25,2.3,0,H.g);
+  mesh(new THREE.BoxGeometry(0.7,0.25,0.12),lam(0x5a3a22),0.75,2.25,0,H.g);
+  for(const sz of[-0.29,0.29])mesh(new THREE.SphereGeometry(0.07,6,5),lam(0x111111),1.4,2.45,sz,H.g,false);
+  if(!spring)for(const[a,b]of[[0.7,0.3],[0.7,-0.3],[-0.7,0.3],[-0.7,-0.3]])mesh(new THREE.CylinderGeometry(0.1,0.1,0.75,6),brown,a,0.65,b,H.g);
+  else mesh(new THREE.CylinderGeometry(0.25,0.25,0.4,8),brown,0,0.85,0,H.g);
+  mesh(new THREE.BoxGeometry(0.6,0.12,0.85),lam(0xe9402a),-0.1,1.66,0,H.g);
+  label(name,H.x,3.6,H.z,'#c06a20');
+}
+// sand particles
+const sandBits=[];
+for(let i=0;i<36;i++){const m=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.12,0.12),new THREE.MeshBasicMaterial({color:0xe2c48a,transparent:true}));m.visible=false;scene.add(m);sandBits.push({m,vx:0,vy:0,vz:0,life:0})}
+let sandI=0;
+function sandPuff(x,z,n){for(let k=0;k<n;k++){const d=sandBits[sandI++%sandBits.length],a=rand(0,6.28),sp=rand(0.8,2.5);Object.assign(d,{vx:Math.cos(a)*sp,vz:Math.sin(a)*sp,vy:rand(2,5),life:rand(0.4,0.8)});d.m.position.set(x,0.15,z);d.m.visible=true}}
+function updateSand(dt){for(const d of sandBits){if(d.life<=0)continue;d.life-=dt;d.vy-=18*dt;d.m.position.x+=d.vx*dt;d.m.position.y=Math.max(0.05,d.m.position.y+d.vy*dt);d.m.position.z+=d.vz*dt;d.m.material.opacity=Math.min(1,d.life*2.5);if(d.life<=0)d.m.visible=false}}
+
+// ----- stage 5: kids' room (ball pit, swing, RC car, floor piano, slide) -----
 function buildKids(){
   room(kidTex(),0xfff1c9);
-  // starry wallpaper strip + window
   {const t=canvasTex(256,64,(g,w,h)=>{g.fillStyle='#bfe3ff';g.fillRect(0,0,w,h);const c=['#ffd23b','#ff8ad8','#ffffff'];for(let i=0;i<14;i++){g.fillStyle=c[i%3];g.font='26px sans-serif';g.fillText('★',i*19,20+((i*37)%30))}},6,1);
    mesh(new THREE.PlaneGeometry(W*2,1.6),new THREE.MeshLambertMaterial({map:t}),0,7.6,-D+0.02,null,false)}
   windowAt(-1);
   door('R',4);
-  KID={pballs:[],spillCd:0};
+  kidInit();
   // --- ball pit: a soft inflatable ring full of balls. bump it and balls spill out ---
   const P={x:-9.5,z:-7.5,r:3.3,h:0.9,n:110};KID.pit=P;
   const ring=circ(P.x,P.z,P.r,P.h,{platform:true,bouncy:true});ring.pit=true;
@@ -743,39 +801,18 @@ function buildKids(){
    stage.add(im);P.im=im;P.fill=P.n}
   label('ボールプール',P.x,3.2,P.z,'#ff4fa0');
   ramp(-9.5,-1.6,0,-1,{vy:9,sp:6}); // jump into the pit
-  // --- slide: climb the steps, slide down into the ball pit ---
-  {const x0=-16.2,x1=-11,z=-7.5,h0=3.0,h1=1.0,hw=0.9;
-   const o={t:'slope',x0,x1,z,hz:hw,h0,h1,x:(x0+x1)/2,hx:(x1-x0)/2,h:h0,solid:false,platform:true};obs.push(o);KID.slide=o;
-   solidBox(-17.1,z,1.8,2.4,h0,0xff8ad8,{platform:true}); // top deck
-   [0x4fb3ff,0xffd23b,0x6fdc6f,0xff9a2a,0xff5a5a].forEach((c,i)=>solidBox(-17.1,-5.8+i,1.8,1.0,h0-0.5*(i+1),c,{platform:true}));
-   box(-17.1,z-1.25,1.8,0.12,h0+1.0);mesh(new THREE.BoxGeometry(1.8,0.12,0.12),lam(0xffffff),-17.1,h0+1.0,z-1.25);
-   for(const px of[-17.9,-16.3])mesh(new THREE.CylinderGeometry(0.06,0.06,1.0,6),lam(0xffffff),px,h0+0.5,z-1.25);
-   const L=Math.hypot(x1-x0,h0-h1),ang=Math.atan2(h0-h1,x1-x0),cx=(x0+x1)/2,cy=(h0+h1)/2;
-   const bed=mesh(new THREE.BoxGeometry(L,0.12,hw*2),new THREE.MeshPhongMaterial({color:0xffc21f,shininess:80}),cx,cy-0.06,z);bed.rotation.z=-ang;
-   for(const sz of[-1,1]){const r=mesh(new THREE.BoxGeometry(L,0.5,0.12),lam(0x3fa9f5),cx,cy+0.2,z+sz*(hw+0.06));r.rotation.z=-ang}
-   // legs under the slide
-   mesh(new THREE.CylinderGeometry(0.1,0.1,(h0+h1)/2,8),lam(0xdddddd),cx,(h0+h1)/4,z-hw);mesh(new THREE.CylinderGeometry(0.1,0.1,(h0+h1)/2,8),lam(0xdddddd),cx,(h0+h1)/4,z+hw);
-   // side rails keep the ball on the slide (stepped collision walls)
-   for(let i=0;i<4;i++){const a=x0+(x1-x0)*i/4,b=x0+(x1-x0)*(i+1)/4,top=h0+(h1-h0)*i/4+0.45;for(const sz of[-1,1])box((a+b)/2,z+sz*(hw+0.08),b-a,0.16,top)}
-   label('すべりだい',-17.1,h0+2.4,z,'#ff4fa0')}
+  // slide that drops into the ball pit
+  slideTower(-17.1,-7.5,3.0,0xff8ad8);
+  slideRun(-16.2,-11,-7.5,3.0,1.0,0.9,0xffc21f,0x3fa9f5);
+  label('すべりだい',-17.1,5.4,-7.5,'#ff4fa0');
   trampoline(-3.6,-5.8);
-  // --- swing ---
-  const S={x:9,z:-8.5,top:6.2,L:5.3,th:0.45,w:0,cd:0};KID.swing=S;
-  for(const sx of[-2.5,2.5]){
-    circ(S.x+sx,S.z-1.2,0.22,S.top);circ(S.x+sx,S.z+1.2,0.22,S.top);
-    for(const sz of[-1,1]){const leg=mesh(new THREE.CylinderGeometry(0.13,0.13,S.top+0.4,8),lam(0xff6a4f),S.x+sx,S.top/2,S.z+sz*0.6);leg.rotation.x=sz*0.2}
-  }
-  {const bar=mesh(new THREE.CylinderGeometry(0.16,0.16,5.4,10),lam(0x3fa9f5),S.x,S.top,S.z);bar.rotation.z=Math.PI/2}
-  S.pivot=new THREE.Group();S.pivot.position.set(S.x,S.top,S.z);stage.add(S.pivot);
-  for(const sx of[-0.85,0.85])mesh(new THREE.CylinderGeometry(0.04,0.04,S.L,6),lam(0x888899),sx,-S.L/2,0,S.pivot);
-  mesh(new THREE.BoxGeometry(2,0.22,1.1),lam(0xffd23b),0,-S.L,0,S.pivot);
-  label('ブランコ',S.x,S.top+1.4,S.z,'#e07000');
+  kidSwing(9,-8.5);
   // --- radio-controlled car + its button ---
   const C={x:7.5,z:5,y:0,vx:0,vz:0,vy:0,r:0.6,rest:0.5,ground:true,step:0.3,head:-Math.PI/2,on:0,cd:0,bx:3.5,bz:2.5,br:0.8,hum:0,tgt:null};KID.car=C;
   C.g=new THREE.Group();stage.add(C.g);
   mesh(new THREE.BoxGeometry(0.75,0.32,1.25),lam(0xe9402a),0,0.32,0,C.g);
   mesh(new THREE.BoxGeometry(0.62,0.3,0.6),lam(0x9fdcff),0,0.6,-0.05,C.g);
-  mesh(new THREE.BoxGeometry(0.8,0.06,0.3),lam(0x222222),0,0.55,0.62,C.g); // spoiler
+  mesh(new THREE.BoxGeometry(0.8,0.06,0.3),lam(0x222222),0,0.55,0.62,C.g);
   for(const sx of[-0.25,0.25])mesh(new THREE.SphereGeometry(0.07,6,5),new THREE.MeshBasicMaterial({color:0xfff6a0}),sx,0.36,-0.63,C.g,false);
   mesh(new THREE.CylinderGeometry(0.015,0.015,0.9,4),lam(0x333333),0.28,0.95,0.45,C.g,false);
   mesh(new THREE.SphereGeometry(0.06,6,5),lam(0xff4f4f),0.28,1.4,0.45,C.g,false);
@@ -784,26 +821,13 @@ function buildKids(){
   mesh(new THREE.CylinderGeometry(C.br+0.1,C.br+0.15,0.12,24),lam(0xdddddd),C.bx,0.06,C.bz);
   C.btn=mesh(new THREE.CylinderGeometry(C.br-0.1,C.br-0.1,0.15,24),lam(0x3fc75a),C.bx,0.15,C.bz);
   label('ラジコン',C.bx,1.8,C.bz,'#1f9a3a');
-  // --- floor piano mat: rolling over the keys plays notes ---
+  // --- floor piano mat ---
   const K={x0:6,z:9.2,kw:1.1,d:3,notes:[523,587,659,698,784,880,988,1047],keys:[],last:{}};KID.piano=K;
   mesh(new THREE.BoxGeometry(K.kw*8+0.4,0.02,K.d+0.4),lam(0x333344),K.x0+K.kw*4,0.01,K.z,null,false).receiveShadow=true;
   for(let i=0;i<8;i++){const m=mesh(new THREE.BoxGeometry(K.kw-0.08,0.03,K.d),new THREE.MeshLambertMaterial({color:0xffffff,emissive:0x000000}),K.x0+K.kw*(i+0.5),0.03,K.z,null,false);m.receiveShadow=true;K.keys.push({m,t:0})}
   for(const i of[1,2,4,5,6])mesh(new THREE.BoxGeometry(K.kw*0.55,0.04,K.d*0.55),lam(0x222222),K.x0+K.kw*i,0.045,K.z-K.d*0.22,null,false);
   label('ピアノ マット',K.x0+K.kw*4,1.6,K.z,'#7a4fd0');
-  // --- rocking horse (soft and bouncy) ---
-  {const H={x:-14,z:3.5,rock:0,w:0};KID.horse=H;
-   const o=circ(H.x,H.z,1.0,1.6,{bouncy:true});o.horse=true;
-   H.g=new THREE.Group();H.g.position.set(H.x,0,H.z);stage.add(H.g);
-   const brown=lam(0xc98d52);
-   for(const sz of[-0.45,0.45]){const r=mesh(new THREE.TorusGeometry(2.2,0.08,6,24,1.2),lam(0xe9402a),0,2.25,sz,H.g);r.rotation.z=-Math.PI/2-0.6}
-   mesh(new THREE.BoxGeometry(1.9,0.75,0.8),brown,0,1.25,0,H.g);
-   mesh(new THREE.BoxGeometry(0.55,1.0,0.6),brown,0.85,1.85,0,H.g).rotation.z=-0.35;
-   mesh(new THREE.BoxGeometry(0.8,0.45,0.55),brown,1.25,2.3,0,H.g);
-   mesh(new THREE.BoxGeometry(0.7,0.25,0.12),lam(0x5a3a22),0.75,2.25,0,H.g);
-   for(const sz of[-0.29,0.29])mesh(new THREE.SphereGeometry(0.07,6,5),lam(0x111111),1.4,2.45,sz,H.g,false);
-   for(const[a,b]of[[0.7,0.3],[0.7,-0.3],[-0.7,0.3],[-0.7,-0.3]])mesh(new THREE.CylinderGeometry(0.1,0.1,0.75,6),brown,a,0.65,b,H.g);
-   mesh(new THREE.BoxGeometry(0.6,0.12,0.85),lam(0xe9402a),-0.1,1.66,0,H.g);
-   label('もくば',H.x,3.6,H.z,'#c06a20')}
+  kidHorse(-14,3.5);
   // toy shelf with steps of blocks
   solidBox(0,-11.9,6,2,1.6,0xf4f0e6,{platform:true});
   solidBox(3.5,-11.9,1,1.6,1.05,0x4fb3ff,{platform:true});
@@ -815,12 +839,95 @@ function buildKids(){
   prop('block',-2,3.5);prop('block',-1.2,4.2);prop('block',2.5,5.5);prop('block',8,-1);prop('block',-13,-5);prop('block',12,2);
   prop('car',-3,-1);prop('car',10,1);prop('plush',-15,9);prop('plush',16,-6);prop('tennis',3,-4);prop('tennis',-7,10.5);prop('book',-15.5,-10.5);prop('book',-14.8,-11);prop('duck',5,8.5);
 }
+
+// ----- stage 6: park (fountain, sandbox, seesaw, slide, swing, pipes, bushes) -----
+function grassTex(){return canvasTex(256,256,(g,w)=>{g.fillStyle='#8fd06a';g.fillRect(0,0,w,w);for(let i=0;i<2600;i++){g.fillStyle=Math.random()<.5?'rgba(255,255,255,.12)':'rgba(40,110,30,.18)';g.fillRect(rand(0,w),rand(0,w),2,5)}},9,6.5)}
+function tree(x,z,s=1){
+  circ(x,z,0.55*s,9);
+  mesh(new THREE.CylinderGeometry(0.45*s,0.65*s,7*s,10),lam(0x8a5a3a),x,3.5*s,z);
+  for(const[a,b,c,r]of[[0,8,0,3],[1.6,7,0.8,2.2],[-1.5,7.2,-0.6,2.3],[0.3,9.4,-0.5,2]])mesh(new THREE.SphereGeometry(r*s,12,9),lam(0x4fa64a),x+a*s,b*s,z+c*s);
+}
+function bush(x,z){
+  const g=group();for(const[a,b,r]of[[0,0,1.3],[0.9,0.5,1],[-0.9,0.4,1.05],[0.3,-0.8,1],[-0.5,-0.7,0.95]])mesh(new THREE.SphereGeometry(r,12,9),lam(0x3f9a45),x+a,r*0.75,z+b,g);
+  for(let i=0;i<6;i++)mesh(new THREE.SphereGeometry(0.12,6,5),lam(pick([0xff6b8a,0xfff06a,0xffffff])),x+rand(-1.3,1.3),rand(0.9,1.7),z+rand(-1.1,1.1),g,false);
+  fadeWhenUnder(g,x,z,1.7,1.5,2.2);hideBoxes.push({x,z,hx:1.5,hz:1.3});
+  label('しげみ',x,3.2,z,'#2f8a3a');
+}
+function buildPark(){
+  // grass ground that stretches past the fence
+  {const far=mesh(new THREE.PlaneGeometry(220,220),lam(0x7cc25a),0,-0.02,0,null,false);far.rotation.x=-Math.PI/2;far.receiveShadow=true;
+   const f=mesh(new THREE.PlaneGeometry(W*2+1,D*2+1),new THREE.MeshLambertMaterial({map:grassTex()}),0,0,0,null,false);f.rotation.x=-Math.PI/2;f.receiveShadow=true}
+  // white picket fence around the playground
+  {const wm=lam(0xffffff);
+   for(const[x0,z0,x1,z1]of[[-W,-D,W,-D],[-W,D,W,D],[-W,-D,-W,D],[W,-D,W,D]]){
+     const len=Math.hypot(x1-x0,z1-z0),n=Math.round(len/1.1);
+     for(let i=0;i<=n;i++){const x=x0+(x1-x0)*i/n,z=z0+(z1-z0)*i/n;if(x0===W&&Math.abs(z-(-4))<2)continue;mesh(new THREE.BoxGeometry(0.3,1.8,0.3),wm,x,0.9,z,null,false)}
+     const r=mesh(new THREE.BoxGeometry(x1===x0?0.15:len,0.18,z1===z0?0.15:len),wm,(x0+x1)/2,1.3,(z0+z1)/2,null,false);
+   }
+   // far hills and trees for the horizon
+   for(const[x,z,r,c]of[[-40,-70,30,0x9ad57a],[30,-75,35,0x8acb6c],[80,-30,30,0x9ad57a],[-80,20,32,0x8acb6c],[60,60,30,0x9ad57a],[-50,70,28,0x8acb6c]]){const h=mesh(new THREE.SphereGeometry(r,20,12),lam(c),x,-r*0.6,z,null,false);h.scale.y=0.7}
+   for(let i=0;i<16;i++){const a=i/16*Math.PI*2,R=rand(30,40),x=Math.cos(a)*R,z=Math.sin(a)*R*0.8;mesh(new THREE.CylinderGeometry(0.5,0.7,5,8),lam(0x8a5a3a),x,2.5,z,null,false);mesh(new THREE.SphereGeometry(3,10,8),lam(0x4fa64a),x,6.5,z,null,false)}}
+  // exit gate on the right side
+  {const sx=W,pos=-4;doorMat=new THREE.MeshLambertMaterial({color:0x3fa9f5,emissive:0x000000});
+   for(const s of[-1,1])mesh(new THREE.CylinderGeometry(0.25,0.25,4,10),lam(0xffffff),sx,2,pos+s*1.9);
+   const arch=mesh(new THREE.TorusGeometry(1.9,0.18,8,20,Math.PI),doorMat,sx,4,pos);arch.rotation.y=Math.PI/2;
+   doorLabel=label('ゴール！',W-1.2,5,pos,'#e09000');doorLabel.visible=false;
+   DOOR={side:'R',pos,x:W-0.5,z:pos}}
+  kidInit();
+  // dirt path
+  {const m=mesh(new THREE.PlaneGeometry(30,3),lam(0xe2c48a),0,0.01,4.5,null,false);m.rotation.x=-Math.PI/2;m.receiveShadow=true}
+  // --- fountain in the middle of a round pond ---
+  {const fx=0,fz=-2;KID.fountain={x:fx,z:fz};
+   waterPlane(fx,fz,6.6,6.6,0.03);
+   const rim=mesh(new THREE.TorusGeometry(3.35,0.22,8,36),lam(0xc9c3b8),fx,0.08,fz);rim.rotation.x=Math.PI/2;
+   circ(fx,fz,0.7,2.4);
+   mesh(new THREE.CylinderGeometry(0.5,0.75,2.2,14),lam(0xd8d2c6),fx,1.1,fz);
+   mesh(new THREE.CylinderGeometry(1.6,0.9,0.45,20),lam(0xd8d2c6),fx,2.3,fz);
+   const wtop=mesh(new THREE.CylinderGeometry(1.45,1.45,0.05,20),new THREE.MeshPhongMaterial({color:0x5fc4ff,transparent:true,opacity:0.7,shininess:120}),fx,2.5,fz,null,false);
+   mesh(new THREE.CylinderGeometry(0.15,0.2,0.6,10),lam(0xd8d2c6),fx,2.8,fz);
+   label('ふんすい',fx,5,fz,'#2b7bff')}
+  // --- sandbox + a slide that ends in it ---
+  {const S={x:-10,z:-7.5,hx:4.2,hz:3.2};KID.sand=S;
+   const t=canvasTex(128,128,(g,w)=>{g.fillStyle='#ead39a';g.fillRect(0,0,w,w);for(let i=0;i<900;i++){g.fillStyle=Math.random()<.5?'rgba(255,255,255,.3)':'rgba(150,110,50,.25)';g.fillRect(rand(0,w),rand(0,w),2,2)}},3,2);
+   const m=mesh(new THREE.PlaneGeometry(S.hx*2,S.hz*2),new THREE.MeshLambertMaterial({map:t}),S.x,0.02,S.z,null,false);m.rotation.x=-Math.PI/2;m.receiveShadow=true;
+   for(const[a,b,w,d]of[[0,-S.hz,S.hx*2+0.4,0.3],[0,S.hz,S.hx*2+0.4,0.3],[-S.hx,0,0.3,S.hz*2],[S.hx,0,0.3,S.hz*2]])mesh(new THREE.BoxGeometry(w,0.3,d),lam(0xb07a4a),S.x+a,0.15,S.z+b);
+   // a sand castle and a shovel
+   mesh(new THREE.CylinderGeometry(0.6,0.8,0.8,10),lam(0xdcbf82),-8,0.4,-9);mesh(new THREE.ConeGeometry(0.5,0.6,10),lam(0xdcbf82),-8,1.1,-9);
+   label('すなば',S.x+1,2.6,S.z,'#b0782a')}
+  slideTower(-17.1,-7.5,3.5,0x4fb3ff);
+  slideRun(-16.2,-11,-7.5,3.5,0.15,0.9,0xff5a5a,0xffd23b);
+  label('すべりだい',-17.1,5.9,-7.5,'#ff4fa0');
+  ramp(-3.6,-7.5,-1,0,{vy:9,sp:6.5}); // jump into the sandbox
+  // --- seesaw ---
+  {const sx=9,sz=-1.2,half=3.6,low=0.15,high=1.75;
+   const o={t:'slope',x0:sx-half,x1:sx+half,z:sz,hz:0.6,h0:low,h1:high,x:sx,hx:half,h:high,solid:false,platform:true};obs.push(o);
+   const Q={o,sx,sz,half,low,high,up:1,ang:Math.atan2(high-low,half*2),cd:0};KID.saw=Q;
+   mesh(new THREE.BoxGeometry(0.9,0.95,1.1),lam(0xff6a4f),sx,0.47,sz);
+   Q.g=new THREE.Group();Q.g.position.set(sx,0.95,sz);stage.add(Q.g);
+   mesh(new THREE.BoxGeometry(half*2+0.4,0.16,1.2),lam(0xffd23b),0,0,0,Q.g);
+   for(const s of[-1,1]){mesh(new THREE.BoxGeometry(0.1,0.7,0.9),lam(0x3fa9f5),s*(half-0.6),0.4,0,Q.g);mesh(new THREE.CylinderGeometry(0.06,0.06,0.9,6),lam(0x3fa9f5),s*(half-0.6),0.75,0,Q.g).rotation.x=Math.PI/2}
+   label('シーソー',sx,3,sz,'#e05a00')}
+  kidSwing(9.5,-9.5,0x3fc75a);
+  kidHorse(-5.5,4.3,0xff8ad8,'ゆらゆら うま',true);
+  // concrete pipes to roll through
+  tunnel(13,7.5,6,false,new THREE.MeshLambertMaterial({color:0xa3abb3,side:THREE.DoubleSide}));
+  tunnel(-11,8.5,5,true,new THREE.MeshLambertMaterial({color:0xa3abb3,side:THREE.DoubleSide}));
+  // benches (roll underneath)
+  table(5,11.4,5,1.4,1.5,0xb07a4a,0x444444);mesh(new THREE.BoxGeometry(5,1.2,0.2),lam(0xb07a4a),5,2.3,12.1);
+  table(-16.4,0,1.4,4.5,1.5,0xb07a4a,0x444444);
+  tree(-15,11);tree(16,10.5,0.9);tree(15.5,-11.5);tree(-6,-11.5,0.85);
+  bush(-15.5,5);bush(4,-10.8);
+  // flower beds
+  for(const[x,z]of[[-3,10],[9,4],[3,-6.5]]){mesh(new THREE.CylinderGeometry(1.2,1.2,0.25,16),lam(0x8a5a3a),x,0.12,z);for(let i=0;i<9;i++){const a=i/9*6.28,r=rand(0.2,0.9);mesh(new THREE.SphereGeometry(0.16,6,5),lam(pick([0xff6b8a,0xfff06a,0xff9a2a,0xffffff,0xb36ad1])),x+Math.cos(a)*r,0.4,z+Math.sin(a)*r,null,false)}}
+  prop('pail',-9,-6);prop('pail',-12,-8.5);prop('tennis',4,2);prop('tennis',-8,1);prop('tennis',12,3);prop('tennis',-2,8);prop('car',-7,-9.2);prop('plush',6,10.8,1.5);
+  prop('apple',4.2,11.5,1.5);prop('apple',5.6,11.2,1.5);prop('bottle',-1,11);prop('can',14,1);prop('block',-11.5,-6);prop('block',-10.6,-6.4);prop('yarn',10,6);
+}
+
 function pballOut(x,y,z,vx,vy,vz){
   const p=prop('pball',x,z,y);p.vx=vx;p.vz=vz;p.vy=vy;p.ground=false;p.rest=0.6;
   KID.pballs.push(p);
   if(KID.pballs.length>40){const o=KID.pballs.shift();stage.remove(o.g);const i=props.indexOf(o);if(i>=0)props.splice(i,1)}
 }
-// balls spill over the rim toward (dx,dz), or burst straight up when up=true
 function pitSpill(n,fromX,fromZ,up){
   const P=KID.pit;if(!P||KID.spillCd>0)return;KID.spillCd=0.25;
   n=Math.min(n,Math.floor(P.fill));if(n<=0)return;
@@ -834,26 +941,32 @@ function pitSpill(n,fromX,fromZ,up){
 }
 function pitHit(x,z,sp){if(sp>1.5){pitSpill(Math.round(3+sp*0.8),x,z,false);if(sp>4)toast('ボールが あふれた！',1)}}
 function inPit(e){const P=KID&&KID.pit;return P&&e.y>0.6&&Math.hypot(e.x-P.x,e.z-P.z)<P.r}
-// physics that runs every frame (also behind the menu)
+function inSand(e){const S=KID&&KID.sand;return S&&e.y<0.3&&Math.abs(e.x-S.x)<S.hx&&Math.abs(e.z-S.z)<S.hz}
+// visuals that run every frame (also behind the menu)
 function animKid(dt,now){
-  const S=KID.swing,gL=G/S.L;
-  for(let i=0;i<2;i++){const h=dt/2;S.w+=-gL*Math.sin(S.th)*h;S.th+=S.w*h}
-  const E=0.5*S.w*S.w+gL*(1-Math.cos(S.th)),Elo=gL*(1-Math.cos(0.45)),Ehi=gL*(1-Math.cos(1.05));
-  if(E<Elo)S.w+=(S.w>=0?1:-1)*dt*0.5;else if(E>Ehi)S.w*=Math.pow(0.75,dt);else S.w*=Math.pow(0.985,dt);
-  S.pivot.rotation.x=-S.th;
-  const H=KID.horse;H.w+=(-30*H.rock-1.2*H.w)*dt;H.rock+=H.w*dt;H.g.rotation.z=H.rock;
-  const C=KID.car;C.g.position.set(C.x,C.y,C.z);C.g.rotation.y=C.head;
-  const sp=Math.hypot(C.vx,C.vz);for(const w of C.wheels)w.rotation.x+=sp*dt/0.2;
-  C.btn.position.y=C.on>0?0.07:0.15;C.btn.material.color.setHex(C.cd>0&&C.on<=0?0x9ad1a6:0x3fc75a);
-  const P=KID.pit;if(P.fill<P.n){P.fill=Math.min(P.n,P.fill+dt*1.5);P.im.count=Math.floor(P.fill)}
-  for(const k of KID.piano.keys){if(k.t>0){k.t-=dt;const v=Math.max(0,k.t)/0.4;k.m.material.emissive.setRGB(v,v*0.8,0);k.m.position.y=0.03-v*0.015}}
+  const S=KID.swing;
+  if(S){const gL=G/S.L;
+    for(let i=0;i<2;i++){const h=dt/2;S.w+=-gL*Math.sin(S.th)*h;S.th+=S.w*h}
+    const E=0.5*S.w*S.w+gL*(1-Math.cos(S.th)),Elo=gL*(1-Math.cos(0.45)),Ehi=gL*(1-Math.cos(1.05));
+    if(E<Elo)S.w+=(S.w>=0?1:-1)*dt*0.5;else if(E>Ehi)S.w*=Math.pow(0.75,dt);else S.w*=Math.pow(0.985,dt);
+    S.pivot.rotation.x=-S.th}
+  const H=KID.horse;if(H){H.w+=(-30*H.rock-1.2*H.w)*dt;H.rock+=H.w*dt;H.g.rotation.z=H.rock}
+  const C=KID.car;if(C){C.g.position.set(C.x,C.y,C.z);C.g.rotation.y=C.head;
+    const sp=Math.hypot(C.vx,C.vz);for(const w of C.wheels)w.rotation.x+=sp*dt/0.2;
+    C.btn.position.y=C.on>0?0.07:0.15;C.btn.material.color.setHex(C.cd>0&&C.on<=0?0x9ad1a6:0x3fc75a)}
+  const P=KID.pit;if(P&&P.fill<P.n){P.fill=Math.min(P.n,P.fill+dt*1.5);P.im.count=Math.floor(P.fill)}
+  if(KID.piano)for(const k of KID.piano.keys){if(k.t>0){k.t-=dt;const v=Math.max(0,k.t)/0.4;k.m.material.emissive.setRGB(v,v*0.8,0);k.m.position.y=0.03-v*0.015}}
+  const Q=KID.saw;if(Q){const target=Q.up*Math.atan2(Q.high-Q.low,Q.half*2);Q.ang+=(target-Q.ang)*Math.min(1,dt*14);Q.g.rotation.z=Q.ang}
+  const F=KID.fountain;if(F){F.t=(F.t||0)-dt;if(F.t<=0){F.t=0.05;const d=drops[dropI++%drops.length],a=rand(0,6.28),sp=rand(0.6,1.6);Object.assign(d,{vx:Math.cos(a)*sp,vz:Math.sin(a)*sp,vy:rand(5,7),life:1.1});d.m.position.set(F.x,3.1,F.z);d.m.visible=true}
+    if(state!=='play')updateDrops(dt)}
+  if(KID.sand&&state!=='play')updateSand(dt);
 }
 // gameplay interactions (only while playing)
 function updateKid(dt){
   KID.spillCd-=dt;
-  const S=KID.swing,C=KID.car,K=KID.piano,P=KID.pit;
+  const S=KID.swing,C=KID.car,K=KID.piano;
   // --- swing seat hits things ---
-  S.cd-=dt;
+  if(S){S.cd-=dt;
   const seatY=S.top-S.L*Math.cos(S.th),seatZ=S.z+S.L*Math.sin(S.th),seatV=S.L*S.w*Math.cos(S.th);
   const nearSeat=(e,h)=>Math.abs(e.x-S.x)<1.0+e.r*0.5&&Math.abs(e.z-seatZ)<0.55+e.r&&e.y<seatY+0.15&&e.y+h>seatY-0.15;
   if(S.cd<=0&&nearSeat(ball,BALL_R*2)){
@@ -864,13 +977,12 @@ function updateKid(dt){
     S.cd=0.3;
   }
   for(const c of cats){if(c.state==='stun')continue;
-    if(Math.abs(seatV)>2.5&&nearSeat(c,1.0)){stunCat(c,10,0,Math.sign(seatV),'ブランコ アタック！');S.w*=0.85}}
+    if(Math.abs(seatV)>2.5&&nearSeat(c,1.0)){stunCat(c,10,0,Math.sign(seatV),'ブランコ アタック！');S.w*=0.85}}}
   // --- RC car ---
-  C.cd-=dt;
+  if(C){C.cd-=dt;
   if(C.cd<=0&&ball.y<0.5&&Math.hypot(ball.x-C.bx,ball.z-C.bz)<C.br){C.on=8;C.cd=13;toast('ラジコン はっしん！ ブーン！',1.4);[523,659,784].forEach((f,i)=>tone(f,.08,'square',.05,0,i*.07))}
   if(C.on>0){
     C.on-=dt;
-    // chase the nearest cat that is on the floor and awake
     let best=null,bd=1e9;for(const c of cats){if(c.state==='stun'||c.y>0.8)continue;const d=Math.hypot(c.x-C.x,c.z-C.z);if(d<bd){bd=d;best=c}}
     let want=C.head;
     if(best){want=Math.atan2(best.x-C.x,best.z-C.z)}else{C.wander=(C.wander||0)-dt;if(C.wander<=0){C.wander=1;C.wh=rand(-3.14,3.14)}want=C.wh}
@@ -890,24 +1002,55 @@ function updateKid(dt){
   {const dx=ball.x-C.x,dz=ball.z-C.z,d=Math.hypot(dx,dz);
    if(d<C.r+BALL_R&&ball.y<0.9&&d>0){const nx=dx/d,nz=dz/d;ball.x=C.x+nx*(C.r+BALL_R);ball.z=C.z+nz*(C.r+BALL_R);const rv=(C.vx-ball.vx)*nx+(C.vz-ball.vz)*nz;if(rv>0){ball.vx+=nx*rv*1.2;ball.vz+=nz*rv*1.2}if(C.on>0)C.head+=Math.PI*0.6;else{C.vx-=nx*rv*0.5;C.vz-=nz*rv*0.5}}}
   for(const p of props){const dx=p.x-C.x,dz=p.z-C.z,d=Math.hypot(dx,dz);
-   if(d<C.r+p.r&&p.y<0.8&&d>0){const nx=dx/d,nz=dz/d,cs=Math.hypot(C.vx,C.vz);p.x=C.x+nx*(C.r+p.r+0.02);p.z=C.z+nz*(C.r+p.r+0.02);if(cs>1){p.vx=nx*cs*1.3;p.vz=nz*cs*1.3;p.vy=Math.max(p.vy,2.5);p.ground=false}}}
-  // --- slide: things on it speed up downhill with little friction ---
-  {const o=KID.slide,dir=Math.sign(o.x1-o.x0),acc=G*(o.h0-o.h1)/(o.x1-o.x0)*dir*0.9;
-   for(const e of[ball,...cats]){
-     const on=e.supObj===o&&(e.ground||e.y-0.3<o.h0);
-     if(on){e.vx+=acc*dt*dir*dir;e.vz*=Math.pow(0.3,dt);if(e===ball){ball.slip=0.15;
-       if(!ball.onSlide&&ball.vx*dir>1){toast('すべりだい〜！',1);tone(1200,.6,'sine',.06,-700)}}}
-     if(e===ball)ball.onSlide=on&&ball.vx*dir>1;
-   }}
-  // --- ball pit: landing in it makes a wave of balls, moving through it is slow ---
-  for(const e of[ball,...cats]){
+   if(d<C.r+p.r&&p.y<0.8&&d>0){const nx=dx/d,nz=dz/d,cs=Math.hypot(C.vx,C.vz);p.x=C.x+nx*(C.r+p.r+0.02);p.z=C.z+nz*(C.r+p.r+0.02);if(cs>1){p.vx=nx*cs*1.3;p.vz=nz*cs*1.3;p.vy=Math.max(p.vy,2.5);p.ground=false}}}}
+  // --- slides: things on them speed up downhill with little friction ---
+  for(const o of KID.slides){
+    const dir=(o.h1<o.h0?1:-1)*Math.sign(o.x1-o.x0),acc=G*Math.abs(o.h0-o.h1)/Math.abs(o.x1-o.x0)*0.9;
+    for(const e of[ball,...cats]){
+      const on=e.supObj===o&&(e.ground||e.y-0.3<Math.max(o.h0,o.h1));
+      if(on){e.vx+=acc*dt*dir;e.vz*=Math.pow(0.3,dt);if(e===ball){ball.slip=0.15;
+        if(!ball.onSlide&&ball.vx*dir>1){toast('すべりだい〜！',1);tone(1200,.6,'sine',.06,-700)}}}
+      if(e===ball)ball.onSlide=on&&ball.vx*dir>1;
+    }
+  }
+  // --- seesaw: rolling past the middle tips it over and flings whatever is on the other end ---
+  const Q=KID.saw;
+  if(Q){Q.cd-=dt;const o=Q.o;
+    for(const e of[ball,...cats]){
+      if(e.supObj!==o)continue;
+      if(e===ball)ball.slip=0.12; // smooth plank
+      if(Q.cd>0)continue;
+      const u=(e.x-o.x0)/(o.x1-o.x0);
+      if((Q.up>0&&u>0.52)||(Q.up<0&&u<0.48)){
+        Q.up=-Q.up;Q.cd=0.7;
+        if(Q.up>0){o.h0=Q.low;o.h1=Q.high}else{o.h0=Q.high;o.h1=Q.low}
+        const endX=Q.up>0?o.x1:o.x0; // the end that just went up
+        tone(160,.18,'square',.06,-40);tone(320,.1,'triangle',.05,0,.08);toast('ギッコン！',0.8);
+        for(const t of[ball,...cats]){if(t===e)continue;
+          if(Math.abs(t.x-endX)<1.8&&Math.abs(t.z-Q.sz)<1.3&&t.y<2.4){
+            if(t===ball){ball.vy=13;ball.vx=-Q.up*2;ball.ground=false;toast('ビヨーン！',1)}
+            else if(t.state!=='stun'){stunCat(t,8,-Q.up,0,'シーソーで ビヨーン！');t.vy=14}
+          }}
+      }
+    }}
+  // --- sandbox: slow and dusty; cats can't resist digging ---
+  if(KID.sand){
+    if(inSand(ball)&&ball.ground){const f=Math.pow(0.25,dt);ball.vx*=f;ball.vz*=f;if(Math.hypot(ball.vx,ball.vz)>1.2&&Math.random()<dt*12)sandPuff(ball.x,ball.z,2);
+      if(!ball.inSand){ball.inSand=true;sandPuff(ball.x,ball.z,10);toast('すなば ザザッ',0.8);tone(300,.15,'sawtooth',.03,-150)}}
+    else ball.inSand=false;
+    for(const c of cats){c.digCd=(c.digCd||0)-dt;
+      if(c.state==='chase'&&c.digCd<=0&&inSand(c)&&c.ground){c.state='dig';c.t=2.6;c.digCd=7;meow(c.voice*0.9,0.35,0.06);toast('ねこ ホリホリ…',1)}}
+    updateSand(dt);
+  }
+  // --- ball pit ---
+  if(KID.pit)for(const e of[ball,...cats]){
     const ip=inPit(e)&&e.ground;
     if(ip&&!e.inPit){pitSpill(e===ball?8:10,e.x,e.z,true);if(e===ball)toast('ボールプールに ダイブ！',1.1);else if(e.state!=='stun'){e.state='panic';e.t=2.2;e.pt=0;e.ring&&(e.ring.visible=false);meow(e.voice*1.5,0.3,0.1);toast('ボールまみれ！',0.9)}}
     if(ip){const f=Math.pow(e===ball?0.35:0.2,dt);e.vx*=f;e.vz*=f;if(Math.hypot(e.vx,e.vz)>2&&Math.random()<dt*2.5)pitSpill(2,e.x,e.z,true)}
     e.inPit=ip;
   }
   // --- piano mat ---
-  for(const e of[ball,...cats]){
+  if(K)for(const e of[ball,...cats]){
     let key=-1;
     if(e.y<0.4&&Math.abs(e.z-K.z)<K.d/2){const i=Math.floor((e.x-K.x0)/K.kw);if(i>=0&&i<8)key=i}
     const id=e===ball?'b':e.kind;
@@ -922,6 +1065,7 @@ const STAGES=[
   {name:'しんしつ',build:buildBedroom,ball:[-1,6],cats:[[-13,0],[14,-6],[1,-6]],grip:1},
   {name:'おふろ',build:buildBath,ball:[-2,8],cats:[[-14,-1],[14,2],[0,-3]],grip:0.85},
   {name:'こどもべや',build:buildKids,ball:[1,9.5],cats:[[-14,-1],[14,6],[2,-6]],grip:1},
+  {name:'こうえん',build:buildPark,ball:[0,9],cats:[[-14,-1.5],[15,2],[3,-10]],grip:1,sky:0x9fd8ff},
 ];
 let loadedStage=-1;
 function loadStage(i){
@@ -930,6 +1074,7 @@ function loadStage(i){
   obs.length=0;ramps.length=0;roofs.length=0;labels.length=0;hideBoxes.length=0;props.length=0;WATERS.length=0;SHOWER=null;KID=null;
   FAN=null;BTN={x:999,z:999,r:0};TRAMP=null;REMOTE={x:999,z:999,y:-99,cd:0};TV_SPOTS=null;DOOR=null;
   blades=new THREE.Group();btnTop=new THREE.Object3D();trampMat=new THREE.Object3D();TV.on=0;
+  scene.background.setHex(STAGES[i].sky||0xf3e3c7);
   DEF_PARENT=stage;STAGES[i].build();DEF_PARENT=scene;
   GRIP=STAGES[i].grip;loadedStage=i;
 }
@@ -1490,6 +1635,7 @@ function update(dt){
     if(WATERS.length&&c.state!=='stun'&&c.state!=='panic'&&c.state!=='flee'&&c.state!=='leap'&&inWater(c)){
       c.state='panic';c.t=3;c.ring.visible=false;c.pt=0;splash(c.x,0.4,c.z,10,5);waterSound();meow(c.voice*1.6,0.35,0.13);toast('ニャッ！？',0.9);
     }
+    if(c.state==='dig'){c.t-=dt;if(c.ground){c.vx*=Math.pow(0.02,dt);c.vz*=Math.pow(0.02,dt)}c.x+=c.vx*dt;c.z+=c.vz*dt;collide(c,null);vertical(c,dt);if(Math.random()<dt*7)sandPuff(c.x+Math.sin(c.heading||0)*0.6,c.z+Math.cos(c.heading||0)*0.6,2);if(c.t<=0){c.state='chase';c.atkCd=1}continue}
     if(c.state==='panic'||c.state==='flee'){
       c.t-=dt;c.pt=(c.pt||0)-dt;
       if(c.state==='panic'&&c.pt<=0){const a=rand(0,6.28);c.fx=Math.cos(a);c.fz=Math.sin(a);c.pt=rand(0.3,0.6)}
@@ -1883,6 +2029,7 @@ function sync(dt){
   }
   for(const l of labels)l.s.position.y=l.y+Math.sin(now*3)*0.15;
   // cats watching TV sit still facing it
+  for(const c of cats)if(c.state==='dig'){c.m.body.rotation.x=0.45;c.m.head.rotation.x=0.5+Math.sin(now*16)*0.2;c.m.legs.forEach((l,i)=>l.rotation.x=i<2?Math.sin(now*18+i*3)*0.9:0)}
   for(const c of cats)if(c.state==='tv'&&Math.hypot(c.vx,c.vz)<0.3){c.heading+=(Math.PI/2-c.heading)*Math.min(1,dt*6);c.m.root.rotation.y=c.heading;c.m.legs.forEach(l=>l.rotation.x=0);c.m.body.rotation.x=0.35}
   // markers for cats off screen
   const mks=document.querySelectorAll('.mk');
