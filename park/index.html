@@ -986,7 +986,7 @@ function updateWalk(dt,t){
   if(camAutoT>0)camAutoT-=dt;else if(B.v>0){let d=(B.head+Math.PI)-camYaw;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;camYaw+=d*Math.min(1,dt*1.2)}
   // near a ride?
   nearRide=null;{let bd=1e9;for(const r of RIDES){const d=Math.hypot(B.x-r.x,B.z-r.z);if(d<r.r&&d/r.r<bd){bd=d/r.r;nearRide=r}}}
-  if(nearRide&&nearRide!==lastPad&&go.target){go.target=null;marker.visible=false;B.v=0;tone(1046,.12,'sine',.06);tone(1568,.15,'sine',.05,0,.08)}lastPad=nearRide;
+  if(nearRide&&nearRide!==lastPad&&go.target){go.target={x:nearRide.x,z:nearRide.z};go.stuck=0;marker.visible=false;tone(1046,.12,'sine',.06);tone(1568,.15,'sine',.05,0,.08)}lastPad=nearRide;
   $('rot').hidden=false;if(nearRide&&nearRide.open){$('act').hidden=false;$('act').textContent=nearRide.name+'に のる！'}else $('act').hidden=true;
   if(nearRide&&!nearRide.open&&(!lastSoon[nearRide.name]||t-lastSoon[nearRide.name]>25)){lastSoon[nearRide.name]=t;toast(nearRide.name+' … もうすぐ のれるよ！',2.4)}
   const an=areaName();if($('area').textContent!==an)$('area').textContent=an;
