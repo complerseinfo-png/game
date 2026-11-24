@@ -85,11 +85,11 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
 @keyframes hop{0%,100%{transform:none}50%{transform:translateY(-6px)}}
 .ltitle{margin:0;font-size:clamp(30px,9vw,44px);font-weight:800;color:var(--ball);-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:0 4px 0 var(--ink)}
 @media (prefers-reduced-motion:reduce){.lball,.lcat,.ltext i{animation:none}.lball{left:60%}.lcat{left:20%}}
-.stages{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-@media (max-width:420px){.stages{grid-template-columns:repeat(2,1fr)}}
+.stages{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+@media (max-width:520px){.stages{grid-template-columns:repeat(3,1fr)}}
 .stg{font:inherit;display:grid;justify-items:center;gap:4px;padding:8px 4px;border:3px solid var(--ink);border-radius:16px;background:#fff;
   color:var(--ink);cursor:pointer;box-shadow:0 4px 0 var(--ink);min-width:0}
-.stg b{font-size:clamp(13px,3.8vw,17px)}
+.stg b{font-size:clamp(10px,2.2vw,14px);white-space:nowrap;letter-spacing:-.02em}
 .stg small{font-size:11px;opacity:.8;min-height:1.4em}
 .stg.sel{background:var(--accent);transform:translateY(-3px)}
 .stg:focus-visible{outline:4px solid #2b7bff;outline-offset:2px}
@@ -102,6 +102,8 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
 .th3{background:linear-gradient(#d9eef4 0 55%,#cfe3ea 55%)}
 .th3::after{content:"";position:absolute;right:8%;bottom:18%;width:55%;height:34%;background:#fff;border:2px solid #9cc;border-radius:6px;box-shadow:inset 0 10px 0 #7fd0ff}
 .th2::after{content:"";position:absolute;left:10%;bottom:25%;width:60%;height:30%;background:#fff;border-top:6px solid #f3a5b5;border-radius:4px}
+.th4{background:linear-gradient(#fff1c9 0 55%,#ffb0ba 55% 70%,#a8d6ff 70%)}
+.th4::after{content:"";position:absolute;left:12%;bottom:12%;width:46%;height:30%;border-radius:50%;background:radial-gradient(circle at 30% 40%,#ff5a5a 0 12%,transparent 13%),radial-gradient(circle at 60% 35%,#ffd23b 0 12%,transparent 13%),radial-gradient(circle at 45% 65%,#4fb3ff 0 12%,transparent 13%),#ffe08a;border:3px solid #ff7aa8}
 .btn2{background:#fff;font-size:18px;padding:8px 18px}
 [hidden]{display:none!important}
 </style>
@@ -135,6 +137,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
       <button class="stg" data-i="0"><span class="thumb th0"></span><b>リビング</b><small id="rec0"></small></button>
       <button class="stg" data-i="2"><span class="thumb th2"></span><b>しんしつ</b><small id="rec2"></small></button>
       <button class="stg" data-i="3"><span class="thumb th3"></span><b>おふろ</b><small id="rec3"></small></button>
+      <button class="stg" data-i="4"><span class="thumb th4"></span><b>こどもべや</b><small id="rec4"></small></button>
     </div>
     <div class="modes">
       <button class="mode" data-lives="3">やさしい <span style="color:#ff4f4f">♥♥♥</span></button>
@@ -244,6 +247,7 @@ function prop(kind,x,z,y=0){
   else if(kind==='duck'){r=0.34;roll=false;lift=0.22;mesh(new THREE.SphereGeometry(0.3,14,10),lam(0xffd93b),0,0,0,g).scale.set(1.15,0.8,1);mesh(new THREE.SphereGeometry(0.19,12,9),lam(0xffd93b),0,0.28,0.2,g);mesh(new THREE.ConeGeometry(0.07,0.16,8),lam(0xff8a1f),0,0.27,0.4,g).rotation.x=Math.PI/2;for(const sx of[-1,1])mesh(new THREE.SphereGeometry(0.03,6,5),lam(0x222222),sx*0.08,0.34,0.36,g,false)}
   else if(kind==='pail'){r=0.45;roll=false;lift=0.25;mesh(new THREE.CylinderGeometry(0.42,0.32,0.5,16,1,true),new THREE.MeshLambertMaterial({color:pick([0xff7aa8,0x4fb3e8,0x8ad16b]),side:THREE.DoubleSide}),0,0,0,g);mesh(new THREE.CircleGeometry(0.32,16),lam(0x666666),0,-0.24,0,g).rotation.x=-Math.PI/2}
   else if(kind==='soap'){r=0.3;roll=false;lift=0.09;const m=mesh(new THREE.BoxGeometry(0.5,0.18,0.32),new THREE.MeshPhongMaterial({color:pick([0xffc4d8,0xfff3b0,0xc9f0ff]),shininess:120}),0,0,0,g);m.geometry.translate(0,0,0)}
+  else if(kind==='pball'){r=0.2;mesh(new THREE.SphereGeometry(r,10,8),lam(pick(PB_COLORS)),0,0,0,g,false)}
   else if(kind==='block'){r=0.3;roll=false;lift=0.25;mesh(new THREE.BoxGeometry(0.5,0.5,0.5),lam(pick([0xe9785a,0x4f9fb8,0xf2c14e,0x6fa07f])),0,0,0,g)}
   const p={kind,x,z,y,vx:0,vz:0,vy:0,r,rest:0.35,ground:true,step:0.12,roll,lift:roll?r:lift,g,rampCd:0};
   props.push(p);g.position.set(x,y+p.lift,z);return p;
@@ -710,17 +714,197 @@ function splash(x,y,z,n,up=4){
 function updateDrops(dt){for(const d of drops){if(d.life<=0)continue;d.life-=dt;d.vy-=20*dt;d.m.position.x+=d.vx*dt;d.m.position.y+=d.vy*dt;d.m.position.z+=d.vz*dt;d.m.material.opacity=Math.min(1,d.life*2);if(d.life<=0)d.m.visible=false}}
 function waterSound(){tone(rand(500,900),.12,'sine',.05,-300);tone(rand(1200,1800),.06,'sine',.03,-500,.05)}
 
+// ----- stage 5: kids' room (ball pit, swing, RC car, floor piano) -----
+let KID=null;
+const PB_COLORS=[0xff5a5a,0xffd23b,0x4fb3ff,0x6fdc6f,0xff8ad8,0xff9a2a];
+function kidTex(){return canvasTex(256,256,(g,w)=>{ // puzzle play mat
+  const cs=['#ffb0ba','#ffe08a','#a6e3b4','#a8d6ff'],s=64;
+  for(let i=0;i<4;i++)for(let j=0;j<4;j++){g.fillStyle=cs[(i+j*2)%4];g.fillRect(i*s,j*s,s,s)}
+  for(let i=0;i<4;i++)for(let j=0;j<4;j++){g.fillStyle=cs[(i+j*2+1)%4];g.beginPath();g.arc(i*s+s,j*s+s/2,9,0,7);g.fill();g.fillStyle=cs[(i+j*2+2)%4];g.beginPath();g.arc(i*s+s/2,j*s+s,9,0,7);g.fill()}
+  g.strokeStyle='rgba(0,0,0,.1)';g.lineWidth=3;for(let i=0;i<=4;i++){g.beginPath();g.moveTo(i*s,0);g.lineTo(i*s,w);g.moveTo(0,i*s);g.lineTo(w,i*s);g.stroke()}
+},9,6.5)}
+function buildKids(){
+  room(kidTex(),0xfff1c9);
+  // starry wallpaper strip + window
+  {const t=canvasTex(256,64,(g,w,h)=>{g.fillStyle='#bfe3ff';g.fillRect(0,0,w,h);const c=['#ffd23b','#ff8ad8','#ffffff'];for(let i=0;i<14;i++){g.fillStyle=c[i%3];g.font='26px sans-serif';g.fillText('★',i*19,20+((i*37)%30))}},6,1);
+   mesh(new THREE.PlaneGeometry(W*2,1.6),new THREE.MeshLambertMaterial({map:t}),0,7.6,-D+0.02,null,false)}
+  windowAt(-1);
+  door('R',4);
+  KID={pballs:[],spillCd:0};
+  // --- ball pit: a soft inflatable ring full of balls. bump it and balls spill out ---
+  const P={x:-9.5,z:-7.5,r:3.3,h:0.9,n:110};KID.pit=P;
+  const ring=circ(P.x,P.z,P.r,P.h,{platform:true,bouncy:true});ring.pit=true;
+  mesh(new THREE.TorusGeometry(P.r-0.28,0.3,10,32),lam(0x4fb3ff),P.x,0.3,P.z).rotation.x=Math.PI/2;
+  mesh(new THREE.TorusGeometry(P.r-0.28,0.3,10,32),lam(0xff7aa8),P.x,0.82,P.z).rotation.x=Math.PI/2;
+  mesh(new THREE.CylinderGeometry(P.r-0.4,P.r-0.4,0.5,28),lam(0xffe08a),P.x,0.25,P.z);
+  {const im=new THREE.InstancedMesh(new THREE.SphereGeometry(0.24,10,8),new THREE.MeshLambertMaterial(),P.n);
+   const m4=new THREE.Matrix4(),col=new THREE.Color();
+   for(let i=0;i<P.n;i++){const a=rand(0,6.28),rr=Math.sqrt(Math.random())*(P.r-0.55);m4.makeTranslation(P.x+Math.cos(a)*rr,rand(0.6,0.98),P.z+Math.sin(a)*rr);im.setMatrixAt(i,m4);im.setColorAt(i,col.setHex(PB_COLORS[i%PB_COLORS.length]))}
+   stage.add(im);P.im=im;P.fill=P.n}
+  label('ボールプール',P.x,3.2,P.z,'#ff4fa0');
+  ramp(-9.5,-1.6,0,-1,{vy:9,sp:6}); // jump into the pit
+  trampoline(-3.6,-5.8);
+  // --- swing ---
+  const S={x:9,z:-8.5,top:6.2,L:5.3,th:0.45,w:0,cd:0};KID.swing=S;
+  for(const sx of[-2.5,2.5]){
+    circ(S.x+sx,S.z-1.2,0.22,S.top);circ(S.x+sx,S.z+1.2,0.22,S.top);
+    for(const sz of[-1,1]){const leg=mesh(new THREE.CylinderGeometry(0.13,0.13,S.top+0.4,8),lam(0xff6a4f),S.x+sx,S.top/2,S.z+sz*0.6);leg.rotation.x=sz*0.2}
+  }
+  {const bar=mesh(new THREE.CylinderGeometry(0.16,0.16,5.4,10),lam(0x3fa9f5),S.x,S.top,S.z);bar.rotation.z=Math.PI/2}
+  S.pivot=new THREE.Group();S.pivot.position.set(S.x,S.top,S.z);stage.add(S.pivot);
+  for(const sx of[-0.85,0.85])mesh(new THREE.CylinderGeometry(0.04,0.04,S.L,6),lam(0x888899),sx,-S.L/2,0,S.pivot);
+  mesh(new THREE.BoxGeometry(2,0.22,1.1),lam(0xffd23b),0,-S.L,0,S.pivot);
+  label('ブランコ',S.x,S.top+1.4,S.z,'#e07000');
+  // --- radio-controlled car + its button ---
+  const C={x:7.5,z:5,y:0,vx:0,vz:0,vy:0,r:0.6,rest:0.5,ground:true,step:0.3,head:-Math.PI/2,on:0,cd:0,bx:3.5,bz:2.5,br:0.8,hum:0,tgt:null};KID.car=C;
+  C.g=new THREE.Group();stage.add(C.g);
+  mesh(new THREE.BoxGeometry(0.75,0.32,1.25),lam(0xe9402a),0,0.32,0,C.g);
+  mesh(new THREE.BoxGeometry(0.62,0.3,0.6),lam(0x9fdcff),0,0.6,-0.05,C.g);
+  mesh(new THREE.BoxGeometry(0.8,0.06,0.3),lam(0x222222),0,0.55,0.62,C.g); // spoiler
+  for(const sx of[-0.25,0.25])mesh(new THREE.SphereGeometry(0.07,6,5),new THREE.MeshBasicMaterial({color:0xfff6a0}),sx,0.36,-0.63,C.g,false);
+  mesh(new THREE.CylinderGeometry(0.015,0.015,0.9,4),lam(0x333333),0.28,0.95,0.45,C.g,false);
+  mesh(new THREE.SphereGeometry(0.06,6,5),lam(0xff4f4f),0.28,1.4,0.45,C.g,false);
+  C.wheels=[];for(const[a,b]of[[0.42,0.4],[-0.42,0.4],[0.42,-0.4],[-0.42,-0.4]]){const w=mesh(new THREE.CylinderGeometry(0.2,0.2,0.16,12),lam(0x222222),a,0.2,b,C.g);w.rotation.z=Math.PI/2;C.wheels.push(w)}
+  circ(C.bx,C.bz,C.br,0.15,{platform:true});
+  mesh(new THREE.CylinderGeometry(C.br+0.1,C.br+0.15,0.12,24),lam(0xdddddd),C.bx,0.06,C.bz);
+  C.btn=mesh(new THREE.CylinderGeometry(C.br-0.1,C.br-0.1,0.15,24),lam(0x3fc75a),C.bx,0.15,C.bz);
+  label('ラジコン',C.bx,1.8,C.bz,'#1f9a3a');
+  // --- floor piano mat: rolling over the keys plays notes ---
+  const K={x0:6,z:9.2,kw:1.1,d:3,notes:[523,587,659,698,784,880,988,1047],keys:[],last:{}};KID.piano=K;
+  mesh(new THREE.BoxGeometry(K.kw*8+0.4,0.02,K.d+0.4),lam(0x333344),K.x0+K.kw*4,0.01,K.z,null,false).receiveShadow=true;
+  for(let i=0;i<8;i++){const m=mesh(new THREE.BoxGeometry(K.kw-0.08,0.03,K.d),new THREE.MeshLambertMaterial({color:0xffffff,emissive:0x000000}),K.x0+K.kw*(i+0.5),0.03,K.z,null,false);m.receiveShadow=true;K.keys.push({m,t:0})}
+  for(const i of[1,2,4,5,6])mesh(new THREE.BoxGeometry(K.kw*0.55,0.04,K.d*0.55),lam(0x222222),K.x0+K.kw*i,0.045,K.z-K.d*0.22,null,false);
+  label('ピアノ マット',K.x0+K.kw*4,1.6,K.z,'#7a4fd0');
+  // --- rocking horse (soft and bouncy) ---
+  {const H={x:-14,z:3.5,rock:0,w:0};KID.horse=H;
+   const o=circ(H.x,H.z,1.0,1.6,{bouncy:true});o.horse=true;
+   H.g=new THREE.Group();H.g.position.set(H.x,0,H.z);stage.add(H.g);
+   const brown=lam(0xc98d52);
+   for(const sz of[-0.45,0.45]){const r=mesh(new THREE.TorusGeometry(2.2,0.08,6,24,1.2),lam(0xe9402a),0,2.25,sz,H.g);r.rotation.z=-Math.PI/2-0.6}
+   mesh(new THREE.BoxGeometry(1.9,0.75,0.8),brown,0,1.25,0,H.g);
+   mesh(new THREE.BoxGeometry(0.55,1.0,0.6),brown,0.85,1.85,0,H.g).rotation.z=-0.35;
+   mesh(new THREE.BoxGeometry(0.8,0.45,0.55),brown,1.25,2.3,0,H.g);
+   mesh(new THREE.BoxGeometry(0.7,0.25,0.12),lam(0x5a3a22),0.75,2.25,0,H.g);
+   for(const sz of[-0.29,0.29])mesh(new THREE.SphereGeometry(0.07,6,5),lam(0x111111),1.4,2.45,sz,H.g,false);
+   for(const[a,b]of[[0.7,0.3],[0.7,-0.3],[-0.7,0.3],[-0.7,-0.3]])mesh(new THREE.CylinderGeometry(0.1,0.1,0.75,6),brown,a,0.65,b,H.g);
+   mesh(new THREE.BoxGeometry(0.6,0.12,0.85),lam(0xe9402a),-0.1,1.66,0,H.g);
+   label('もくば',H.x,3.6,H.z,'#c06a20')}
+  // toy shelf with steps of blocks
+  solidBox(0,-11.9,6,2,1.6,0xf4f0e6,{platform:true});
+  solidBox(3.5,-11.9,1,1.6,1.05,0x4fb3ff,{platform:true});
+  solidBox(4.5,-11.9,1,1.6,0.5,0xffd23b,{platform:true});
+  [[-12,0.5,0xe9785a],[0.5,-1,0x4f9fb8],[6,-3,0xf2c14e],[-6,2,0x6fdc6f],[11,-4,0xff8ad8]].forEach(([x,z,c])=>solidBox(x,z,0.9,0.9,0.9,c,{platform:true}));
+  tunnel(-5,7.6,6,true);
+  cardboard(14.5,-1,'w');
+  prop('plush',-2,-11.9,1.6);prop('car',1.5,-11.7,1.6);prop('block',-0.5,-12,1.6);
+  prop('block',-2,3.5);prop('block',-1.2,4.2);prop('block',2.5,5.5);prop('block',8,-1);prop('block',-13,-5);prop('block',12,2);
+  prop('car',-3,-1);prop('car',10,1);prop('plush',-15,9);prop('plush',16,-6);prop('tennis',3,-4);prop('tennis',-7,10.5);prop('book',-15.5,-10.5);prop('book',-14.8,-11);prop('duck',5,8.5);
+}
+function pballOut(x,y,z,vx,vy,vz){
+  const p=prop('pball',x,z,y);p.vx=vx;p.vz=vz;p.vy=vy;p.ground=false;p.rest=0.6;
+  KID.pballs.push(p);
+  if(KID.pballs.length>40){const o=KID.pballs.shift();stage.remove(o.g);const i=props.indexOf(o);if(i>=0)props.splice(i,1)}
+}
+// balls spill over the rim toward (dx,dz), or burst straight up when up=true
+function pitSpill(n,fromX,fromZ,up){
+  const P=KID.pit;if(!P||KID.spillCd>0)return;KID.spillCd=0.25;
+  n=Math.min(n,Math.floor(P.fill));if(n<=0)return;
+  P.fill-=n;P.im.count=Math.max(0,Math.floor(P.fill));
+  let a0=Math.atan2(fromZ-P.z,fromX-P.x);
+  for(let k=0;k<n;k++){
+    if(up){const a=rand(0,6.28),rr=rand(0.3,1.2);pballOut(fromX+Math.cos(a)*rr,1.4,fromZ+Math.sin(a)*rr,Math.cos(a)*rand(2,5),rand(6,9),Math.sin(a)*rand(2,5))}
+    else{const a=a0+rand(-0.7,0.7),sp=rand(3,6.5);pballOut(P.x+Math.cos(a)*(P.r+0.3),1.1,P.z+Math.sin(a)*(P.r+0.3),Math.cos(a)*sp,rand(3,6),Math.sin(a)*sp)}
+  }
+  for(let k=0;k<3;k++)tone(rand(600,1100),.07,'sine',.05,300,k*0.05);
+}
+function pitHit(x,z,sp){if(sp>1.5){pitSpill(Math.round(3+sp*0.8),x,z,false);if(sp>4)toast('ボールが あふれた！',1)}}
+function inPit(e){const P=KID&&KID.pit;return P&&e.y>0.6&&Math.hypot(e.x-P.x,e.z-P.z)<P.r}
+// physics that runs every frame (also behind the menu)
+function animKid(dt,now){
+  const S=KID.swing,gL=G/S.L;
+  for(let i=0;i<2;i++){const h=dt/2;S.w+=-gL*Math.sin(S.th)*h;S.th+=S.w*h}
+  const E=0.5*S.w*S.w+gL*(1-Math.cos(S.th)),Elo=gL*(1-Math.cos(0.45)),Ehi=gL*(1-Math.cos(1.05));
+  if(E<Elo)S.w+=(S.w>=0?1:-1)*dt*0.5;else if(E>Ehi)S.w*=Math.pow(0.75,dt);else S.w*=Math.pow(0.985,dt);
+  S.pivot.rotation.x=-S.th;
+  const H=KID.horse;H.w+=(-30*H.rock-1.2*H.w)*dt;H.rock+=H.w*dt;H.g.rotation.z=H.rock;
+  const C=KID.car;C.g.position.set(C.x,C.y,C.z);C.g.rotation.y=C.head;
+  const sp=Math.hypot(C.vx,C.vz);for(const w of C.wheels)w.rotation.x+=sp*dt/0.2;
+  C.btn.position.y=C.on>0?0.07:0.15;C.btn.material.color.setHex(C.cd>0&&C.on<=0?0x9ad1a6:0x3fc75a);
+  const P=KID.pit;if(P.fill<P.n){P.fill=Math.min(P.n,P.fill+dt*1.5);P.im.count=Math.floor(P.fill)}
+  for(const k of KID.piano.keys){if(k.t>0){k.t-=dt;const v=Math.max(0,k.t)/0.4;k.m.material.emissive.setRGB(v,v*0.8,0);k.m.position.y=0.03-v*0.015}}
+}
+// gameplay interactions (only while playing)
+function updateKid(dt){
+  KID.spillCd-=dt;
+  const S=KID.swing,C=KID.car,K=KID.piano,P=KID.pit;
+  // --- swing seat hits things ---
+  S.cd-=dt;
+  const seatY=S.top-S.L*Math.cos(S.th),seatZ=S.z+S.L*Math.sin(S.th),seatV=S.L*S.w*Math.cos(S.th);
+  const nearSeat=(e,h)=>Math.abs(e.x-S.x)<1.0+e.r*0.5&&Math.abs(e.z-seatZ)<0.55+e.r&&e.y<seatY+0.15&&e.y+h>seatY-0.15;
+  if(S.cd<=0&&nearSeat(ball,BALL_R*2)){
+    const sg=Math.sign(ball.z-seatZ)||1,bv=ball.vz;
+    ball.z=seatZ+sg*(0.56+BALL_R);
+    if(Math.abs(seatV)>1&&Math.sign(seatV)===sg){ball.vz=seatV*1.5;ball.vy=Math.max(ball.vy,3+Math.abs(seatV)*0.4);ball.ground=false;toast('ブラ〜ン！',0.8);tone(300,.15,'triangle',.06,200)}
+    else{ball.vz=-bv*0.4+seatV*0.5;S.w+=(bv-seatV)*0.25/S.L;if(Math.abs(bv)>2){tone(220,.1,'triangle',.06);toast('ゆらゆら〜',0.8)}}
+    S.cd=0.3;
+  }
+  for(const c of cats){if(c.state==='stun')continue;
+    if(Math.abs(seatV)>2.5&&nearSeat(c,1.0)){stunCat(c,10,0,Math.sign(seatV),'ブランコ アタック！');S.w*=0.85}}
+  // --- RC car ---
+  C.cd-=dt;
+  if(C.cd<=0&&ball.y<0.5&&Math.hypot(ball.x-C.bx,ball.z-C.bz)<C.br){C.on=8;C.cd=13;toast('ラジコン はっしん！ ブーン！',1.4);[523,659,784].forEach((f,i)=>tone(f,.08,'square',.05,0,i*.07))}
+  if(C.on>0){
+    C.on-=dt;
+    // chase the nearest cat that is on the floor and awake
+    let best=null,bd=1e9;for(const c of cats){if(c.state==='stun'||c.y>0.8)continue;const d=Math.hypot(c.x-C.x,c.z-C.z);if(d<bd){bd=d;best=c}}
+    let want=C.head;
+    if(best){want=Math.atan2(best.x-C.x,best.z-C.z)}else{C.wander=(C.wander||0)-dt;if(C.wander<=0){C.wander=1;C.wh=rand(-3.14,3.14)}want=C.wh}
+    let da=want-C.head;while(da>Math.PI)da-=Math.PI*2;while(da<-Math.PI)da+=Math.PI*2;
+    C.head+=clamp(da,-3.2*dt,3.2*dt);
+    const v=9.5;C.vx+=(Math.sin(C.head)*v-C.vx)*Math.min(1,dt*5);C.vz+=(Math.cos(C.head)*v-C.vz)*Math.min(1,dt*5);
+    C.hum-=dt;if(C.hum<=0){C.hum=0.09;tone(95+Math.random()*25,.1,'sawtooth',.025,40)}
+    if(C.on<=0)toast('ラジコン ていし',0.8);
+  }else{C.vx*=Math.pow(0.05,dt);C.vz*=Math.pow(0.05,dt)}
+  C.x+=C.vx*dt;C.z+=C.vz*dt;
+  collide(C,(sp)=>{if(C.on>0){C.head+=rand(1.5,2.6)*(Math.random()<.5?-1:1);if(sp>3)tone(180,.06,'square',.04)}});
+  vertical(C,dt);
+  for(const c of cats){
+    const dx=c.x-C.x,dz=c.z-C.z,d=Math.hypot(dx,dz);
+    if(c.state!=='stun'&&d<C.r+c.r&&Math.abs(c.y-C.y)<0.8&&Math.hypot(C.vx,C.vz)>3){stunCat(c,11,dx/(d||1),dz/(d||1),'ラジコン アタック！');C.head+=Math.PI*0.8;C.vx*=-0.3;C.vz*=-0.3}
+  }
+  {const dx=ball.x-C.x,dz=ball.z-C.z,d=Math.hypot(dx,dz);
+   if(d<C.r+BALL_R&&ball.y<0.9&&d>0){const nx=dx/d,nz=dz/d;ball.x=C.x+nx*(C.r+BALL_R);ball.z=C.z+nz*(C.r+BALL_R);const rv=(C.vx-ball.vx)*nx+(C.vz-ball.vz)*nz;if(rv>0){ball.vx+=nx*rv*1.2;ball.vz+=nz*rv*1.2}if(C.on>0)C.head+=Math.PI*0.6;else{C.vx-=nx*rv*0.5;C.vz-=nz*rv*0.5}}}
+  for(const p of props){const dx=p.x-C.x,dz=p.z-C.z,d=Math.hypot(dx,dz);
+   if(d<C.r+p.r&&p.y<0.8&&d>0){const nx=dx/d,nz=dz/d,cs=Math.hypot(C.vx,C.vz);p.x=C.x+nx*(C.r+p.r+0.02);p.z=C.z+nz*(C.r+p.r+0.02);if(cs>1){p.vx=nx*cs*1.3;p.vz=nz*cs*1.3;p.vy=Math.max(p.vy,2.5);p.ground=false}}}
+  // --- ball pit: landing in it makes a wave of balls, moving through it is slow ---
+  for(const e of[ball,...cats]){
+    const ip=inPit(e)&&e.ground;
+    if(ip&&!e.inPit){pitSpill(e===ball?8:10,e.x,e.z,true);if(e===ball)toast('ボールプールに ダイブ！',1.1);else if(e.state!=='stun'){e.state='panic';e.t=2.2;e.pt=0;e.ring&&(e.ring.visible=false);meow(e.voice*1.5,0.3,0.1);toast('ボールまみれ！',0.9)}}
+    if(ip){const f=Math.pow(e===ball?0.35:0.2,dt);e.vx*=f;e.vz*=f;if(Math.hypot(e.vx,e.vz)>2&&Math.random()<dt*2.5)pitSpill(2,e.x,e.z,true)}
+    e.inPit=ip;
+  }
+  // --- piano mat ---
+  for(const e of[ball,...cats]){
+    let key=-1;
+    if(e.y<0.4&&Math.abs(e.z-K.z)<K.d/2){const i=Math.floor((e.x-K.x0)/K.kw);if(i>=0&&i<8)key=i}
+    const id=e===ball?'b':e.kind;
+    if(key>=0&&K.last[id]!==key){const vol=e===ball?0.09:0.05;tone(K.notes[key],.45,'triangle',vol);tone(K.notes[key]*2,.2,'sine',vol*0.3);K.keys[key].t=0.4}
+    K.last[id]=key;
+  }
+}
+
 const STAGES=[
   {name:'リビング',build:buildLiving,ball:[0,7],cats:[[-15,-3],[14,-2],[3,-9.5]],grip:1},
   {name:'キッチン',build:buildKitchen,ball:[1,6.5],cats:[[-14,-6],[12,-5],[-1,-8.5]],grip:0.5},
   {name:'しんしつ',build:buildBedroom,ball:[-1,6],cats:[[-13,0],[14,-6],[1,-6]],grip:1},
   {name:'おふろ',build:buildBath,ball:[-2,8],cats:[[-14,-1],[14,2],[0,-3]],grip:0.85},
+  {name:'こどもべや',build:buildKids,ball:[1,9.5],cats:[[-14,-1],[14,6],[2,-6]],grip:1},
 ];
 let loadedStage=-1;
 function loadStage(i){
   if(stage){scene.remove(stage);stage.traverse(n=>{if(n.geometry)n.geometry.dispose()})}
   stage=new THREE.Group();scene.add(stage);
-  obs.length=0;ramps.length=0;roofs.length=0;labels.length=0;hideBoxes.length=0;props.length=0;WATERS.length=0;SHOWER=null;
+  obs.length=0;ramps.length=0;roofs.length=0;labels.length=0;hideBoxes.length=0;props.length=0;WATERS.length=0;SHOWER=null;KID=null;
   FAN=null;BTN={x:999,z:999,r:0};TRAMP=null;REMOTE={x:999,z:999,y:-99,cd:0};TV_SPOTS=null;DOOR=null;
   blades=new THREE.Group();btnTop=new THREE.Object3D();trampMat=new THREE.Object3D();TV.on=0;
   DEF_PARENT=stage;STAGES[i].build();DEF_PARENT=scene;
@@ -1096,7 +1280,7 @@ let sel=0;
 function getRec(i){try{return JSON.parse(localStorage.getItem('neko-rec-'+i))||{}}catch(e){return {}}}
 function setRec(i,r){try{localStorage.setItem('neko-rec-'+i,JSON.stringify(r))}catch(e){}}
 function showBest(){
-  for(let i=0;i<4;i++){const r=getRec(i);$('rec'+i).textContent=r.clear?`★クリア ${r.bonks||0}かい`:'まだ'}
+  for(let i=0;i<STAGES.length;i++){const r=getRec(i);$('rec'+i).textContent=r.clear?`★クリア ${r.bonks||0}かい`:'まだ'}
   document.querySelectorAll('.stg').forEach(b=>b.classList.toggle('sel',+b.dataset.i===sel));
   document.querySelectorAll('.mode').forEach(b=>b.classList.toggle('sel',+b.dataset.lives===maxLives));
 }
@@ -1248,7 +1432,7 @@ function update(dt){
   ball.rampCd-=dt;
   if(tryRamp(ball)){sfx.jump();toast('ジャンプ！')}
   ball.x+=ball.vx*dt;ball.z+=ball.vz*dt;
-  collide(ball,(sp,o)=>{if(o&&o.tv&&sp>1.5)tvOn();if(o&&o.bouncy){sfx.boing();ball.vy=Math.max(ball.vy,3)}else if(sp>4){sfx.land();shake=.08}});
+  collide(ball,(sp,o)=>{if(o&&o.tv&&sp>1.5)tvOn();if(o&&o.bouncy){if(o.pit)pitHit(ball.x,ball.z,sp);if(o.horse){KID.horse.w+=Math.min(4,sp*0.6);toast('ヒヒーン！',0.8)}sfx.boing();ball.vy=Math.max(ball.vy,3)}else if(sp>4){sfx.land();shake=.08}});
   vertical(ball,dt);
   // rolling through water: a little slower, with splashes
   {const wz=inWater(ball);splashT-=dt;
@@ -1269,6 +1453,7 @@ function update(dt){
         if(dd<SHOWER.r+1.2){c.state='flee';c.t=2.6;c.ring.visible=false;c.fx=(c.x-SHOWER.x)/(dd||1);c.fz=(c.z-SHOWER.z)/(dd||1);meow(c.voice*1.5,0.3,0.12);toast('ギャッ！',0.9)}}}
     SHOWER.btn.position.y=SHOWER.on>0?0.07:0.15}
   updateDrops(dt);
+  if(KID)updateKid(dt);
 
   // cats
   const bsp=Math.hypot(ball.vx,ball.vz);
@@ -1406,7 +1591,7 @@ function update(dt){
     c.x+=c.vx*dt;c.z+=c.vz*dt;
     let hard=0,hn=[0,0];
     collide(c,(sp,o,nx,nz)=>{
-      if(o&&o.bouncy){sfx.boing();c.vy=6;c.ground=false;c.spin=7;return}
+      if(o&&o.bouncy){if(o.pit)pitHit(c.x,c.z,sp+3);if(o.horse){KID.horse.w+=3}sfx.boing();c.vy=6;c.ground=false;c.spin=7;return}
       if(sp>hard){hard=sp;hn=[nx,nz]}
     });
     if(hard>4.4){stunCat(c,hard,hn[0],hn[1],pick(['ゴツン！','ドテッ！','ガシャーン！']))}
@@ -1647,7 +1832,7 @@ function sync(dt){
     }
   }
   if(TV.on>0&&now-TV.lastDraw>0.08){TV.lastDraw=now;drawTV(now)}
-  trampSquash*=Math.pow(0.004,dt);if(TRAMP){trampMat.position.y=TRAMP.h-0.03-trampSquash*0.6;trampMat.scale.set(1,1+trampSquash*4,1)}
+  if(KID)animKid(dt,now);trampSquash*=Math.pow(0.004,dt);if(TRAMP){trampMat.position.y=TRAMP.h-0.03-trampSquash*0.6;trampMat.scale.set(1,1+trampSquash*4,1)}
   updateBursts(dt);
   for(const p of props){
     p.g.position.set(p.x,p.y+p.lift,p.z);
