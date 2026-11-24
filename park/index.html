@@ -41,6 +41,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#8fd0ff;font-family:va
 .card h1{margin:0 0 6px;font-size:clamp(36px,9vw,60px);color:#ff5a8a;-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:0 4px 0 var(--ink)}
 .card p{margin:6px 0;font-size:18px}
 .big{font:800 30px var(--font);padding:12px 48px;border-radius:999px;border:4px solid var(--ink);background:#ffcc33;color:var(--ink);box-shadow:0 6px 0 var(--ink);cursor:pointer;margin-top:12px}
+.bmwrap{background:#fffaf0;border:5px solid var(--ink);border-radius:22px;box-shadow:0 8px 0 var(--ink);padding:6px 8px;text-align:center;max-width:98vw}.bmhead{display:flex;justify-content:space-between;align-items:center;font-size:24px;padding:0 6px 6px}#bmc{display:block;border-radius:12px;border:3px solid var(--ink);cursor:pointer;max-width:96vw;max-height:84vh}.bmhint{margin:6px 0 0;font-size:16px;font-weight:800}
 #loading{position:fixed;inset:0;display:grid;place-items:center;background:#8fd0ff;font:800 28px var(--font);z-index:30}
 </style>
 </head>
@@ -58,6 +59,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#8fd0ff;font-family:va
   <div id="hint">スワイプした ほうへ はしるよ！ タッチで とまる</div>
   <div id="rot"><button class="rb" id="rotL" aria-label="ひだりに まわす">⟲</button><button class="rb" id="rotR" aria-label="みぎに まわす">⟳</button></div>
 </div>
+<div class="ov" id="bigmap" hidden><div class="bmwrap"><div class="bmhead"><b>どこへ いく？ のりものの えを おしてね</b><button class="rb" id="bmclose">とじる</button></div><canvas id="bmc"></canvas></div></div>
 <div class="ov" id="title"><div class="card"><h1>ひらひらパーク</h1><p>ゆうえんちを あるいて のりものに のろう！</p><p>スワイプした ほうへ はしるよ！ タッチで とまる</p><p>ぜんぶで 21この のりものに のれるよ！</p><button class="big" id="startBtn">あそぶ！</button></div></div>
 <div id="loading">よみこみちゅう…</div>
 <script>
@@ -787,7 +789,7 @@ function freeSpot(x,z,margin){for(const o of OBST){if(o.e){const c=Math.cos(-o.r
 function findSpot(x,z,margin,avoid=[]){const cx=0,cz=0;for(let rad=0;rad<40;rad+=1){let best=null,bd=1e9;const n=rad?24:1;for(let i=0;i<n;i++){const a=i/n*Math.PI*2,px=x+Math.cos(a)*rad,pz=z+Math.sin(a)*rad;
     if(!freeSpot(px,pz,margin))continue;if(avoid.some(q=>Math.hypot(q.x-px,q.z-pz)<6.5))continue;const ix=px/K+940,iy=pz/K+700;const[rr,gg,bb]=groundColor(ix,iy);const onPath=rr>200&&gg>190&&bb>140?0:30;const d=Math.hypot(px-cx,pz-cz)*0.05+onPath;if(d<bd){bd=d;best={x:px,z:pz}}}if(best)return best}return{x,z}}
 for(const r of RIDES){const type=ICON_OF[r.name]||'coaster';{const sp=findSpot(r.x,r.z,2.8,PADS.map(p=>p.r));r.x=sp.x;r.z=sp.z}
-  const cv=iconCanvas(type,'#fff6d8');const tex=new THREE.CanvasTexture(cv);
+  const cv=iconCanvas(type,'#fff6d8');r.iconCv=cv;const tex=new THREE.CanvasTexture(cv);
   const pad=mesh(new THREE.CylinderGeometry(2.4,2.5,0.18,32),[lam(0xffcc33),new THREE.MeshLambertMaterial({map:tex}),lam(0xffcc33)],r.x,0.09,r.z);
   pad.rotation.y=Math.PI/2;
   // ring of lights around the pad
@@ -928,12 +930,31 @@ function drawMap(){const w=mapC.width,h=mapC.height;mg.drawImage(GT,0,0,w,h);con
   {const x=(FW.x+GW/2)*sx,y=(FW.z+GD/2)*sz;mg.fillStyle='#2a2430';mg.fillText('かんらんしゃ',x,y-14)}
   const bx=(B.x+GW/2)*sx,by=(B.z+GD/2)*sz;mg.save();mg.translate(bx,by);mg.rotate(-B.head+Math.PI);mg.fillStyle='#ffd23b';mg.strokeStyle='#2a2430';mg.lineWidth=3;mg.beginPath();mg.moveTo(0,-12);mg.lineTo(9,9);mg.lineTo(-9,9);mg.closePath();mg.fill();mg.stroke();mg.restore()}
 
-mapC.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();if(mode!=='walk'||!started)return;const rc=mapC.getBoundingClientRect();const mx=(e.clientX-rc.left)/rc.width,my=(e.clientY-rc.top)/rc.height;
+mapC.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();if(mode!=='walk'||!started)return;openBigMap();return;const rc=mapC.getBoundingClientRect();const mx=(e.clientX-rc.left)/rc.width,my=(e.clientY-rc.top)/rc.height;
   let x=mx*GW-GW/2,z=my*GD-GD/2;let label=null;
   for(const r of RIDES){const px=(r.x+GW/2)/GW,pz=(r.z+GD/2)/GD;if(Math.hypot((px-mx)*rc.width,(pz-my)*rc.height)<14){x=r.x;z=r.z;label=r.name;break}}
   if(!label){const sp=findSpot(x,z,1.2);x=sp.x;z=sp.z}
   B.x=x;B.z=z;go.target=null;marker.visible=false;camYaw=B.head+Math.PI;camera.position.set(B.x+Math.sin(camYaw)*9,5,B.z+Math.cos(camYaw)*9);
   toast(label?label+'へ ワープ！':'ワープ！',1.4);[880,1320,1760].forEach((f,i)=>tone(f,.12,'sine',.06,0,i*.06))});
+
+// ----- big map: pick where to go -----
+const BM=$('bigmap'),bmc=$('bmc'),bmg=bmc.getContext('2d');let bmScale=1;
+function openBigMap(){go.target=null;marker.visible=false;BM.hidden=false;const W0=innerWidth*0.96,H0=innerHeight*0.84;bmScale=Math.min(W0/GW,H0/GD);bmc.width=Math.round(GW*bmScale);bmc.height=Math.round(GD*bmScale);drawBigMap();tone(660,.08,'sine',.05)}
+function drawBigMap(){const w=bmc.width,h=bmc.height;bmg.drawImage(GT,0,0,w,h);const S=bmScale,ic=Math.max(34,Math.min(58,w/16));
+  bmg.font=`800 ${Math.round(ic*0.32)}px ${FONT}`;bmg.textAlign='center';bmg.textBaseline='top';
+  const boxes=[];for(const r of RIDES){const x=(r.x+GW/2)*S,y=(r.z+GD/2)*S;boxes.push([x-ic/2,y-ic/2,x+ic/2,y+ic/2]);if(r.iconCv)bmg.drawImage(r.iconCv,x-ic/2,y-ic/2,ic,ic)}
+  const hit=(a)=>boxes.some(b=>a[0]<b[2]&&a[2]>b[0]&&a[1]<b[3]&&a[3]>b[1]);
+  for(const r of RIDES){const x=(r.x+GW/2)*S,y=(r.z+GD/2)*S;const tw=bmg.measureText(r.name).width,th=ic*0.36;
+    for(const[ox,oy]of[[0,ic/2+1],[0,-ic/2-th-1],[ic/2+tw/2+3,-th/2],[-ic/2-tw/2-3,-th/2]]){const bx=[x+ox-tw/2,y+oy,x+ox+tw/2,y+oy+th];if(hit(bx))continue;boxes.push(bx);bmg.lineWidth=5;bmg.strokeStyle='#fffaf0';bmg.strokeText(r.name,x+ox,y+oy);bmg.fillStyle='#2a2430';bmg.fillText(r.name,x+ox,y+oy);break}}
+  const bx=(B.x+GW/2)*S,by=(B.z+GD/2)*S;bmg.save();bmg.translate(bx,by);bmg.rotate(-B.head+Math.PI);bmg.fillStyle='#ffd23b';bmg.strokeStyle='#2a2430';bmg.lineWidth=4;bmg.beginPath();bmg.moveTo(0,-18);bmg.lineTo(13,13);bmg.lineTo(-13,13);bmg.closePath();bmg.fill();bmg.stroke();bmg.restore();
+  bmg.font=`800 ${Math.round(ic*0.34)}px ${FONT}`;bmg.lineWidth=5;bmg.strokeStyle='#fffaf0';bmg.strokeText('いま ここ',bx,by+16);bmg.fillStyle='#d02a4a';bmg.fillText('いま ここ',bx,by+16)}
+bmc.addEventListener('pointerdown',e=>{e.preventDefault();const rc=bmc.getBoundingClientRect();const px=(e.clientX-rc.left)/rc.width*bmc.width,py=(e.clientY-rc.top)/rc.height*bmc.height;const S=bmScale,ic=Math.max(34,Math.min(58,bmc.width/16));
+  let x=px/S-GW/2,z=py/S-GD/2,label=null,bd=ic*0.75;
+  for(const r of RIDES){const d=Math.hypot((r.x+GW/2)*S-px,(r.z+GD/2)*S-py);if(d<bd){bd=d;x=r.x;z=r.z;label=r.name}}
+  if(!label){const sp=findSpot(x,z,1.2);x=sp.x;z=sp.z}
+  B.x=x;B.z=z;camYaw=B.head+Math.PI;camera.position.set(B.x+Math.sin(camYaw)*9,5,B.z+Math.cos(camYaw)*9);BM.hidden=true;
+  toast(label?label+'へ ワープ！':'ワープ！',1.6);[880,1320,1760].forEach((f,i)=>tone(f,.12,'sine',.06,0,i*.06))});
+$('bmclose').addEventListener('click',()=>{BM.hidden=true});
 
 // ================= area names =================
 const AREAS=[['ゴーカート',560,755,90],['スプラッシュ',1050,230,90],['メインゲート',480,1210,110],['フラワーコート',620,1140,90],['マジカルラグーン',660,1000,120],['パームウォーク',960,820,120],['ハブプラザ',1110,575,90],['こどもエリア',1300,680,140],['バラの にわ',1100,1120,150],['かんらんしゃ ひろば',520,400,110],['ようせいの もり',1000,490,80],['ちびっこタウン',740,200,120],['のりもの ひろば',1180,400,130],['あそびば',430,770,110],['もくもくコースター',760,545,150]];
