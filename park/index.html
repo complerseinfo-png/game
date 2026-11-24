@@ -350,8 +350,8 @@ const GT=document.createElement('canvas');GT.width=2048;GT.height=1526;
   g.fillStyle='#ffd0a8';g.beginPath();g.ellipse(430,770,70,110,0.2,0,7);g.fill();
 }
 const groundTex=new THREE.CanvasTexture(GT);groundTex.anisotropy=4;
-{const m=mesh(new THREE.PlaneGeometry(GW,GD),new THREE.MeshLambertMaterial({map:groundTex}),0,0,0);m.rotation.x=-Math.PI/2;
- const o=mesh(new THREE.PlaneGeometry(900,900),lam(0x7cbf58),0,-0.05,0);o.rotation.x=-Math.PI/2}
+{const m=mesh(new THREE.PlaneGeometry(GW,GD),new THREE.MeshLambertMaterial({map:groundTex}),0,0,0);m.rotation.x=-Math.PI/2;m.userData.noFade=1;
+ const o=mesh(new THREE.PlaneGeometry(900,900),lam(0x7cbf58),0,-0.05,0);o.userData.noFade=1;o.rotation.x=-Math.PI/2}
 const GD2=GT.getContext('2d').getImageData(0,0,GT.width,GT.height).data;
 function groundColor(ix,iy){const x=Math.floor(ix*2048/1880),y=Math.floor(iy*2048/1880);if(x<0||y<0||x>=2048||y>=1526)return[0,0,0];const i=(y*2048+x)*4;return[GD2[i],GD2[i+1],GD2[i+2]]}
 function isGrass(ix,iy){const[r,g,b]=groundColor(ix,iy);return g>150&&r<170&&b<130}
@@ -805,7 +805,7 @@ function makeBoy(){const g=new THREE.Group();const root=grp(0,0,0,g);const skin=
   for(const s of[-1,1]){ball(0.05,lam(0x2a2226),s*0.13,0,0.34,head,1,1.2,0.6);ball(0.06,lam(0xffa0b4),s*0.22,-0.1,0.3,head,1,0.6,0.4);ball(0.08,skin,s*0.38,0,0,head)}
   const m=mesh(new THREE.TorusGeometry(0.07,0.015,4,10,Math.PI),lam(0x8a2a2a),0,-0.12,0.35,head);m.rotation.z=Math.PI;
   scene.add(g);return P}
-const boy=makeBoy();
+const boy=makeBoy();boy.g.traverse(n=>n.userData.noFade=1);
 const B={x:0,z:0,head:0,v:0};
 {const[x,z]=W(520,1185);B.x=x;B.z=z;B.head=Math.atan2(0.79,-0.61)}
 
@@ -974,6 +974,28 @@ function updateCamera(dt,t){
     else{const base=Math.atan2(FW.nx,FW.nz)+rideYaw;const d=16;camera.position.set(wp.x+Math.sin(base)*d,wp.y+4+ridePitch*6,wp.z+Math.cos(base)*d);camera.lookAt(wp)}}
 }
 
+// ================= see-through: things between the camera and the boy fade out =================
+const faded=new Map(),hiddenInst=new Map();const fadeRay=new THREE.Raycaster();fadeRay.camera=camera;let fadeTick=0;
+const _a=new THREE.Vector3(),_b=new THREE.Vector3(),_d=new THREE.Vector3(),_zero=new THREE.Matrix4().makeScale(0,0,0);
+function updateFade(){
+  if(mode!=='walk'){if(faded.size||hiddenInst.size)restoreFade(new Set(),new Set());return}
+  if((fadeTick++)%3)return;
+  const hit=new Set(),hitI=new Set();const cam=camera.position;const rx=Math.cos(camYaw),rz=-Math.sin(camYaw);
+  for(const[o,h]of[[0,1.5],[0,0.4],[0.8,1.0],[-0.8,1.0]]){
+    _b.set(B.x+rx*o,h,B.z+rz*o);const dist=cam.distanceTo(_b);if(dist<0.8)continue;
+    for(const dir of[0,1]){if(dir){_a.copy(_b);_d.subVectors(cam,_b).normalize()}else{_a.copy(cam);_d.subVectors(_b,cam).normalize()}
+      fadeRay.set(_a,_d);fadeRay.far=dist-0.7;fadeRay.near=dir?0.7:0;
+      for(const q of fadeRay.intersectObjects(scene.children,true)){const ob=q.object;if(ob.isSprite||ob.isPoints||ob.userData.noFade||!ob.visible)continue;
+        if(ob.isInstancedMesh){if(q.instanceId!==undefined)hitI.add(ob.uuid+':'+q.instanceId+':'+ob.id);ob.userData._m=ob;continue}
+        if(Array.isArray(ob.material))continue;hit.add(ob)}}}
+  restoreFade(hit,hitI);
+  for(const ob of hit)if(!faded.has(ob)){const orig=ob.material;const m=orig.clone();m.transparent=true;m.opacity=0.22;m.depthWrite=false;ob.material=m;faded.set(ob,orig)}
+  for(const key of hitI)if(!hiddenInst.has(key)){const[uuid,id]=key.split(':');const ob=instByUuid(uuid);if(!ob)continue;const m=new THREE.Matrix4();ob.getMatrixAt(+id,m);hiddenInst.set(key,{ob,id:+id,m});ob.setMatrixAt(+id,_zero);ob.instanceMatrix.needsUpdate=true}
+}
+const instCache={};function instByUuid(u){if(instCache[u])return instCache[u];scene.traverse(n=>{if(n.isInstancedMesh)instCache[n.uuid]=n});return instCache[u]}
+function restoreFade(keep,keepI){for(const[ob,orig]of faded)if(!keep.has(ob)){ob.material.dispose();ob.material=orig;faded.delete(ob)}
+  for(const[key,v]of hiddenInst)if(!keepI.has(key)){v.ob.setMatrixAt(v.id,v.m);v.ob.instanceMatrix.needsUpdate=true;hiddenInst.delete(key)}}
+
 // ================= loop =================
 let last=performance.now(),started=false,frames=0,fpsT=0;
 function frame(now){const dt=Math.max(0,Math.min(0.05,(now-last)/1000));last=now;const t=now/1000;
@@ -981,7 +1003,7 @@ function frame(now){const dt=Math.max(0,Math.min(0.05,(now-last)/1000));last=now
   outTrain.position.set(0,0,0);{const u=(t*0.04)%2,k=u<1?u:2-u;const[ax,az]=W(1840,250),[bx,bz]=W(1250,1400);outTrain.position.set(ax+(bx-ax)*k+3,0,az+(bz-az)*k);outTrain.rotation.y=Math.atan2(bx-ax,bz-az)}
   updateGuests(dt,t);
   if(started){if(mode==='walk')updateWalk(dt,t);else if(ride)updateRide(dt,t)}
-  updateCamera(dt,t);
+  updateCamera(dt,t);updateFade();
   if(toastT>0){toastT-=dt;if(toastT<=0)$('toast').style.opacity=0}
   if(Math.floor(t*4)!==Math.floor((t-dt)*4))drawMap();
   renderer.render(scene,camera);
