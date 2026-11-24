@@ -154,9 +154,9 @@ makeSlide({name:'ながーい すべりだい',color:0x3fa9f5,w:1.6,wall:0.45,pt
  makeSlide({name:'ぐるぐる らせん',color:0x6fdc6f,w:1.6,wall:0.6,pts:a,x:35,z:-28,rot:0,bumpy:0.2,instab:1.3})}
 {const a=[];const h=6,len=24;for(let i=0;i<=24;i++){const t=i/24;a.push([0,0.35+(h-0.35)*(1-t)+Math.sin(t*Math.PI*5)*0.7*(1-t*0.7),t*len])}makeSlide({name:'なみなみ すべりだい',color:0xff9a2a,w:1.8,wall:0.45,pts:a,x:42,z:20,rot:-1.3,bumpy:1.3,instab:1.3})}
 makeSlide({name:'ひろーい すべりだい',color:0xffffff,w:12,wall:0.8,rainbow:1,pts:straight(6.5,18,8),x:-30,z:24,rot:2.6,bumpy:0.4,instab:1.1,wide:1});
-{const a=[];const h=8,len=28;for(let i=0;i<=28;i++){const t=i/28;a.push([Math.sin(t*Math.PI*3)*5,0.35+(h-0.35)*(1-smooth(t)),t*len])}makeSlide({name:'くねくね すべりだい',color:0xb36ad1,w:1.7,wall:0.6,pts:a,x:-60,z:5,rot:-1.4,bumpy:0.3,instab:1.4})}
+{const a=[];const h=8,len=28;for(let i=0;i<=28;i++){const t=i/28;a.push([Math.sin(t*Math.PI*3)*5,0.35+(h-0.35)*(1-smooth(t)),t*len])}makeSlide({name:'くねくね すべりだい',color:0xb36ad1,w:1.7,wall:0.6,pts:a,x:-75,z:-15,rot:Math.PI/2,bumpy:0.3,instab:1.4})}
 {const a=[];const h=7,len=22;for(let i=0;i<=22;i++){const t=i/22;a.push([Math.sin(t*Math.PI*2)*4,0.6+(h-0.6)*(1-t),t*len])}makeSlide({name:'トンネル すべりだい',color:0x5ad8e8,w:2.2,wall:0,tube:1,pts:a,x:10,z:-40,rot:0.2,bumpy:0.4,instab:1.2})}
-{const a=[];const h=15,len=34;for(let i=0;i<=16;i++){const t=i/16;const y=t<0.35?h-(h-3)*Math.pow(t/0.35,1.3)*0.9:Math.max(0.35,(h-(h-3)*0.9)*(1-(t-0.35)/0.65));a.push([0,y,t*len])}makeSlide({name:'メガ すべりだい',color:0xe8402a,w:2,wall:0.6,pts:a,x:62,z:-8,rot:-2.2,bumpy:0.6,instab:1.6,ladder:0xffffff})}
+{const a=[];const h=15,len=34;for(let i=0;i<=16;i++){const t=i/16;const y=t<0.35?h-(h-3)*Math.pow(t/0.35,1.3)*0.9:Math.max(0.35,(h-(h-3)*0.9)*(1-(t-0.35)/0.65));a.push([0,y,t*len])}makeSlide({name:'メガ すべりだい',color:0xe8402a,w:2,wall:0.6,pts:a,x:75,z:42,rot:-Math.PI/2,bumpy:0.6,instab:1.6,ladder:0xffffff})}
 
 flushBatch();
 // ---------- the boy (with joints for poses) ----------
@@ -275,8 +275,11 @@ function update(dt,t){
   // camera
   if(state==='walk'){const cx=B.x+Math.sin(camYaw)*9*0.94,cz=B.z+Math.cos(camYaw)*9*0.94;camera.position.lerp(new THREE.Vector3(cx,4.6,cz),Math.min(1,dt*6));camera.lookAt(B.x,1.6,B.z)}
   else if(state==='climb'||state==='top'){const S=cur;const f=S.frames[0];const p=boy.g.position;const back=new THREE.Vector3(f.t.x,0,f.t.z).normalize();camera.position.lerp(new THREE.Vector3(p.x-back.x*6,p.y+3,p.z-back.z*6),Math.min(1,dt*4));camera.lookAt(p.x+back.x*3,p.y+0.5,p.z+back.z*3)}
-  else{const p=boy.g.position;let back;if(state==='slide'||state==='fallen'){const f=frameAt(P.s);back=new THREE.Vector3(f.t.x,0,f.t.z);if(back.lengthSq()<0.01)back.set(0,0,1);back.normalize()}else back=cur?cur.out:new THREE.Vector3(0,0,1);
-    const tgt=new THREE.Vector3(p.x-back.x*5.5,p.y+3.2,p.z-back.z*5.5);camera.position.lerp(tgt,Math.min(1,dt*(state==='land'?2:5)));camera.lookAt(p.x+back.x*2,p.y+0.6,p.z+back.z*2)}
+  else{const p=boy.g.position;let back,tgt;
+    if(state==='slide'||state==='fallen'){const f=frameAt(P.s);back=new THREE.Vector3(f.t.x,0,f.t.z);if(back.lengthSq()<0.01)back.set(0,0,1);back.normalize();
+      // follow the track from behind and above the slide surface, never underneath it
+      const fb=frameAt(Math.max(0,P.s-5));tgt=fb.p.clone().addScaledVector(fb.up,2.4).add(new THREE.Vector3(0,1.4,0));if(P.s<5)tgt.addScaledVector(back,-(5-P.s));tgt.y=Math.max(tgt.y,p.y+1.8)}
+    else{back=cur?cur.out:new THREE.Vector3(0,0,1);tgt=new THREE.Vector3(p.x-back.x*5.5,p.y+3.2,p.z-back.z*5.5)}camera.position.lerp(tgt,Math.min(1,dt*(state==='land'?2:5)));camera.lookAt(p.x+back.x*2,p.y+0.6,p.z+back.z*2)}
   if(shake>0){shake-=dt;camera.position.x+=rand(-.08,.08);camera.position.y+=rand(-.08,.08)}
 }
 function poseFall(kind,ft){const R=boy.pose,legs=boy.legs,arms=boy.arms;boy.root.position.y=0;R.position.y=0.4;boy.mouth.rotation.z=0;
