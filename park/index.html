@@ -1,0 +1,702 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ひらひらパーク">
+<meta name="theme-color" content="#8fd0ff">
+<title>ひらひらパーク</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;800&display=swap">
+<style>
+:root{--ink:#2a2430;--font:"M PLUS Rounded 1c","Hiragino Maru Gothic ProN","Yu Gothic",system-ui,sans-serif}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:#8fd0ff;font-family:var(--font);color:var(--ink);user-select:none;-webkit-user-select:none;touch-action:none}
+[hidden]{display:none!important}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block}
+#hud{position:fixed;inset:0;pointer-events:none}
+#hud>*{pointer-events:auto}
+.pill{position:absolute;font:800 15px var(--font);padding:6px 12px;border-radius:999px;border:3px solid var(--ink);background:#fff;color:var(--ink);cursor:pointer}
+#mute{top:10px;left:10px}#full{top:10px;left:100px}
+#map{position:absolute;top:10px;right:10px;width:min(30vw,230px);border:4px solid var(--ink);border-radius:14px;background:#cde9a0;box-shadow:0 4px 0 var(--ink)}
+#toast{position:absolute;left:50%;top:16%;transform:translateX(-50%);font:800 clamp(20px,4vw,38px) var(--font);color:#fff;-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:0 3px 0 var(--ink);white-space:nowrap;opacity:0;transition:opacity .3s;pointer-events:none}
+#area{position:absolute;left:50%;top:10px;transform:translateX(-50%);font:800 18px var(--font);background:rgba(255,255,255,.9);border:3px solid var(--ink);border-radius:999px;padding:4px 16px;pointer-events:none;white-space:nowrap}
+#act{position:absolute;left:50%;bottom:7%;transform:translateX(-50%);font:800 clamp(22px,4.5vw,36px) var(--font);padding:12px 34px;border-radius:999px;border:5px solid var(--ink);background:#ffcc33;color:var(--ink);box-shadow:0 6px 0 var(--ink);cursor:pointer;white-space:nowrap}
+#act:active{transform:translateX(-50%) translateY(4px);box-shadow:0 2px 0 var(--ink)}
+#ridebar{position:absolute;right:12px;bottom:12px;display:flex;gap:10px}
+.rb{font:800 18px var(--font);padding:10px 18px;border-radius:999px;border:4px solid var(--ink);background:#fff;color:var(--ink);box-shadow:0 4px 0 var(--ink);cursor:pointer}
+#joy{position:absolute;width:130px;height:130px;margin:-65px 0 0 -65px;border-radius:50%;background:rgba(255,255,255,.35);border:4px solid rgba(42,36,48,.5);pointer-events:none}
+#knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:#fff;border:4px solid var(--ink)}
+#hint{position:absolute;left:14px;bottom:14px;font:800 15px var(--font);background:rgba(255,255,255,.85);border:3px solid var(--ink);border-radius:14px;padding:6px 10px;pointer-events:none}
+.ov{position:fixed;inset:0;display:grid;place-items:center;background:rgba(20,40,60,.55);z-index:20;padding:16px}
+.card{background:#fffaf0;border:5px solid var(--ink);border-radius:28px;box-shadow:0 8px 0 var(--ink);padding:22px 26px;max-width:560px;width:100%;text-align:center}
+.card h1{margin:0 0 6px;font-size:clamp(36px,9vw,60px);color:#ff5a8a;-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:0 4px 0 var(--ink)}
+.card p{margin:6px 0;font-size:18px}
+.big{font:800 30px var(--font);padding:12px 48px;border-radius:999px;border:4px solid var(--ink);background:#ffcc33;color:var(--ink);box-shadow:0 6px 0 var(--ink);cursor:pointer;margin-top:12px}
+#loading{position:fixed;inset:0;display:grid;place-items:center;background:#8fd0ff;font:800 28px var(--font);z-index:30}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud">
+  <button class="pill" id="mute">おと ON</button><button class="pill" id="full">ぜんがめん</button>
+  <canvas id="map" width="460" height="342"></canvas>
+  <div id="area">メインゲート</div>
+  <div id="toast"></div>
+  <button id="act" hidden>のる！</button>
+  <div id="ridebar" hidden><button class="rb" id="viewBtn">そとから みる</button><button class="rb" id="exitBtn">おりる</button></div>
+  <div id="joy" hidden><div id="knob"></div></div>
+  <div id="hint">ひだりで あるく ・ みぎで みまわす</div>
+</div>
+<div class="ov" id="title"><div class="card"><h1>ひらひらパーク</h1><p>ゆうえんちを あるいて のりものに のろう！</p><p>いまは かんらんしゃに のれるよ</p><button class="big" id="startBtn">あそぶ！</button></div></div>
+<div id="loading">よみこみちゅう…</div>
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const rand=(a,b)=>a+Math.random()*(b-a);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const FONT='"M PLUS Rounded 1c","Hiragino Maru Gothic ProN",sans-serif';
+
+// ================= sound =================
+let ac=null,master=null,muted=false;
+function audio(){if(!ac){try{ac=new(window.AudioContext||window.webkitAudioContext)();master=ac.createGain();master.gain.value=0.5;master.connect(ac.destination)}catch(e){return null}}if(ac.state==='suspended')ac.resume();return ac}
+function tone(f,d,type='sine',vol=.08,slide=0,delay=0){if(muted||!audio())return;const t=ac.currentTime+delay,o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,f+slide),t+d);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(master);o.start(t);o.stop(t+d+.05)}
+function noise(d,vol=.1,f=1000,q=1,delay=0,type='bandpass',fEnd=0){if(muted||!audio())return;const t=ac.currentTime+delay,n=Math.floor(ac.sampleRate*d),b=ac.createBuffer(1,n,ac.sampleRate),c=b.getChannelData(0);for(let i=0;i<n;i++)c[i]=Math.random()*2-1;
+  const s=ac.createBufferSource();s.buffer=b;const fl=ac.createBiquadFilter();fl.type=type;fl.frequency.setValueAtTime(f,t);if(fEnd)fl.frequency.exponentialRampToValueAtTime(fEnd,t+d);fl.Q.value=q;const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(fl).connect(g).connect(master);s.start(t)}
+let wind=null;
+function windOn(v){if(!audio())return;if(!wind){const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),c=b.getChannelData(0);let l=0;for(let i=0;i<n;i++){l=l*0.97+(Math.random()*2-1)*0.03;c[i]=l*6}const s=ac.createBufferSource();s.buffer=b;s.loop=true;const f=ac.createBiquadFilter();f.type='bandpass';f.frequency.value=500;f.Q.value=0.6;wind=ac.createGain();wind.gain.value=0;s.connect(f).connect(wind).connect(master);s.start()}wind.gain.setTargetAtTime(muted?0:v,ac.currentTime,0.4)}
+// cheerful park music (simple loop)
+const N={C4:262,D4:294,E4:330,F4:349,G4:392,A4:440,B4:494,C5:523,D5:587,E5:659,F5:698,G5:784,A5:880};
+const TUNE=[N.C5,N.E5,N.G5,N.E5,N.F5,N.A5,N.G5,0,N.E5,N.D5,N.C5,N.D5,N.E5,N.C5,N.D5,0,N.C5,N.E5,N.G5,N.E5,N.F5,N.A5,N.G5,0,N.F5,N.E5,N.D5,N.G4,N.C5,0,0,0];
+const BASS=[N.C4,N.G4,N.F4,N.G4];
+let musicT=0,musicI=0,musicVol=0.035;
+function music(dt){if(muted||!ac)return;musicT-=dt;if(musicT<=0){musicT=0.24;const n=TUNE[musicI%TUNE.length];if(n)tone(n,.3,'triangle',musicVol);if(musicI%4===0)tone(BASS[Math.floor(musicI/8)%4]/2,.5,'sine',musicVol*1.4);musicI++}}
+function chime(){[N.C5,N.E5,N.G5,N.C5*2].forEach((f,i)=>tone(f,.4,'sine',.07,0,i*.12))}
+
+// ================= three basics =================
+const canvas=$('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+let quality=Math.min(1.5,window.devicePixelRatio||1);renderer.setPixelRatio(quality);
+const scene=new THREE.Scene();
+const SKY=0x9fd8ff;scene.background=new THREE.Color(SKY);scene.fog=new THREE.Fog(SKY,70,190);
+const camera=new THREE.PerspectiveCamera(60,1,0.05,400);
+function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.fov=camera.aspect<1?75:60;camera.updateProjectionMatrix()}
+addEventListener('resize',resize);
+const hemi=new THREE.HemisphereLight(0xffffff,0x6a8a4a,0.72);scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xfff4e0,0.5);sun.position.set(-40,80,30);scene.add(sun);
+const lam=c=>new THREE.MeshLambertMaterial({color:c});
+const phong=(c,s=60)=>new THREE.MeshPhongMaterial({color:c,shininess:s});
+const flat=c=>new THREE.MeshPhongMaterial({color:c,flatShading:true,shininess:5});
+const basic=c=>new THREE.MeshBasicMaterial({color:c});
+let PARENT=scene;
+function mesh(geo,mat,x=0,y=0,z=0,parent){const m=new THREE.Mesh(geo,mat);m.position.set(x,y,z);(parent||PARENT).add(m);return m}
+function ctex(w,h,draw,rx=1,ry=1){const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rx,ry);return t}
+const SPH=new THREE.SphereGeometry(1,16,12);
+function ball(r,mat,x,y,z,p,sx=1,sy=1,sz=1){const m=mesh(SPH,mat,x,y,z,p);m.scale.set(r*sx,r*sy,r*sz);return m}
+function cyl(rt,rb,h,mat,x,y,z,p,seg=12){return mesh(new THREE.CylinderGeometry(rt,rb,h,seg),mat,x,y,z,p)}
+function boxm(w,h,d,mat,x,y,z,p){return mesh(new THREE.BoxGeometry(w,h,d),mat,x,y,z,p)}
+function cone(r,h,mat,x,y,z,p,seg=12){return mesh(new THREE.ConeGeometry(r,h,seg),mat,x,y,z,p)}
+function grp(x=0,y=0,z=0,p){const g=new THREE.Group();g.position.set(x,y,z);(p||PARENT).add(g);return g}
+function signTex(text,bg='#3fa9f5',fg='#fff'){const t=ctex(512,128,(g,W,H)=>{g.fillStyle=bg;g.beginPath();g.roundRect?g.roundRect(4,4,W-8,H-8,40):g.rect(4,4,W-8,H-8);g.fill();g.fillStyle=fg;g.font=`800 ${text.length>8?54:68}px ${FONT}`;g.textAlign='center';g.textBaseline='middle';g.fillText(text,W/2,H/2+4)});t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping;t.repeat.set(1,1);return t}
+function board(text,x,y,z,w=6,bg,rotY=0,p){const m=mesh(new THREE.PlaneGeometry(w,w/4),new THREE.MeshBasicMaterial({map:signTex(text,bg),side:THREE.DoubleSide}),x,y,z,p);m.rotation.y=rotY;return m}
+function floatSign(text,x,y,z,bg='#ff5a8a',w=7){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:signTex(text,bg),fog:false}));s.scale.set(w,w/4,1);s.position.set(x,y,z);scene.add(s);return s}
+
+// ================= map coordinates (from the park map picture 1880 x 1400) =================
+const K=0.11;
+const W=(x,y)=>[(x-940)*K,(y-700)*K];
+const GW=1880*K,GD=1400*K;
+function beam(a,b,r,mat,p){const d=new THREE.Vector3().subVectors(b,a);const L=d.length();const m=cyl(r,r,L,mat,(a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2,p,8);m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());return m}
+// ================= animals (chibi 3D) =================
+const patTex={};
+function pattern(kind,base,ink){const key=kind+base+ink;if(patTex[key])return patTex[key];
+  const t=ctex(128,128,(g,w,h)=>{g.fillStyle='#'+base.toString(16).padStart(6,'0');g.fillRect(0,0,w,h);g.fillStyle='#'+ink.toString(16).padStart(6,'0');
+    if(kind==='stripes'||kind==='zebra'){for(let i=0;i<8;i++){g.beginPath();g.moveTo(i*16,0);g.quadraticCurveTo(i*16+10,64,i*16,128);g.lineTo(i*16+(kind==='zebra'?8:6),128);g.quadraticCurveTo(i*16+16,64,i*16+(kind==='zebra'?8:6),0);g.fill()}}
+    else if(kind==='spots'){for(let i=0;i<9;i++){g.beginPath();g.ellipse((i*47)%128,(i*71)%128,14,11,i,0,7);g.fill()}}
+    else if(kind==='giraffe'){g.strokeStyle='#fff3d0';for(let i=0;i<10;i++){g.beginPath();const x=(i*41)%128,y=(i*67)%128;g.moveTo(x,y);for(let k=0;k<6;k++){const a=k*1.05;g.lineTo(x+Math.cos(a)*16,y+Math.sin(a)*16)}g.closePath();g.fill()}}
+  });patTex[key]=t;return t}
+function matFor(c,pat,ink,fluffy){if(pat&&ink!==undefined)return new THREE.MeshLambertMaterial({map:pattern(pat,c,ink)});return fluffy?flat(c):lam(c)}
+// d: {c,belly,ear,earC,snout,snoutC,pat,ink,mane,horn,tail,tailC,s,fluffy,cap,neck,cheek,special}
+function animal(d){
+  const g=new THREE.Group(),S=d.s||1;const P={g,legs:[],arms:[],eyes:[],d};
+  const root=new THREE.Group();g.add(root);root.scale.setScalar(S);P.root=root;
+  const shadow=mesh(new THREE.CircleGeometry(0.45,20),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.2,depthWrite:false}),0,0.01,0,g);shadow.rotation.x=-Math.PI/2;shadow.scale.setScalar(S);
+  if(d.special){d.special(P,root);P.h=(d.h||1.6)*S;return P}
+  const M=matFor(d.c,d.pat,d.ink,d.fluffy),B=lam(d.belly??d.c),dark=lam(0x2a2226);
+  const body=new THREE.Group();root.add(body);P.body=body;
+  // legs
+  for(const s of[-1,1]){const piv=new THREE.Group();piv.position.set(s*0.17,0.36,0);body.add(piv);cyl(0.11,0.12,0.32,d.legC?lam(d.legC):M,0,-0.18,0,piv);ball(0.13,d.footC?lam(d.footC):(d.legC?lam(d.legC):M),0,-0.32,0.05,piv,1,0.6,1.3);P.legs.push(piv)}
+  // torso + belly
+  ball(0.38,M,0,0.66,0,body,1,1.08,0.9);ball(0.27,B,0,0.62,0.16,body,1,1.1,0.7);
+  // arms
+  for(const s of[-1,1]){const piv=new THREE.Group();piv.position.set(s*0.34,0.86,0);body.add(piv);const a=cyl(0.085,0.09,0.36,d.armC?lam(d.armC):M,0,-0.16,0,piv);ball(0.1,d.armC?lam(d.armC):M,0,-0.34,0,piv);piv.rotation.z=s*0.25;P.arms.push(piv)}
+  // tail
+  const tc=lam(d.tailC??d.c);
+  if(d.tail==='long'){const t=new THREE.Group();t.position.set(0,0.5,-0.32);body.add(t);for(let i=0;i<5;i++)ball(0.07,d.pat?M:tc,0,i*0.13,-i*0.06-0.03,t);t.rotation.x=-0.6;P.tail=t}
+  else if(d.tail==='fluffy'){const t=ball(0.22,tc,0,0.62,-0.4,body,0.8,1.5,0.8);t.rotation.x=0.5;P.tail=t}
+  else if(d.tail==='pom')ball(0.12,tc,0,0.5,-0.36,body);
+  else if(d.tail==='curl'){const t=mesh(new THREE.TorusGeometry(0.08,0.03,6,12),tc,0,0.55,-0.38,body)}
+  else if(d.tail==='tuft'){const t=new THREE.Group();t.position.set(0,0.5,-0.33);body.add(t);cyl(0.03,0.03,0.4,tc,0,0.15,-0.1,t).rotation.x=-0.6;ball(0.08,lam(d.tuftC||0x5a3a22),0,0.32,-0.22,t);P.tail=t}
+  else if(d.tail==='flat'){const t=boxm(0.3,0.06,0.4,tc,0,0.3,-0.45,body);t.rotation.x=-0.3}
+  else if(d.tail==='horse'){const t=ball(0.1,lam(d.maneC||d.c),0,0.6,-0.4,body,1,2.5,1);t.rotation.x=0.6}
+  // head
+  const head=new THREE.Group();head.position.set(0,1.18+(d.neck||0),0);body.add(head);P.head=head;
+  if(d.neck){cyl(0.12,0.16,d.neck+0.2,M,0,0.95+d.neck/2,0,body)}
+  const hs=d.headS||1;const hm=d.capC!==undefined?lam(d.c):M;
+  ball(0.44*hs,hm,0,0,0,head,d.headW||1,0.92,0.92);
+  if(d.capC!==undefined){const cp=ball(0.452*hs,lam(d.capC),0,0.06,-0.02,head,d.headW||1,0.8,0.92);}
+  // face patches
+  if(d.pat==='panda'){for(const s of[-1,1]){const p=ball(0.1,dark,s*0.16,0.03,0.36,head,1,1.3,0.5);p.rotation.z=s*0.5}}
+  if(d.mask){for(const s of[-1,1]){const p=ball(0.13,lam(d.mask),s*0.15,0.04,0.33,head,1.2,0.8,0.5)}}
+  if(d.face)ball(0.3,lam(d.face),0,-0.05,0.2,head,1,0.85,0.7);
+  // eyes
+  for(const s of[-1,1]){const e=new THREE.Group();e.position.set(s*0.16*(d.eyeW||1),0.05+(d.eyeY||0),0.38*hs);head.add(e);ball(d.eyeR||0.06,dark,0,0,0,e,1,1.15,0.7);ball(0.02,lam(0xffffff),0.015,0.025,0.035,e);P.eyes.push(e)}
+  if(d.cheek!==false)for(const s of[-1,1])ball(0.06,lam(0xffa0b4),s*0.27,-0.1,0.31*hs,head,1,0.6,0.4);
+  // snout
+  const sc=lam(d.snoutC??0xfff3e6);
+  if(d.snout==='muzzle'){ball(0.16,sc,0,-0.1,0.33*hs,head,1.2,0.85,0.8);ball(0.05,dark,0,-0.04,0.46*hs,head,1.2,0.8,0.8)}
+  else if(d.snout==='long'){ball(0.16,sc,0,-0.08,0.4*hs,head,0.9,0.75,1.3);ball(0.05,dark,0,-0.02,0.6*hs,head)}
+  else if(d.snout==='pig'){cyl(0.12,0.13,0.1,lam(d.snoutC??0xffb0c0),0,-0.08,0.42*hs,head,14).rotation.x=Math.PI/2;for(const s of[-1,1])ball(0.025,dark,s*0.045,-0.08,0.48*hs,head)}
+  else if(d.snout==='beak'){cone(0.07,0.18,lam(d.snoutC??0xffa020),0,-0.06,0.47*hs,head).rotation.x=Math.PI/2}
+  else if(d.snout==='duck'){const b=ball(0.12,lam(0xffa020),0,-0.08,0.42*hs,head,1.2,0.4,1)}
+  else if(d.snout==='trunk'){const t=new THREE.Group();t.position.set(0,-0.08,0.38*hs);head.add(t);for(let i=0;i<5;i++)ball(0.1-i*0.01,M,0,-i*0.09,0.05+i*0.03,t);t.rotation.x=-0.3;P.trunk=t}
+  else if(d.snout==='hippo'){ball(0.26,M,0,-0.12,0.3,head,1.2,0.8,0.9);for(const s of[-1,1])ball(0.035,dark,s*0.09,-0.02,0.53,head)}
+  else if(d.snout==='nose'){ball(0.08,dark,0,-0.06,0.44*hs,head,1.3,1,0.8)}
+  else ball(0.035,lam(d.noseC??0xff8aa0),0,-0.05,0.43*hs,head);
+  if(d.snout!=='beak'&&d.snout!=='duck'&&d.mouth!==false){const m=mesh(new THREE.TorusGeometry(0.04,0.01,4,10,Math.PI),dark,0,-0.15,0.42*hs,head);m.rotation.z=Math.PI}
+  // ears
+  const ec=lam(d.earC??d.c),inner=lam(d.earIn??0xffb3c6);
+  for(const s of[-1,1]){
+    if(d.ear==='round'){ball(0.13,ec,s*0.3,0.32,0,head,1,1,0.5);ball(0.07,inner,s*0.3,0.32,0.05,head,1,1,0.3)}
+    else if(d.ear==='cat'){const e=cone(0.13,0.24,ec,s*0.25,0.36,0,head,4);e.rotation.z=-s*0.3;e.rotation.y=Math.PI/4}
+    else if(d.ear==='long'){const e=new THREE.Group();e.position.set(s*0.15,0.34,-0.05);e.rotation.z=-s*0.15;head.add(e);ball(0.1,ec,0,0.3,0,e,1,3.2,0.6);ball(0.06,inner,0,0.3,0.04,e,1,3,0.3);P.ears=P.ears||[];P.ears.push(e)}
+    else if(d.ear==='floppy'){const e=ball(0.12,ec,s*0.38,0.02,-0.02,head,0.6,1.6,0.9);e.rotation.z=s*0.3}
+    else if(d.ear==='big'){const e=ball(0.32,ec,s*0.46,0.02,-0.08,head,0.25,1.1,1);e.rotation.y=s*0.4}
+    else if(d.ear==='mouse'){ball(0.2,ec,s*0.32,0.32,-0.02,head,1,1,0.35);ball(0.12,inner,s*0.32,0.32,0.03,head,1,1,0.2)}
+    else if(d.ear==='koala'){ball(0.2,ec,s*0.4,0.2,0,head,1,1,0.5);ball(0.12,lam(0xffffff),s*0.4,0.2,0.05,head,1,1,0.3)}
+    else if(d.ear==='tiny'){ball(0.06,ec,s*0.25,0.36,0,head)}
+    else if(d.ear==='tuft'){const e=cone(0.07,0.18,ec,s*0.22,0.4,0,head,6);e.rotation.z=-s*0.4}
+    else if(d.ear==='horse'){const e=cone(0.07,0.2,ec,s*0.2,0.4,-0.05,head,6);e.rotation.z=-s*0.2}
+    else if(d.ear==='frog'){ball(0.13,M,s*0.2,0.3,0.12,head);ball(0.07,dark,s*0.2,0.33,0.22,head)}
+  }
+  if(d.mane){const mm=d.fluffy?flat(d.mane):lam(d.mane);for(let i=0;i<12;i++){const a=i/12*Math.PI*2;ball(0.16,mm,Math.cos(a)*0.42,Math.sin(a)*0.42,-0.1,head)}}
+  if(d.maneTop){for(let i=0;i<4;i++)ball(0.1,lam(d.maneTop),0,0.38-i*0.05,-0.1-i*0.13,head)}
+  if(d.horn==='cow')for(const s of[-1,1]){const h=cone(0.05,0.16,lam(0xf5ecd8),s*0.3,0.4,0,head,6);h.rotation.z=-s*0.6}
+  if(d.horn==='uni'){cone(0.06,0.34,lam(0xffe06a),0,0.5,0.15,head,8).rotation.x=0.4}
+  if(d.horn==='antler')for(const s of[-1,1]){const a=new THREE.Group();a.position.set(s*0.2,0.4,0);a.rotation.z=-s*0.4;head.add(a);const br=lam(0x8a5a3a);cyl(0.025,0.03,0.36,br,0,0.18,0,a);cyl(0.02,0.02,0.18,br,s*0.06,0.26,0,a).rotation.z=-s*0.8;cyl(0.02,0.02,0.15,br,-s*0.04,0.3,0,a).rotation.z=s*0.7}
+  if(d.redNose)ball(0.07,lam(0xff2a2a),0,-0.06,0.5,head);
+  if(d.wool){const w=flat(0xffffff);for(let i=0;i<10;i++){const a=i/10*Math.PI*2;ball(0.14,w,Math.cos(a)*0.38,0.66+Math.sin(a)*0.2,Math.sin(a)*0.3,body)}for(let i=0;i<5;i++)ball(0.12,w,(i-2)*0.12,0.38,-0.05,head)}
+  if(d.extra)d.extra(P,head,body);
+  P.h=(1.62+(d.neck||0))*S;return P;
+}
+// special bodies
+function spPenguin(P,r){const bk=lam(0x2a2f3a),w=lam(0xffffff),o=lam(0xffa020);const body=new THREE.Group();r.add(body);P.body=body;
+  ball(0.45,bk,0,0.62,0,body,1,1.25,0.95);ball(0.36,w,0,0.58,0.14,body,1,1.15,0.8);
+  const head=new THREE.Group();head.position.y=1.2;body.add(head);P.head=head;ball(0.36,bk,0,0,0,head);ball(0.27,w,0,-0.04,0.12,head,1.1,0.9,0.8);
+  for(const s of[-1,1]){const e=new THREE.Group();e.position.set(s*0.12,0.04,0.32);head.add(e);ball(0.05,lam(0x111111),0,0,0,e);ball(0.017,w,0.01,0.02,0.04,e);P.eyes.push(e);ball(0.05,lam(0xffa0b4),s*0.2,-0.07,0.27,head,1,0.6,0.4)}
+  cone(0.07,0.16,o,0,-0.04,0.38,head).rotation.x=Math.PI/2;
+  for(const s of[-1,1]){const a=new THREE.Group();a.position.set(s*0.42,0.85,0);body.add(a);const f=ball(0.1,bk,0,-0.22,0,a,0.5,2.3,1);a.rotation.z=s*0.3;P.arms.push(a);
+    const l=new THREE.Group();l.position.set(s*0.17,0.12,0.1);body.add(l);ball(0.12,o,0,-0.08,0.06,l,1,0.35,1.5);P.legs.push(l)}}
+function spChick(P,r){const y=lam(0xffe04a),o=lam(0xffa020);const body=new THREE.Group();r.add(body);P.body=body;ball(0.42,y,0,0.5,0,body);const head=new THREE.Group();head.position.y=0.62;body.add(head);P.head=head;
+  for(const s of[-1,1]){const e=new THREE.Group();e.position.set(s*0.13,0.05,0.36);head.add(e);ball(0.05,lam(0x111111),0,0,0,e);P.eyes.push(e);ball(0.05,lam(0xffa0b4),s*0.24,-0.06,0.3,head,1,0.6,0.4);
+    const w=new THREE.Group();w.position.set(s*0.4,0.5,0);body.add(w);ball(0.12,y,0,-0.05,0,w,0.5,1,1.3);P.arms.push(w);const l=new THREE.Group();l.position.set(s*0.12,0.1,0);body.add(l);cyl(0.02,0.02,0.15,o,0,0,0,l);P.legs.push(l)}
+  cone(0.07,0.14,o,0,-0.04,0.44,head).rotation.x=Math.PI/2;ball(0.06,y,0,0.42,0,head,1,1.6,1)}
+function spOctopus(P,r){const m=lam(0xff6a5a);const body=new THREE.Group();r.add(body);P.body=body;const head=new THREE.Group();head.position.y=1.0;body.add(head);P.head=head;ball(0.5,m,0,0.1,-0.05,head,1,1.15,1);
+  for(const s of[-1,1]){const e=new THREE.Group();e.position.set(s*0.17,0,0.42);head.add(e);ball(0.07,lam(0x111111),0,0,0,e);ball(0.02,lam(0xffffff),0.02,0.02,0.05,e);P.eyes.push(e)}
+  cyl(0.06,0.04,0.1,m,0,-0.15,0.48,head).rotation.x=Math.PI/2;P.tent=[];
+  for(let i=0;i<8;i++){const a=i/8*Math.PI*2,t=new THREE.Group();t.position.set(Math.cos(a)*0.3,0.55,Math.sin(a)*0.3);body.add(t);for(let k=0;k<4;k++)ball(0.09-k*0.015,m,Math.cos(a)*k*0.09,-k*0.13,Math.sin(a)*k*0.09,t);P.tent.push(t)}}
+function spRobot(P,r){const m=phong(0xb9c4cf,80),d=lam(0x445566);const body=new THREE.Group();r.add(body);P.body=body;
+  for(const s of[-1,1]){const l=new THREE.Group();l.position.set(s*0.18,0.4,0);body.add(l);boxm(0.16,0.38,0.18,d,0,-0.2,0,l);P.legs.push(l)}
+  const tor=boxm(0.7,0.6,0.5,m,0,0.72,0,body);boxm(0.3,0.2,0.02,new THREE.MeshBasicMaterial({color:0x4fff9a}),0,0.78,0.26,body);
+  for(const s of[-1,1]){const a=new THREE.Group();a.position.set(s*0.45,0.95,0);body.add(a);cyl(0.06,0.06,0.45,d,0,-0.2,0,a);ball(0.09,m,0,-0.45,0,a);P.arms.push(a)}
+  const head=new THREE.Group();head.position.y=1.32;body.add(head);P.head=head;boxm(0.62,0.48,0.5,m,0,0,0,head);boxm(0.5,0.3,0.02,lam(0x223344),0,0,0.26,head);
+  for(const s of[-1,1]){const e=new THREE.Group();e.position.set(s*0.12,0.02,0.28);head.add(e);ball(0.06,new THREE.MeshBasicMaterial({color:0x6ad8ff}),0,0,0,e);P.eyes.push(e)}
+  cyl(0.015,0.015,0.25,d,0,0.36,0,head);P.lamp=ball(0.05,new THREE.MeshBasicMaterial({color:0xff4f4f}),0,0.5,0,head)}
+function spGhost(P,r){const w=new THREE.MeshLambertMaterial({color:0xffffff,transparent:true,opacity:0.85});const body=new THREE.Group();r.add(body);P.body=body;
+  ball(0.45,w,0,1.2,0,body,1,1,1);cyl(0.45,0.55,0.8,w,0,0.8,0,body,16);for(let i=0;i<6;i++){const a=i/6*Math.PI*2;ball(0.12,w,Math.cos(a)*0.48,0.42,Math.sin(a)*0.48,body)}
+  const head=new THREE.Group();head.position.y=1.2;body.add(head);P.head=head;for(const s of[-1,1]){const e=new THREE.Group();e.position.set(s*0.15,0.02,0.4);head.add(e);ball(0.07,lam(0x111111),0,0,0,e,1,1.3,0.6);P.eyes.push(e)}
+  ball(0.08,lam(0x552233),0,-0.15,0.41,head,1,1.2,0.5);for(const s of[-1,1]){const a=new THREE.Group();a.position.set(s*0.48,1.0,0);body.add(a);ball(0.12,w,0,-0.05,0.1,a,0.8,1.4,0.8);P.arms.push(a)}}
+function spTurtle(P,r){const g=lam(0x7fd06a),sh=flat(0x5a8a3a);const body=new THREE.Group();r.add(body);P.body=body;ball(0.5,sh,0,0.45,0,body,1,0.75,1);
+  for(const[a,b]of[[0.32,0.32],[-0.32,0.32],[0.32,-0.32],[-0.32,-0.32]]){const l=new THREE.Group();l.position.set(a,0.2,b);body.add(l);ball(0.13,g,0,0,0,l,1,0.8,1);P.legs.push(l)}
+  const head=new THREE.Group();head.position.set(0,0.55,0.5);body.add(head);P.head=head;ball(0.22,g,0,0,0,head);for(const s of[-1,1]){const e=new THREE.Group();e.position.set(s*0.08,0.05,0.18);head.add(e);ball(0.035,lam(0x111111),0,0,0,e);P.eyes.push(e)}}
+function spAlien(P,r){/* built via animal() extra */}
+function spDino(P,r){const gm=lam(0x6fc05a),bl=lam(0xfff0c0);const body=new THREE.Group();r.add(body);P.body=body;
+  ball(0.6,gm,0,0.9,0,body,1,1.1,1.2);ball(0.42,bl,0,0.85,0.3,body,1,1.1,0.6);
+  for(const s of[-1,1]){const l=new THREE.Group();l.position.set(s*0.32,0.5,0);body.add(l);cyl(0.17,0.2,0.5,gm,0,-0.25,0,l);ball(0.2,gm,0,-0.48,0.1,l,1,0.5,1.4);P.legs.push(l);
+    const a=new THREE.Group();a.position.set(s*0.4,1.15,0.35);body.add(a);cyl(0.05,0.05,0.25,gm,0,-0.1,0.05,a).rotation.x=0.8;P.arms.push(a)}
+  const t=new THREE.Group();t.position.set(0,0.8,-0.6);body.add(t);for(let i=0;i<6;i++)ball(0.3-i*0.045,gm,0,-i*0.06,-i*0.25,t);P.tail=t;
+  for(let i=0;i<6;i++)cone(0.1,0.22,lam(0xffa040),0,1.5-i*0.12+(i>3?-0.2:0),0.1-i*0.25,body,4);
+  const head=new THREE.Group();head.position.set(0,1.75,0.35);body.add(head);P.head=head;ball(0.45,gm,0,0,0.1,head,1,0.9,1.2);
+  const jaw=new THREE.Group();jaw.position.set(0,-0.15,0.2);head.add(jaw);ball(0.35,gm,0,-0.05,0.15,jaw,1,0.45,1.1);P.jaw=jaw;
+  for(let i=0;i<5;i++)cone(0.04,0.1,lam(0xffffff),-0.24+i*0.12,-0.18,0.55,head,4).rotation.x=Math.PI;
+  for(const s of[-1,1]){const e=new THREE.Group();e.position.set(s*0.22,0.18,0.42);head.add(e);ball(0.08,lam(0xffffff),0,0,0,e);ball(0.045,lam(0x111111),0,0,0.05,e);P.eyes.push(e)}}
+
+// the family cats from "neko"
+const AN={
+  black:{n:'くろねこ',w:5,v:0,meow:700,l:['ニャー','あそぼ！'],d:{c:0x26262c,belly:0x26262c,ear:'cat',earIn:0x553344,snout:'none',noseC:0x553344,tail:'long',cheek:false}},
+  brown:{n:'ちゃいろの ながげねこ',w:7,v:0,meow:560,l:['ニャ〜ン','ふわふわでしょ'],d:{c:0x8a5a32,belly:0xd8b080,ear:'cat',snout:'muzzle',snoutC:0xf0dcc0,tail:'fluffy',fluffy:true}},
+  white:{n:'しろねこ',w:4,v:0,meow:820,l:['ニャッ','おしり ふりふり'],d:{c:0xf7f5f0,belly:0xffffff,capC:0x222226,ear:'cat',earC:0x222226,tail:'long',tailC:0x222226}},
+  dog:{n:'いぬ',w:15,v:700,l:['ワン！','おさんぽ いこう！'],d:{c:0xd9984a,belly:0xfff3e0,ear:'cat',earC:0xd9984a,snout:'muzzle',tail:'curl',face:0xfff3e0}},
+  rabbit:{n:'うさぎ',w:5,v:1000,l:['ぴょん！','にんじん すき'],d:{c:0xfafafa,belly:0xffffff,ear:'long',snout:'none',tail:'pom'}},
+  bear:{n:'くま',w:160,v:200,l:['クマ〜','はちみつ どこ？'],d:{c:0x8a5a3a,belly:0xd8b08a,ear:'round',earIn:0xd8b08a,snout:'muzzle',snoutC:0xe8c8a0,tail:'pom'}},
+  panda:{n:'パンダ',w:110,v:350,l:['ささ たべたい','ころころ〜'],d:{c:0xffffff,belly:0xffffff,pat:'panda',ear:'round',earC:0x2a2226,earIn:0x2a2226,armC:0x2a2226,legC:0x2a2226,snout:'nose',tail:'pom'}},
+  pig:{n:'ぶた',w:90,v:400,l:['ブーブー','ブヒッ'],d:{c:0xffb6c8,belly:0xffd0dc,ear:'floppy',snout:'pig',tail:'curl'}},
+  penguin:{n:'ペンギン',w:25,v:900,l:['ペンペン','さかな ちょうだい'],d:{special:spPenguin,h:1.6}},
+  elephant:{n:'ぞう',w:900,v:200,trumpet:1,l:['パオーン','おおきいでしょ'],d:{c:0x9aa8b8,belly:0xb4c0cc,ear:'big',earIn:0xffc0cc,snout:'trunk',tail:'tuft',tuftC:0x445566}},
+  giraffe:{n:'キリン',w:300,v:500,l:['たかいでしょ','はっぱ おいしい'],d:{c:0xf2c04a,pat:'giraffe',ink:0xb0702a,belly:0xfff0c8,ear:'horse',snout:'muzzle',snoutC:0xf7dca0,neck:0.55,horn:'giraffe',tail:'tuft',extra(P,h){for(const s of[-1,1])cyl(0.03,0.03,0.18,lam(0xb0702a),s*0.12,0.45,0,h);for(const s of[-1,1])ball(0.05,lam(0x8a5a3a),s*0.12,0.55,0,h)}}},
+  lion:{n:'ライオン',w:190,v:180,roar:1,l:['ガオー！','かまないよ'],d:{c:0xf2b24a,belly:0xffe0a0,mane:0xb8702a,fluffy:true,ear:'round',earIn:0xffd0a0,snout:'muzzle',snoutC:0xfff0c8,tail:'tuft'}},
+  tiger:{n:'トラ',w:180,v:200,l:['ガルル','しましま だよ'],d:{c:0xffa040,pat:'stripes',ink:0x2a2226,belly:0xffffff,ear:'round',earIn:0xffffff,snout:'muzzle',snoutC:0xffffff,tail:'long'}},
+  monkey:{n:'おさる',w:20,v:850,l:['ウキキー！','バナナ ちょうだい'],d:{c:0x8a5a3a,belly:0xf0c8a0,face:0xf5d0b0,ear:'round',earC:0xf0c8a0,earIn:0xf0c8a0,snout:'none',tail:'long'}},
+  frog:{n:'カエル',w:3,v:600,l:['ケロケロ','あめ だいすき'],d:{c:0x6fd05a,belly:0xd8f5a0,ear:'frog',eyeY:0.18,eyeW:1.2,headW:1.2,snout:'none',tail:'none',cheek:true}},
+  owl:{n:'フクロウ',w:5,v:450,l:['ホーホー','しーっ'],d:{c:0x9a7a5a,belly:0xf0e0c0,ear:'tuft',snout:'beak',eyeR:0.09,face:0xf0e0c0,tail:'none'}},
+  fox:{n:'キツネ',w:8,v:900,l:['コンコン','あぶらあげ すき'],d:{c:0xf08a3a,belly:0xffffff,ear:'cat',earIn:0x2a2226,snout:'long',snoutC:0xffffff,tail:'fluffy',tailC:0xf08a3a,face:0xffffff}},
+  koala:{n:'コアラ',w:10,v:600,l:['ねむい…','ユーカリ すき'],d:{c:0x9aa3ab,belly:0xd8dde2,ear:'koala',snout:'nose',tail:'none'}},
+  cow:{n:'うし',w:520,v:180,moo:1,l:['モ〜','ミルク いる？'],d:{c:0xffffff,pat:'spots',ink:0x2a2226,belly:0xffffff,ear:'floppy',horn:'cow',snout:'muzzle',snoutC:0xffc0cc,tail:'tuft'}},
+  sheep:{n:'ひつじ',w:60,v:700,l:['メェ〜','もこもこ'],d:{c:0xf5ecd8,belly:0xffffff,face:0xf5ecd8,ear:'floppy',earC:0x5a4a3a,wool:1,snout:'none',tail:'pom',tailC:0xffffff}},
+  hippo:{n:'カバ',w:450,v:150,l:['カバ〜','おもくないよ'],d:{c:0xa890b8,belly:0xc8b8d8,ear:'tiny',snout:'hippo',tail:'none',headS:1.1}},
+  mouse:{n:'ねずみ',w:1,v:1500,l:['チュー','チーズ ある？'],d:{c:0xb0b4bc,belly:0xf0f0f0,ear:'mouse',snout:'none',tail:'long',tailC:0xffb0c0,s:0.8}},
+  tanuki:{n:'たぬき',w:12,v:500,l:['ポンポコ','ばけるよ'],d:{c:0x8a6a4a,belly:0xd8c0a0,mask:0x3a2a22,ear:'round',earC:0x3a2a22,snout:'muzzle',snoutC:0xf0e0c8,tail:'fluffy',tailC:0x6a4a32}},
+  squirrel:{n:'リス',w:1,v:1300,l:['どんぐり あつめてる','カリカリ'],d:{c:0xc87a3a,belly:0xfff0d8,ear:'cat',snout:'none',tail:'fluffy',tailC:0xc87a3a,s:0.8}},
+  chick:{n:'ひよこ',w:1,v:1600,l:['ピヨピヨ','ピヨッ'],d:{special:spChick,h:1.0}},
+  duck:{n:'アヒル',w:4,v:700,l:['グワッグワッ','およぐの すき'],d:{c:0xffffff,belly:0xffffff,ear:'none',snout:'duck',tail:'none',legC:0xffa020,footC:0xffa020,armC:0xffffff}},
+  deer:{n:'しか',w:80,v:800,l:['せんべい ちょうだい','ピィー'],d:{c:0xc08a5a,belly:0xfff0d8,ear:'horse',horn:'antler',snout:'muzzle',snoutC:0xf5e0c8,tail:'pom',tailC:0xffffff,extra(P,h,b){for(let i=0;i<5;i++)ball(0.04,lam(0xfff0d8),(i-2)*0.12,0.8,-0.3,b)}}},
+  reindeer:{n:'トナカイ',w:110,v:400,l:['ソリ ひくよ','しゃんしゃん'],d:{c:0x9a6a3a,belly:0xe8d0b0,ear:'horse',horn:'antler',snout:'muzzle',snoutC:0xe8d0b0,redNose:1,tail:'pom'}},
+  horse:{n:'うま',w:400,v:500,l:['ヒヒーン','パカパカ'],d:{c:0xa8683a,belly:0xc88a5a,ear:'horse',snout:'long',snoutC:0xc88a5a,maneTop:0x3a2a1a,tail:'horse',maneC:0x3a2a1a}},
+  zebra:{n:'シマウマ',w:300,v:600,l:['しましま〜','はしるの はやいよ'],d:{c:0xffffff,pat:'zebra',ink:0x2a2226,belly:0xffffff,ear:'horse',snout:'long',snoutC:0x3a3a3a,maneTop:0x2a2226,tail:'tuft',tuftC:0x2a2226}},
+  unicorn:{n:'ユニコーン',w:200,v:1000,l:['キラキラ〜','にじの くにから きたよ'],d:{c:0xffffff,belly:0xfff6ff,ear:'horse',snout:'long',snoutC:0xffeef6,horn:'uni',maneTop:0xff8ad8,tail:'horse',maneC:0xb08aff}},
+  hamster:{n:'ハムスター',w:1,v:1400,l:['ほっぺに たね いっぱい','カリカリ'],d:{c:0xf2b46a,belly:0xffffff,ear:'round',earIn:0xffc0cc,snout:'none',tail:'none',s:0.75,extra(P,h){for(const s of[-1,1])ball(0.14,lam(0xffffff),s*0.28,-0.12,0.18,h)}}},
+  capy:{n:'カピバラ',w:50,v:300,l:['のんびり〜','おんせん いいね'],d:{c:0xa87a4a,belly:0xb88a5a,ear:'tiny',snout:'muzzle',snoutC:0x8a5a32,tail:'none',headW:1.05}},
+  polar:{n:'しろくま',w:300,v:220,l:['さむいの すき','アイス たべたい'],d:{c:0xf5f8ff,belly:0xffffff,ear:'round',earIn:0xe8eef8,snout:'muzzle',snoutC:0xffffff,tail:'pom'}},
+  gorilla:{n:'ゴリラ',w:200,v:150,l:['ウホッ','ドンドコ'],d:{c:0x3a3a42,belly:0x6a6a72,face:0x6a6a72,ear:'tiny',snout:'nose',tail:'none',s:1.15}},
+  octopus:{n:'タコ',w:20,v:500,l:['タコタコ〜','すみ はくよ'],d:{special:spOctopus,h:1.6}},
+  robot:{n:'ロボット',w:120,v:1500,l:['ピポパポ','ウィーン ガシャン'],d:{special:spRobot,h:1.6}},
+  ghost:{n:'おばけ',w:0,v:400,l:['うらめしや〜','ばあ！'],d:{special:spGhost,h:1.7}},
+  turtle:{n:'カメ',w:30,v:300,l:['のーんびり','ゆっくり いこう'],d:{special:spTurtle,h:0.9}},
+  alien:{n:'うちゅうじん',w:30,v:1300,l:['ワレワレハ…','ちきゅう たのしい'],d:{c:0x8ae86a,belly:0xb8f5a0,ear:'none',snout:'none',eyeR:0.1,eyeW:1.2,tail:'none',cheek:false,extra(P,h){for(const s of[-1,1]){cyl(0.015,0.015,0.3,lam(0x5ab84a),s*0.15,0.5,0,h).rotation.z=-s*0.3;ball(0.06,lam(0xffe04a),s*0.2,0.65,0,h)}}}},
+  doctor:{n:'うさぎせんせい',w:20,v:1000,l:['おだいじに〜','げんき かな？'],d:{c:0xfafafa,belly:0xffffff,ear:'long',snout:'none',tail:'pom',extra(P,h,b){ball(0.4,lam(0xffffff),0,0.66,0.02,b,1.02,1.1,0.95);boxm(0.08,0.4,0.02,lam(0x6fb6ff),0,0.66,0.37,b);for(const s of[-1,1])mesh(new THREE.TorusGeometry(0.11,0.015,6,14),lam(0x5a4a3a),s*0.16,0.05,0.42,h);mesh(new THREE.TorusGeometry(0.44,0.025,6,20),lam(0x6fb6ff),0,0.22,0,h).rotation.x=Math.PI/2-0.25;cyl(0.1,0.1,0.02,phong(0xe6eef5,150),0,0.32,0.4,h).rotation.x=Math.PI/2-0.3}}},
+  police:{n:'おまわりさん いぬ',w:20,v:650,l:['パトロール ちゅう！','わるもの いない？'],d:{c:0xffffff,belly:0xffffff,ear:'floppy',earC:0x2a2226,snout:'muzzle',tail:'curl',armC:0x2a4a8a,extra(P,h,b){ball(0.39,lam(0x2a4a8a),0,0.66,0,b,1.02,1.1,0.92);cyl(0.36,0.4,0.16,lam(0x2a4a8a),0,0.4,0,h,16);cyl(0.42,0.42,0.03,lam(0x1a2a5a),0,0.33,0.06,h,16);ball(0.05,lam(0xffd23b),0,0.44,0.37,h)}}},
+  kangaroo:{n:'カンガルー',w:60,v:700,l:['ぴょーん！','ポケットに なにか あるよ'],d:{c:0xc8905a,belly:0xf0d0a8,ear:'horse',snout:'long',snoutC:0xe8c09a,tail:'long',tailC:0xc8905a,s:1.1}},
+  sloth:{n:'ナマケモノ',w:8,v:300,l:['ゆっく〜り…','ねむ〜い'],d:{c:0xa8987a,belly:0xd8c8a8,face:0xf0e8d0,mask:0x6a5a4a,ear:'none',snout:'nose',tail:'none'}},
+};
+
+
+// ================= layout data (picture coordinates) =================
+const PARK=[[340,1300],[330,800],[300,420],[380,250],[560,120],[740,0],[1300,0],[1300,470],[1450,540],[1460,770],[1270,1220],[1000,1290],[600,1340]];
+const PATHS=[
+  {w:48,p:[[470,1240],[560,1170],[640,1110],[740,1060],[830,1010],[890,975],[930,900],[980,790],[1030,680],[1080,600],[1110,575]]},
+  {w:40,p:[[1110,575],[1150,500],[1200,440],[1240,380],[1270,300],[1300,210],[1310,110]]},
+  {w:50,p:[[1110,575],[1200,600],[1300,640],[1380,700],[1420,780]]},
+  {w:36,p:[[890,975],[950,1040],[1050,1080],[1150,1060],[1240,1000],[1320,900],[1400,800]]},
+  {w:36,p:[[560,1170],[540,1060],[500,960],[470,840],[460,720],[470,600],[480,500],[500,420],[480,340],[420,300]]},
+  {w:30,p:[[500,420],[580,360],[650,300],[700,230],[780,160],[870,110],[980,130],[1080,200],[1180,280],[1240,380]]},
+  {w:26,p:[[480,500],[600,470],[720,440],[840,420],[940,450],[1010,500],[1080,560]]},
+  {w:30,p:[[640,1110],[600,1040],[580,960],[620,900],[700,880],[780,920],[830,1010]]},
+  {w:26,p:[[470,840],[420,760],[400,680]]},
+];
+const PLAZAS=[[1110,570,62],[880,975,55],[620,1150,75],[510,400,60],[480,1225,60],[1180,400,70],[1010,500,40],[620,330,40]];
+const KIDS=[[1150,520],[1330,520],[1440,620],[1440,800],[1360,820],[1220,720],[1150,640]];
+const POOL=[[1300,0],[1880,0],[1880,560],[1560,580],[1440,520],[1300,470]];
+const RIVER=[[940,620],[900,640],[860,700],[845,800],[800,880],[730,900],[690,850],[710,760],[760,700],[720,660]];
+const ROSE=[[950,1040],[1250,1000],[1270,1150],[1000,1260],[930,1180]];
+const MINITRAIN=[[1160,860],[1300,790],[1390,870],[1350,1000],[1250,1080],[1150,1000]];
+
+// ================= ground texture =================
+const GT=document.createElement('canvas');GT.width=2048;GT.height=1526;
+{
+  const g=GT.getContext('2d'),s=2048/1880;g.scale(s,s);
+  g.fillStyle='#7fc25a';g.fillRect(0,0,1880,1400);
+  for(let i=0;i<5000;i++){g.fillStyle=Math.random()<.5?'rgba(255,255,255,.07)':'rgba(30,90,20,.09)';g.fillRect(Math.random()*1880,Math.random()*1400,3,6)}
+  // outside: roads + parking
+  g.fillStyle='#a8aeb4';g.beginPath();g.moveTo(1880,60);g.lineTo(1880,200);g.lineTo(1300,1400);g.lineTo(1160,1400);g.closePath();g.fill();
+  g.fillStyle='#b8bec4';g.fillRect(0,1290,700,110);
+  // park area slightly lighter grass
+  g.fillStyle='#8fd06a';g.beginPath();PARK.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.closePath();g.fill();
+  // pool
+  g.fillStyle='#bfe9ff';g.beginPath();POOL.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.closePath();g.fill();
+  g.fillStyle='#6ac8f0';for(const[x,y,a,b]of[[1500,330,90,60],[1700,150,120,70],[1650,420,110,60],[1460,120,60,40]]){g.beginPath();g.ellipse(x,y,a,b,0.4,0,7);g.fill()}
+  g.strokeStyle='#6ac8f0';g.lineWidth=26;g.lineCap='round';g.beginPath();g.moveTo(1380,520);g.bezierCurveTo(1450,300,1600,250,1560,80);g.stroke();
+  // plazas & paths
+  const cream='#f4e8c4',edge='#e0cf9e';
+  const poly=(pts,c)=>{g.fillStyle=c;g.beginPath();pts.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.closePath();g.fill()};
+  poly(KIDS,cream);poly([[1080,320],[1260,300],[1290,470],[1150,500],[1080,450]],cream);
+  for(const pass of[0,1])for(const P of PATHS){g.strokeStyle=pass?cream:edge;g.lineWidth=P.w+(pass?0:8);g.lineJoin='round';g.lineCap='round';g.beginPath();P.p.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.stroke()}
+  for(const[x,y,r]of PLAZAS){g.fillStyle=edge;g.beginPath();g.arc(x,y,r+4,0,7);g.fill();g.fillStyle=cream;g.beginPath();g.arc(x,y,r,0,7);g.fill()}
+  // tile pattern on the hub plaza
+  g.strokeStyle='#e8d8a8';g.lineWidth=3;for(let r=15;r<60;r+=15){g.beginPath();g.arc(1110,570,r,0,7);g.stroke()}
+  // rose garden
+  poly(ROSE,'#a8d88a');for(let i=0;i<700;i++){const x=rand(930,1270),y=rand(1000,1270);g.fillStyle=pick(['#ff7aa8','#ff4a7a','#ffffff','#ffb0c8','#ffd23b']);g.beginPath();g.arc(x,y,3,0,7);g.fill()}
+  g.strokeStyle=cream;g.lineWidth=10;for(let i=0;i<4;i++){g.beginPath();g.arc(1100,1260,60+i*45,Math.PI*1.1,Math.PI*1.9);g.stroke()}
+  // river + lagoon
+  g.strokeStyle='#5ab8e8';g.lineWidth=40;g.beginPath();RIVER.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.stroke();g.strokeStyle='#8fd8ff';g.lineWidth=26;g.stroke();
+  g.fillStyle='#5ab8e8';g.beginPath();g.ellipse(660,1010,112,72,0,0,7);g.fill();g.fillStyle='#8fd8ff';g.beginPath();g.ellipse(660,1010,100,62,0,0,7);g.fill();
+  // mini train track
+  g.strokeStyle='#8a6a4a';g.lineWidth=8;g.beginPath();MINITRAIN.forEach(([x,y],i)=>i?g.lineTo(x,y):g.moveTo(x,y));g.closePath();g.stroke();
+  // wooden coaster dirt area
+  g.fillStyle='#c8b080';g.save();g.translate(760,545);g.rotate(-0.7);g.beginPath();g.ellipse(0,0,190,105,0,0,7);g.fill();g.restore();
+  // playground rubber floor
+  g.fillStyle='#ffd0a8';g.beginPath();g.ellipse(430,770,70,110,0.2,0,7);g.fill();
+}
+const groundTex=new THREE.CanvasTexture(GT);groundTex.anisotropy=4;
+{const m=mesh(new THREE.PlaneGeometry(GW,GD),new THREE.MeshLambertMaterial({map:groundTex}),0,0,0);m.rotation.x=-Math.PI/2;
+ const o=mesh(new THREE.PlaneGeometry(600,600),lam(0x7cbf58),0,-0.05,0);o.rotation.x=-Math.PI/2}
+const GD2=GT.getContext('2d').getImageData(0,0,GT.width,GT.height).data;
+function groundColor(ix,iy){const x=Math.floor(ix*2048/1880),y=Math.floor(iy*2048/1880);if(x<0||y<0||x>=2048||y>=1526)return[0,0,0];const i=(y*2048+x)*4;return[GD2[i],GD2[i+1],GD2[i+2]]}
+function isGrass(ix,iy){const[r,g,b]=groundColor(ix,iy);return g>150&&r<170&&b<130}
+function inPoly(x,y,P){let c=false;for(let i=0,j=P.length-1;i<P.length;j=i++){const[xi,yi]=P[i],[xj,yj]=P[j];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))c=!c}return c}
+const PARKW=PARK.map(([x,y])=>W(x,y));
+// distant hills & city
+for(const[x,z,r,c]of[[-140,-60,60,0x6fb24a],[-110,-140,70,0x7cbf58],[-20,-150,50,0x6fb24a],[150,-120,60,0x8ac868],[-150,60,50,0x7cbf58],[140,110,45,0x6fb24a]]){const h=ball(r,flat(c),x,-r*0.55,z);h.scale.y*=0.6}
+for(let i=0;i<14;i++){const x=rand(60,140),z=rand(40,130);if(x-z*0.5<30)continue;const h=rand(8,22);boxm(rand(6,10),h,rand(6,10),lam(pick([0xe8e0d0,0xd0d8e0,0xf0e8e0])),x,h/2,z)}
+
+// ================= collision =================
+const OBST=[];// {x,z,r} circles  or {e:1,x,z,a,b,rot} ellipses
+function block(ix,iy,r){const[x,z]=W(ix,iy);OBST.push({x,z,r})}
+function blockW(x,z,r){OBST.push({x,z,r})}
+
+// ================= trees (instanced) =================
+{
+  const pts=[];for(let i=0;i<4000&&pts.length<340;i++){const x=rand(0,1880),y=rand(0,1400);if(!isGrass(x,y))continue;
+    let ok=true;for(const q of pts)if(Math.abs(q[0]-x)<22&&Math.abs(q[1]-y)<22){ok=false;break}if(!ok)continue;
+    const inside=inPoly(x,y,PARK);if(inside){if(Math.random()<0.5)continue;let far=true;for(const[ox,oy]of[[35,0],[-35,0],[0,35],[0,-35],[25,25],[-25,-25],[25,-25],[-25,25]])if(!isGrass(x+ox,y+oy)){far=false;break}if(!far)continue}pts.push([x,y,inside])}
+  const trunkG=new THREE.CylinderGeometry(0.35,0.5,3,6),crownG=new THREE.IcosahedronGeometry(2.4,0);
+  const tr=new THREE.InstancedMesh(trunkG,lam(0x8a5a3a),pts.length),cr=new THREE.InstancedMesh(crownG,flat(0x3f9a45),pts.length);
+  const m4=new THREE.Matrix4(),q=new THREE.Quaternion(),sc=new THREE.Vector3(),col=new THREE.Color();
+  pts.forEach(([ix,iy,inside],i)=>{const[x,z]=W(ix,iy);const s=rand(0.8,1.4);m4.compose(new THREE.Vector3(x,1.5*s,z),q,sc.set(s,s,s));tr.setMatrixAt(i,m4);
+    q.setFromEuler(new THREE.Euler(0,rand(0,6),0));m4.compose(new THREE.Vector3(x,4.2*s,z),q,sc.set(s,s*rand(0.9,1.3),s));cr.setMatrixAt(i,m4);q.identity();cr.setColorAt(i,col.setHex(pick([0x3f9a45,0x4fa64a,0x5ab84a,0x3a8a3a])));
+    if(inside)blockW(x,z,0.8*s)});
+  scene.add(tr);scene.add(cr);
+}
+// palm trees along the palm walk
+function palm(x,z,s=1){const g=grp(x,0,z);const tk=cyl(0.25*s,0.4*s,5*s,flat(0x9a7a4a),0.15*s,2.5*s,0,g,7);tk.rotation.z=-0.05;for(let i=0;i<7;i++){const l=ball(1.8*s,flat(0x3fae4a),Math.cos(i*0.9)*1.3*s,5*s,Math.sin(i*0.9)*1.3*s,g,1,0.12,0.35);l.rotation.y=-i*0.9;l.rotation.z=0.35}blockW(x,z,0.6)}
+for(let i=0;i<10;i++){const t=i/9;const ix=900+t*(1090-900),iy=960+t*(590-960);for(const s of[-1,1]){const[x,z]=W(ix+s*38,iy+s*14);palm(x,z,1)}}
+
+// ================= main gate =================
+{const[x,z]=W(480,1235);const g=grp(x,0,z);g.rotation.y=-0.91;
+  for(const s of[-1,1]){cyl(1.2,1.4,9,lam(0xf4e0b0),s*9,4.5,0,g,12);cone(1.8,2.6,lam(0xff6a5a),s*9,10.3,0,g,12)}
+  const arch=mesh(new THREE.TorusGeometry(9,0.9,10,30,Math.PI),lam(0x6fd06a),0,6,0,g);
+  const sg=board('ひらひらパーク',0,12.5,0.2,14,'#ff5a8a',0,g);board('ひらひらパーク',0,12.5,-0.2,14,'#ff5a8a',Math.PI,g);
+  for(let i=0;i<7;i++)ball(0.9,phong([0xff5a5a,0xffd23b,0x6ab8ff,0x8ad06a,0xff8ad8][i%5],90),-6+i*2,1.2,2,g);
+  for(const s of[-1,1])blockW(x+s*9*0.61,z+s*9*0.79,1.6);
+  // event halls
+  for(const[ix,iy,w,d,c]of[[780,1265,24,14,0xd8eedd],[850,1200,16,11,0xe8f4e0]]){const[hx,hz]=W(ix,iy);boxm(w,7,d,lam(c),hx,3.5,hz).rotation.y=-0.55;const r=cone(Math.max(w,d)*0.72,3,lam(0x6aa87a),hx,8.5,hz,null,4);r.rotation.y=Math.PI/4-0.55;blockW(hx,hz,Math.min(w,d)*0.6)}
+}
+// flower court + magical lagoon rock stage
+{const[x,z]=W(660,1005);const g=grp(x,0,z);
+  for(const[a,b,r,h]of[[0,0,4,10],[3,1,3,7],[-3,-1,3,8],[1,-3,2.6,12],[-1.5,2,2.4,6]]){const c=cone(r,h,flat(0xb8885a),a,h/2,b,g,7);c.rotation.y=rand(0,3)}
+  const fall=mesh(new THREE.PlaneGeometry(2.2,8),new THREE.MeshBasicMaterial({color:0xdff6ff,transparent:true,opacity:0.8}),0.5,4,4.1,g);
+  OBST.push({e:1,x,z,a:12.3,b:7.9,rot:0});
+  floatSign('マジカルラグーン',x,14,z,'#3fa9f5',9)}
+// fairy forest + hub plaza fountain
+{const[x,z]=W(1110,570);cyl(3,3.4,0.8,lam(0xe8e0d0),x,0.4,z,null,20);const w=cyl(2.6,2.6,0.1,phong(0x8fd8ff,100),x,0.82,z,null,20);cyl(0.4,0.6,2.5,lam(0xe8e0d0),x,1.6,z);blockW(x,z,3.6);floatSign('ハブプラザ',x,6,z,'#ff9a2a',7)}
+{const[x,z]=W(1000,490);for(let i=0;i<8;i++){const a=i/8*6.28;const t=grp(x+Math.cos(a)*4,0,z+Math.sin(a)*4);cyl(0.5,0.6,3,lam(0x8a5a3a),0,1.5,0,t);ball(2,flat(0x2f7a3a),0,4,0,t);const m=ball(0.5,lam(pick([0xff4a3a,0xffd23b])),1.2,0.5,0,t,1,0.6,1)}floatSign('ようせいの もり',x,9,z,'#2f8a3a',8)}
+// outdoor stage
+{const[x,z]=W(625,320);const g=grp(x,0,z);g.rotation.y=0.6;boxm(10,1,6,lam(0xc8a070),0,0.5,0,g);const r=mesh(new THREE.CylinderGeometry(6,6,8,20,1,true,0,Math.PI),new THREE.MeshLambertMaterial({color:0xffffff,side:THREE.DoubleSide}),0,5,-1,g);r.rotation.z=Math.PI/2;r.rotation.y=Math.PI/2;blockW(x,z,5)}
+// playground
+{const[x,z]=W(430,770);const cs=[0xff5a5a,0xffd23b,0x6ab8ff,0x8ad06a,0xff8ad8];for(let i=0;i<14;i++){const a=rand(-4,4),b=rand(-7,7);const h=rand(1,4);boxm(rand(1,2.5),h,rand(1,2.5),lam(pick(cs)),x+a,h/2,z+b)}
+  for(let i=0;i<3;i++){const t=mesh(new THREE.TorusGeometry(2,0.35,8,16,Math.PI),lam(pick(cs)),x+rand(-3,3),0,z-6+i*6);t.rotation.y=rand(0,3)}floatSign('あそびば',x,8,z,'#ff9a2a',6)}
+// pool (closed in this season)
+{const[x,z]=W(1590,280);floatSign('プール（なつ だけ）',x,10,z,'#3fa9f5',11);for(let i=0;i<3;i++){const c=new THREE.CatmullRomCurve3([new THREE.Vector3(x-8+i*6,10,z-10),new THREE.Vector3(x-6+i*6,7,z-4),new THREE.Vector3(x-9+i*6,4,z+2),new THREE.Vector3(x-6+i*6,0.5,z+6)]);mesh(new THREE.TubeGeometry(c,30,0.7,8),lam(pick([0xffd23b,0xff5a8a,0x6ab8ff])),0,0,0);cyl(0.3,0.3,10,lam(0xffffff),x-8+i*6,5,z-10)}}
+// fence along the park edge
+{const pts=PARKW;const fm=lam(0xffffff);for(let i=0;i<pts.length;i++){const[a,b]=pts[i],[c,d]=pts[(i+1)%pts.length];const L=Math.hypot(c-a,d-b),n=Math.floor(L/3);for(let k=0;k<n;k++){const t=k/n;cyl(0.1,0.1,1.4,fm,a+(c-a)*t,0.7,b+(d-b)*t,null,5)}const r=boxm(L,0.15,0.1,fm,(a+c)/2,1.2,(b+d)/2);r.rotation.y=-Math.atan2(d-b,c-a)}}
+// the green train outside the park
+const outTrain=grp(0,0,0);{for(let i=0;i<4;i++){boxm(3,3.2,16,lam(0x2f9a5a),0,2.4,i*16.5,outTrain);boxm(3.05,0.9,15.6,lam(0xcff0e0),0,3,i*16.5,outTrain)}}
+
+// ================= rides =================
+const RIDES=[];// {name,x,z,r,ride:fn|null,update(dt,t)}
+const ANIM=[];// update functions
+// ---------- Ferris wheel (rideable) ----------
+const FW={};
+{const[x,z]=W(525,372);FW.x=x;FW.z=z;
+  const tx=(940-525)*K,tz=(700-372)*K,tl=Math.hypot(tx,tz);FW.nx=tx/tl;FW.nz=tz/tl;// faces the park
+  FW.R=30;FW.H=34;FW.n=32;FW.ang=0;FW.w=Math.PI*2/55;
+  const g=grp(x,0,z);g.rotation.y=Math.atan2(FW.nx,FW.nz);FW.g=g;// local z = toward the park, wheel spins in local x-y plane
+  const white=phong(0xffffff,80);
+  for(const s of[-1,1])for(const d of[-1,1])beam(new THREE.Vector3(d*13,0,s*5),new THREE.Vector3(0,FW.H,s*2.2),0.7,white,g);
+  cyl(1.4,1.4,6,white,0,FW.H,0,g,16).rotation.x=Math.PI/2;
+  const wheel=grp(0,FW.H,0,g);FW.wheel=wheel;
+  const rainbow=[0xff4a4a,0xff9a2a,0xffd23b,0x6fdc6f,0x4fb3ff,0x7a5aff,0xff8ad8];
+  for(const s of[-1.4,1.4]){mesh(new THREE.TorusGeometry(FW.R,0.35,8,72),white,0,0,s,wheel);mesh(new THREE.TorusGeometry(FW.R*0.55,0.25,8,48),white,0,0,s,wheel)}
+  for(let i=0;i<FW.n;i++){const a=i/FW.n*Math.PI*2;const sp=boxm(0.22,FW.R,0.22,lam(rainbow[i%7]),Math.cos(a)*FW.R/2,Math.sin(a)*FW.R/2,0,wheel);sp.rotation.z=a-Math.PI/2}
+  // lights on the rim
+  FW.bulbs=[];for(let i=0;i<64;i++){const a=i/64*Math.PI*2;FW.bulbs.push(ball(0.28,basic(rainbow[i%7]),Math.cos(a)*(FW.R+0.4),Math.sin(a)*(FW.R+0.4),1.6,wheel))}
+  // gondolas (kept upright)
+  FW.gs=[];
+  for(let i=0;i<FW.n;i++){const gd=grp(0,0,0,g);const c=rainbow[i%7];const cm=lam(c);
+    boxm(2.8,0.25,2.8,cm,0,-1.5,0,gd);boxm(2.9,0.3,2.9,cm,0,1.3,0,gd);cone(2.1,0.7,cm,0,1.8,0,gd,4).rotation.y=Math.PI/4;
+    for(const[a,b]of[[1.35,1.35],[-1.35,1.35],[1.35,-1.35],[-1.35,-1.35]])boxm(0.16,2.6,0.16,cm,a,-0.1,b,gd);
+    for(const[a,b,ry]of[[0,1.4,0],[0,-1.4,0],[1.4,0,Math.PI/2],[-1.4,0,Math.PI/2]]){const lo=boxm(2.7,0.9,0.08,cm,a,-1.0,b,gd);lo.rotation.y=ry;const gl=mesh(new THREE.PlaneGeometry(2.6,1.5),new THREE.MeshLambertMaterial({color:0xdff4ff,transparent:true,opacity:0.18,side:THREE.DoubleSide,depthWrite:false}),a,0.3,b,gd);gl.rotation.y=ry}
+    for(const s of[-1,1])boxm(2.2,0.5,0.7,lam(0xfff4e0),0,-1.1,s*0.95,gd);
+    cyl(0.08,0.08,1.4,white,0,2.4,0,gd,6);
+    FW.gs.push(gd)}
+  // boarding platform
+  const px=x+FW.nx*5,pz=z+FW.nz*5;FW.px=px;FW.pz=pz;
+  const pl=grp(px,0,pz);pl.rotation.y=g.rotation.y;boxm(12,0.6,5,lam(0xe8d8b8),0,0.3,0,pl);for(let i=0;i<3;i++)boxm(4,0.2,1,lam(0xd8c8a8),0,0.1,3+i*0.8-0.4,pl);
+  board('かんらんしゃ',0,5,2.4,7,'#ff5a8a',0,pl);cyl(0.15,0.15,4,lam(0xffffff),-3.3,2,2.4,pl);cyl(0.15,0.15,4,lam(0xffffff),3.3,2,2.4,pl);
+  blockW(x+FW.nx*-0.5,z+FW.nz*-0.5,4.5);
+  for(const d of[-1,1]){const lx=Math.cos(g.rotation.y)*13*d,lz=-Math.sin(g.rotation.y)*13*d;blockW(x+lx,z+lz,1.5)}
+  RIDES.push({name:'かんらんしゃ',x:px+FW.nx*3,z:pz+FW.nz*3,r:6,open:true,board:()=>rideFerris()});
+  ANIM.push((dt,t)=>{FW.ang+=FW.w*dt;FW.wheel.rotation.z=FW.ang;
+    for(let i=0;i<FW.n;i++){const a=i/FW.n*Math.PI*2+FW.ang;FW.gs[i].position.set(Math.cos(a)*FW.R,FW.H+Math.sin(a)*FW.R-2.6,0)}
+    const k=Math.floor(t*4);for(let i=0;i<FW.bulbs.length;i++)FW.bulbs[i].visible=((i+k)%3)!==0});
+}
+// ---------- coasters (shared) ----------
+function coaster(pts,opt){
+  const curve=new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(p[0],p[1],p[2])),true,'catmullrom',0.4);
+  const L=curve.getLength();const N=Math.floor(L/1.2);
+  const railM=phong(opt.rail,80);
+  // two rails + ties
+  const fr=curve.computeFrenetFrames(N,true);
+  const up=new THREE.Vector3(0,1,0);
+  const rails=[[],[]];
+  for(let i=0;i<=N;i++){const u=i/N,p=curve.getPointAt(u),t=curve.getTangentAt(u);let side=new THREE.Vector3().crossVectors(t,up);if(side.lengthSq()<1e-4)side.set(1,0,0);side.normalize();
+    rails[0].push(p.clone().addScaledVector(side,0.55));rails[1].push(p.clone().addScaledVector(side,-0.55))}
+  for(const r of rails)mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(r,true),N,0.14,5,true),railM,0,0,0);
+  mesh(new THREE.TubeGeometry(curve,N,0.25,5,true),railM,0,-0.25,0);
+  // supports
+  const supG=new THREE.CylinderGeometry(opt.wood?0.18:0.3,opt.wood?0.18:0.35,1,6);const sup=[];
+  const step=opt.wood?1.6:5;for(let s=0;s<L;s+=step){const p=curve.getPointAt(s/L);if(p.y<1.2)continue;if(opt.wood){for(const o of[-1.2,1.2]){const t=curve.getTangentAt(s/L);const side=new THREE.Vector3(-t.z,0,t.x).normalize();sup.push([p.x+side.x*o,p.y,p.z+side.z*o])}}else sup.push([p.x,p.y,p.z])}
+  const inst=new THREE.InstancedMesh(supG,lam(opt.sup),sup.length);const m4=new THREE.Matrix4();
+  sup.forEach(([x,y,z],i)=>{m4.makeScale(1,y,1);m4.setPosition(x,y/2-0.3,z);inst.setMatrixAt(i,m4)});scene.add(inst);
+  if(opt.wood){const crossG=new THREE.BoxGeometry(0.12,0.12,1);const cr=[];for(let s=0;s<L;s+=1.6){const p=curve.getPointAt(s/L);for(let h=2;h<p.y-0.5;h+=2.2)cr.push([p,curve.getTangentAt(s/L),h])}
+    const ci=new THREE.InstancedMesh(crossG,lam(opt.sup),cr.length);const q=new THREE.Quaternion(),e=new THREE.Euler();cr.forEach(([p,t,h],i)=>{e.set(0,Math.atan2(t.x,t.z)+Math.PI/2,0);q.setFromEuler(e);m4.compose(new THREE.Vector3(p.x,h,p.z),q,new THREE.Vector3(1,1,2.6));ci.setMatrixAt(i,m4)});scene.add(ci)}
+  // train
+  const cars=[];for(let i=0;i<opt.cars;i++){const c=grp();boxm(1.5,0.8,2.2,lam(opt.car),0,0.3,0,c);boxm(1.3,0.5,0.3,lam(0x333333),0,0.75,0.6,c);boxm(1.3,0.5,0.3,lam(0x333333),0,0.75,-0.4,c);
+    if(i===0)boxm(1.5,0.6,0.5,lam(opt.car2||opt.car),0,0.6,1.1,c);
+    // riders
+    for(const zz of[0.3,-0.7]){ball(0.32,lam(pick([0xffd9b8,0xf0c8a0])),0,1.25,zz,c);ball(0.33,lam(pick([0x3a2a1a,0x7a4a2a,0xffd23b])),0,1.4,zz-0.05,c,1,0.7,1)}cars.push(c)}
+  const C={curve,L,cars,s:0,v:opt.v||10,lift:opt.lift,opt};
+  let hmax=0;for(const p of pts)hmax=Math.max(hmax,p[1]);C.hmax=hmax;
+  ANIM.push((dt)=>{const u0=C.s/L,p=curve.getPointAt(u0);const inLift=opt.lift&&u0>opt.lift[0]&&u0<opt.lift[1];
+    let v=inLift?4:Math.sqrt(Math.max(16,2*9.8*(C.hmax+1-p.y)))*(opt.speed||1);if(opt.station&&u0<opt.station)v=3;C.v=v;C.s=(C.s+v*dt)%L;
+    cars.forEach((c,i)=>{const s=((C.s-i*2.5)%L+L)%L,u=s/L;const q=curve.getPointAt(u),t=curve.getTangentAt(u);c.position.copy(q);c.lookAt(q.x+t.x,q.y+t.y,q.z+t.z)})});
+  return C;
+}
+// wooden coaster (big oval with a figure-eight, in the middle of the park)
+{const[cx,cz]=W(760,545);const rot=-0.72;const pts=[];
+  const H=[3,3,6,14,21,23,20,10,3,8,13,9,4,7,11,7,3,9,14,10,5,8,12,8,4,3,3];
+  const n=H.length;for(let i=0;i<n;i++){const t=i/n;const a=t*Math.PI*2*2;const lap=t<0.5?1:0.82;
+    let lx=Math.cos(a)*19*lap,lz=Math.sin(a)*9.5*lap;if(t>=0.5)lx*=-1;// second lap crosses the first like an 8
+    const x=cx+lx*Math.cos(rot)-lz*Math.sin(rot),z=cz+lx*Math.sin(rot)+lz*Math.cos(rot);pts.push([x,H[i],z])}
+  const C=coaster(pts,{rail:0x8a6a4a,sup:0xa8845a,car:0xd84a3a,car2:0xffd23b,cars:5,wood:true,lift:[0.06,0.2],station:0.04});
+  OBST.push({e:1,x:cx,z:cz,a:21,b:11.5,rot});
+  const st=grp(...[pts[0][0],0,pts[0][2]]);boxm(7,3.5,5,lam(0x8a5a3a),0,1.75,0,st);cone(5.5,2.2,lam(0xd84a3a),0,4.6,0,st,4).rotation.y=Math.PI/4;
+  RIDES.push({name:'もくもくコースター',x:pts[0][0],z:pts[0][2],r:7});
+  floatSign('もくもくコースター',cx,28,cz,'#a86a3a',11)}
+// big steel coaster with loops (north)
+{const raw=[[900,400,5],[860,330,9],[845,250,19],[845,150,30],[880,60,31],[960,30,24],[1060,55,6],[1150,95,4],[1230,150,'L'],[1320,90,16],[1430,45,12],[1460,120,14],[1380,190,5],[1300,240,'L'],[1260,330,12],[1220,420,4],[1130,470,9],[1030,460,6],[950,430,4]];
+  const pts=[];for(let i=0;i<raw.length;i++){const[ix,iy,h]=raw[i];const[x,z]=W(ix,iy);
+    if(h==='L'){// vertical loop
+      const[px,pz]=W(raw[i-1][0],raw[i-1][1]),[nx,nz]=W(raw[i+1][0],raw[i+1][1]);let dx=nx-px,dz=nz-pz;const dl=Math.hypot(dx,dz);dx/=dl;dz/=dl;const sx=-dz,sz=dx;const R=8;
+      for(let k=0;k<10;k++){const a=-Math.PI/2+k/10*Math.PI*2;const off=(k/10-0.5)*3;pts.push([x+dx*Math.cos(a)*R+sx*off,4+R+Math.sin(a)*R,z+dz*Math.cos(a)*R+sz*off])}}
+    else pts.push([x,h,z])}
+  const C=coaster(pts,{rail:0xf4f4f4,sup:0xe0e4e8,car:0xe02a3a,car2:0x2a2a3a,cars:6,lift:[0.03,0.16],station:0.02,speed:1.1});
+  const[sx,sz]=W(905,395);const st=grp(sx,0,sz);boxm(9,4,6,lam(0xd84a3a),0,2,0,st);boxm(9.4,0.6,6.4,lam(0xffffff),0,4.2,0,st);blockW(sx,sz,4.5);
+  RIDES.push({name:'まっかっか ファルコン',x:sx,z:sz,r:7});floatSign('まっかっか ファルコン',sx,10,sz,'#e02a3a',11)}
+// swing tower
+{const[x,z]=W(1210,385);const g=grp(x,0,z);cyl(1.2,1.6,22,lam(0xff8a3a),0,11,0,g,12);const top=grp(0,18,0,g);cone(6,2.5,lam(0xffd23b),0,1.5,0,top,16);const chairs=[];
+  for(let i=0;i<16;i++){const a=i/16*Math.PI*2;const arm=grp(Math.cos(a)*5.5,0,Math.sin(a)*5.5,top);cyl(0.03,0.03,5,lam(0x555555),0,-2.5,0,arm,4);const ch=boxm(0.8,0.2,0.6,lam(pick([0xff5a5a,0x6ab8ff,0xffd23b])),0,-5,0,arm);arm.rotation.set(0,-a,0.5);chairs.push(arm)}
+  blockW(x,z,7.5);RIDES.push({name:'くるくる ブランコ',x,z,r:10});floatSign('くるくる ブランコ',x,26,z,'#ff8a3a',9);
+  ANIM.push((dt,t)=>{top.rotation.y=t*0.9;top.position.y=14+Math.sin(t*0.3)*4})}
+// umbrella ride + pirate ship + octopus
+{const[x,z]=W(1150,455);const g=grp(x,0,z);cyl(0.6,0.8,7,lam(0xffffff),0,3.5,0,g);const um=grp(0,7,0,g);const cs=[0xffffff,0x3a7ae8];for(let i=0;i<12;i++){const s=mesh(new THREE.CylinderGeometry(0,6,2,3,1,true,i/12*Math.PI*2,Math.PI*2/12),new THREE.MeshLambertMaterial({color:cs[i%2],side:THREE.DoubleSide}),0,0.6,0,um);}
+  for(let i=0;i<10;i++){const a=i/10*Math.PI*2;cyl(0.03,0.03,3,lam(0x555555),Math.cos(a)*5,-1.5,Math.sin(a)*5,um,4);boxm(1,0.6,0.8,lam(pick([0xff5a8a,0xffd23b])),Math.cos(a)*5,-3.2,Math.sin(a)*5,um)}
+  blockW(x,z,6);RIDES.push({name:'かさ グルグル',x,z,r:8});ANIM.push((dt,t)=>{um.rotation.y=t*1.2;um.rotation.z=Math.sin(t*0.5)*0.25})}
+{const[x,z]=W(1150,330);const g=grp(x,0,z);g.rotation.y=0.5;for(const s of[-1,1]){const a=cyl(0.3,0.3,10,lam(0x3a7ae8),s*3,4,2,g);a.rotation.x=0.35;const b=cyl(0.3,0.3,10,lam(0x3a7ae8),s*3,4,-2,g);b.rotation.x=-0.35}cyl(0.3,0.3,7,lam(0x3a7ae8),0,8.5,0,g).rotation.z=Math.PI/2;
+  const sw=grp(0,8.5,0,g);const ship=grp(0,-6.5,0,sw);const hull=mesh(new THREE.CylinderGeometry(2,2,9,12,1,false,0,Math.PI),lam(0x8a4a2a),0,0,0,ship);hull.rotation.z=Math.PI/2;hull.rotation.y=Math.PI/2;boxm(0.2,4,0.2,lam(0x6a3a1a),0,2,0,ship);mesh(new THREE.PlaneGeometry(3,2.5),new THREE.MeshLambertMaterial({color:0xffffff,side:THREE.DoubleSide}),0,2.5,0.2,ship);
+  blockW(x,z,6);RIDES.push({name:'かいぞくせん',x,z,r:8});ANIM.push((dt,t)=>{sw.rotation.z=Math.sin(t*0.9)*0.9})}
+{const[x,z]=W(1272,565);const g=grp(x,0,z);const body=grp(0,0,0,g);ball(2.2,phong(0xe8402a,40),0,6,0,body,1,1.15,1);for(const s of[-1,1]){ball(0.5,lam(0xffffff),s*0.8,6.5,1.9,body);ball(0.25,lam(0x111111),s*0.8,6.5,2.3,body)}
+  const arms=[];for(let i=0;i<8;i++){const a=i/8*Math.PI*2;const arm=grp(0,4,0,body);arm.rotation.y=a;const t=cyl(0.35,0.5,6,phong(0xe8402a,40),3,0,0,arm,8);t.rotation.z=Math.PI/2+0.4;const car=grp(6,-2,0,arm);cyl(0.9,0.9,0.8,lam(pick([0xffd23b,0x6ab8ff,0x8ad06a])),0,0,0,car,12);arms.push(arm)}
+  blockW(x,z,7);RIDES.push({name:'くるくる タコ',x,z,r:9});ANIM.push((dt,t)=>{body.rotation.y=t*0.8;arms.forEach((a,i)=>a.position.y=4+Math.sin(t*2+i)*1.2)})}
+// kids area: carousel, teacups, planes, mini drop tower
+{const[x,z]=W(1255,665);const g=grp(x,0,z);cyl(5.5,5.5,0.6,lam(0xfff0f5),0,0.3,0,g,24);cyl(0.5,0.5,6,lam(0xffd23b),0,3,0,g);const roof=cone(6.5,2.5,lam(0xff5a8a),0,7.2,0,g,24);cyl(6.4,6.4,0.6,lam(0xffffff),0,5.8,0,g,24);
+  const rot=grp(0,0,0,g);const horses=[];for(let i=0;i<10;i++){const a=i/10*Math.PI*2;const h=grp(Math.cos(a)*4,1.6,Math.sin(a)*4,rot);h.rotation.y=-a;cyl(0.06,0.06,5,lam(0xffd23b),0,1.6,0,h,6);const c=pick([0xffffff,0xffc0d8,0xc8e8ff]);ball(0.55,lam(c),0,0,0,h,0.7,0.6,1.3);ball(0.3,lam(c),0,0.5,0.6,h,0.7,1,1.1);horses.push(h)}
+  blockW(x,z,6);RIDES.push({name:'メリーゴーラウンド',x,z,r:8});floatSign('メリーゴーラウンド',x,11,z,'#ff5a8a',9);ANIM.push((dt,t)=>{rot.rotation.y=t*0.6;horses.forEach((h,i)=>h.position.y=1.6+Math.sin(t*3+i)*0.5)})}
+{const[x,z]=W(1200,720);const g=grp(x,0,z);cyl(5,5,0.4,lam(0xb8e0ff),0,0.2,0,g,24);const plate=grp(0,0.4,0,g);const cups=[];for(let i=0;i<5;i++){const a=i/5*Math.PI*2;const c=grp(Math.cos(a)*3,0,Math.sin(a)*3,plate);const cm=lam(pick([0xff8ad8,0xffd23b,0x8ad06a,0x6ab8ff,0xff9a2a]));mesh(new THREE.CylinderGeometry(1.1,0.8,1.2,16,1,true),new THREE.MeshLambertMaterial({color:cm.color,side:THREE.DoubleSide}),0,0.6,0,c);mesh(new THREE.TorusGeometry(0.4,0.1,6,12),cm,1.2,0.7,0,c);cups.push(c)}
+  blockW(x,z,5.5);RIDES.push({name:'コーヒーカップ',x,z,r:7});ANIM.push((dt,t)=>{plate.rotation.y=t*0.7;cups.forEach((c,i)=>c.rotation.y=t*(2+i*0.4))})}
+{const[x,z]=W(1150,785);const g=grp(x,0,z);cyl(0.5,0.6,5,lam(0x6ab8ff),0,2.5,0,g);const top=grp(0,4.5,0,g);const pl=[];for(let i=0;i<6;i++){const a=i/6*Math.PI*2;const arm=boxm(4,0.15,0.15,lam(0x888888),Math.cos(a)*2,0,Math.sin(a)*2,top);arm.rotation.y=-a;const p=grp(Math.cos(a)*4,-1,Math.sin(a)*4,top);p.rotation.y=-a;ball(0.6,lam(pick([0xff5a5a,0xffd23b,0x6fdc6f])),0,0,0,p,0.6,0.6,1.8);boxm(2.4,0.1,0.6,lam(0xffffff),0,0.1,0,p)}
+  blockW(x,z,5);RIDES.push({name:'ひこうき',x,z,r:7});ANIM.push((dt,t)=>{top.rotation.y=-t*1.1;top.position.y=4+Math.sin(t*0.8)*1.2})}
+{const[x,z]=W(1370,740);const g=grp(x,0,z);cyl(0.9,1.1,14,lam(0xffffff),0,7,0,g,12);for(let i=0;i<5;i++)cyl(0.95,0.95,1,lam(0xe02a3a),0,1.5+i*2.8,0,g,12);ball(1.2,basic(0xfff2a0),0,14.8,0,g);const seat=grp(0,2,0,g);cyl(1.6,1.6,0.8,lam(0x6ab8ff),0,0,0,seat,16);
+  blockW(x,z,2.2);RIDES.push({name:'ストン タワー',x,z,r:5});ANIM.push((dt,t)=>{const c=(t*0.25)%1;seat.position.y=c<0.6?2+c/0.6*10:c<0.7?12-(c-0.6)/0.1*10:2})}
+// mini train around the kids coaster area
+{const pts=MINITRAIN.map(([ix,iy])=>{const[x,z]=W(ix,iy);return new THREE.Vector3(x,0.3,z)});const curve=new THREE.CatmullRomCurve3(pts,true);const L=curve.getLength();const cars=[];
+  for(let i=0;i<4;i++){const c=grp();boxm(1.6,1.4,2.6,lam(i?pick([0x6ab8ff,0xffd23b,0xff8ad8]):0x2a6a3a),0,0.9,0,c);if(!i){cyl(0.35,0.35,1,lam(0x222222),0,2,0.6,c);ball(0.25,basic(0xfff2a0),0,1.2,1.35,c)}cars.push(c)}
+  let s=0;ANIM.push((dt)=>{s=(s+5*dt)%L;cars.forEach((c,i)=>{const u=(((s-i*2.9)%L)+L)%L/L;const p=curve.getPointAt(u),t=curve.getTangentAt(u);c.position.copy(p);c.lookAt(p.x+t.x,p.y,p.z+t.z)})});
+  const[x,z]=W(1270,900);RIDES.push({name:'ミニきしゃ',x,z,r:6});floatSign('ミニきしゃ',x,6,z,'#2a6a3a',7)}
+// kids coaster with a red barn
+{const[cx,cz]=W(1235,905);const pts=[];for(let i=0;i<12;i++){const a=i/12*Math.PI*2;pts.push([cx+Math.cos(a)*9,[2,2,5,7,4,2,3,5,3,2,2,2][i],cz+Math.sin(a)*6])}coaster(pts,{rail:0xff6a3a,sup:0xffd23b,car:0x3fa9f5,cars:3,v:6,speed:0.7});
+  const[bx,bz]=W(1225,830);boxm(5,4,4,lam(0xd84a3a),bx,2,bz);const r=cone(3.8,2,lam(0xffffff),bx,5,bz,null,4);r.rotation.y=Math.PI/4;blockW(bx,bz,3)}
+// peekaboo kids town with a little ferris wheel
+{const[x,z]=W(760,175);const g=grp(x,0,z);const w=grp(0,6,0,g);for(let i=0;i<8;i++){const a=i/8*Math.PI*2;boxm(0.15,5,0.15,lam(0xffd23b),Math.cos(a)*2.5,Math.sin(a)*2.5,0,w).rotation.z=a+Math.PI/2;boxm(0.9,0.9,0.9,lam(pick([0xff5a5a,0x6ab8ff,0x8ad06a])),Math.cos(a)*5,Math.sin(a)*5,0,w)}cyl(0.3,0.3,6,lam(0xffffff),0,3,0,g);
+  ANIM.push((dt,t)=>{w.rotation.z=t*0.4;w.children.forEach((c,i)=>{if(c.geometry.parameters.width===0.9)c.rotation.z=-t*0.4})});blockW(x,z,3);
+  for(let i=0;i<4;i++){const[hx,hz]=W(680+i*28,240+(i%2)*30);boxm(3,2.5,3,lam(pick([0xffe0a0,0xc8e8ff,0xffc8d8])),hx,1.25,hz);cone(2.6,1.6,lam(pick([0xff5a5a,0x3a7ae8])),hx,3.3,hz,null,4).rotation.y=Math.PI/4;blockW(hx,hz,2)}
+  RIDES.push({name:'ちびっこタウン',x,z,r:7});floatSign('ちびっこタウン',x,13,z,'#ff9a2a',8)}
+// river ride boats
+{const pts=RIVER.map(([ix,iy])=>{const[x,z]=W(ix,iy);return new THREE.Vector3(x,0.35,z)});const curve=new THREE.CatmullRomCurve3(pts,false);const L=curve.getLength();const boats=[];
+  for(let i=0;i<4;i++){const b=grp();cyl(1.4,1.4,0.7,lam(pick([0xffd23b,0xff5a5a,0x3fa9f5])),0,0,0,b,14);mesh(new THREE.TorusGeometry(1.4,0.25,6,16),lam(0x333333),0,0.35,0,b).rotation.x=Math.PI/2;boats.push(b)}
+  ANIM.push((dt,t)=>{boats.forEach((b,i)=>{const u=((t*0.03+i*0.25)%1);const p=curve.getPointAt(u);b.position.set(p.x,0.3+Math.sin(t*3+i)*0.1,p.z);b.rotation.y=t*(1+i*0.3)})});
+  const[x,z]=W(800,880);RIDES.push({name:'ぐるぐる ラフティング',x,z,r:6})}
+// rose garden bushes + stage
+{const g=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.7,0),flat(0x4a9a4a),120);const m4=new THREE.Matrix4();let n=0;for(let i=0;i<600&&n<120;i++){const ix=rand(930,1270),iy=rand(1000,1270);if(!inPoly(ix,iy,ROSE))continue;const[x,z]=W(ix,iy);m4.makeScale(1,0.7,1);m4.setPosition(x,0.4,z);g.setMatrixAt(n++,m4)}g.count=n;scene.add(g);
+  const[x,z]=W(1100,1180);floatSign('バラの にわ',x,5,z,'#ff4a7a',7)}
+
+// ================= the boy =================
+function makeBoy(){const g=new THREE.Group();const root=grp(0,0,0,g);const skin=lam(0xffd9b8);const P={g,legs:[],arms:[]};
+  const sh=mesh(new THREE.CircleGeometry(0.45,16),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:0.2,depthWrite:false}),0,0.02,0,g);sh.rotation.x=-Math.PI/2;
+  for(const s of[-1,1]){const l=grp(s*0.15,0.6,0,root);cyl(0.1,0.1,0.42,skin,0,-0.28,0,l,8);ball(0.13,lam(0xff4a3a),0,-0.52,0.06,l,1,0.65,1.4);boxm(0.24,0.2,0.26,lam(0x2a5ac8),0,-0.02,0,l);P.legs.push(l)}
+  boxm(0.56,0.3,0.36,lam(0x2a5ac8),0,0.68,0,root);
+  ball(0.32,lam(0xffd23b),0,0.98,0,root,1,1.05,0.8);mesh(new THREE.TorusGeometry(0.16,0.04,6,12),lam(0xff4a3a),0,1.18,0.2,root);
+  for(const s of[-1,1]){const a=grp(s*0.33,1.15,0,root);cyl(0.08,0.08,0.4,lam(0xffd23b),0,-0.15,0,a,8);ball(0.09,skin,0,-0.38,0,a);a.rotation.z=s*0.15;P.arms.push(a)}
+  const head=grp(0,1.62,0,root);P.head=head;ball(0.38,skin,0,0,0,head);ball(0.4,lam(0x3a2a1a),0,0.1,-0.06,head,1,0.85,1);
+  const cap=ball(0.41,lam(0xe8402a),0,0.16,0,head,1,0.6,1);boxm(0.5,0.05,0.35,lam(0xe8402a),0,0.12,0.4,head);
+  for(const s of[-1,1]){ball(0.05,lam(0x2a2226),s*0.13,0,0.34,head,1,1.2,0.6);ball(0.06,lam(0xffa0b4),s*0.22,-0.1,0.3,head,1,0.6,0.4);ball(0.08,skin,s*0.38,0,0,head)}
+  const m=mesh(new THREE.TorusGeometry(0.07,0.015,4,10,Math.PI),lam(0x8a2a2a),0,-0.12,0.35,head);m.rotation.z=Math.PI;
+  scene.add(g);return P}
+const boy=makeBoy();
+const B={x:0,z:0,head:0,v:0};
+{const[x,z]=W(520,1185);B.x=x;B.z=z;B.head=Math.atan2(0.79,-0.61)}
+
+// ================= animal guests walking around =================
+
+const GUESTS=[];
+{const kinds=['rabbit','bear','panda','pig','penguin','monkey','fox','koala','tanuki','sheep','duck','dog','capy','kangaroo','mouse','hamster'];
+  for(let i=0;i<16;i++){const k=kinds[i%kinds.length];const p=animal(AN[k].d);scene.add(p.g);const path=pick(PATHS);const pw=path.p.map(([ix,iy])=>W(ix,iy));
+    const G={p,pw,seg:Math.floor(rand(0,pw.length-1)),u:rand(0,1),dir:Math.random()<.5?1:-1,off:rand(-1.2,1.2),sp:rand(1.2,2),bob:rand(0,6)};GUESTS.push(G)}}
+function updateGuests(dt,t){for(const G of GUESTS){const a=G.pw[G.seg],b=G.pw[G.seg+1];const L=Math.hypot(b[0]-a[0],b[1]-a[1])||1;G.u+=G.dir*G.sp*dt/L;
+  if(G.u>1){if(G.seg<G.pw.length-2){G.seg++;G.u=0}else{G.u=1;G.dir=-1}}if(G.u<0){if(G.seg>0){G.seg--;G.u=1}else{G.u=0;G.dir=1}}
+  const a2=G.pw[G.seg],b2=G.pw[G.seg+1];let dx=b2[0]-a2[0],dz=b2[1]-a2[1];const l=Math.hypot(dx,dz)||1;dx/=l;dz/=l;
+  const x=a2[0]+(b2[0]-a2[0])*G.u-dz*G.off,z=a2[1]+(b2[1]-a2[1])*G.u+dx*G.off;
+  G.p.g.position.set(x,Math.abs(Math.sin(t*8+G.bob))*0.06,z);G.p.g.rotation.y=Math.atan2(dx*G.dir,dz*G.dir);
+  const s=Math.sin(t*8+G.bob);G.p.legs.forEach((q,i)=>q.rotation.x=(i?1:-1)*s*0.5);G.p.arms.forEach((q,i)=>q.rotation.x=(i?-1:1)*s*0.4);
+  // step aside for the boy
+  const ex=x-B.x,ez=z-B.z,ed=Math.hypot(ex,ez);if(ed<1.3&&ed>0){B.x-=ex/ed*(1.3-ed)*0.5;B.z-=ez/ed*(1.3-ed)*0.5}}}
+
+// ================= input =================
+const joy={on:false,id:null,ox:0,oy:0,x:0,y:0};const look={id:null,lx:0,ly:0};const keys={};
+let camYaw=0,camPitch=0.35,camDist=9,camAuto=true;
+addEventListener('keydown',e=>{keys[e.code]=true});addEventListener('keyup',e=>{keys[e.code]=false});
+canvas.addEventListener('pointerdown',e=>{audio();
+  if(e.clientX<innerWidth*0.5&&mode==='walk'&&joy.id===null){joy.id=e.pointerId;joy.ox=e.clientX;joy.oy=e.clientY;joy.x=joy.y=0;const j=$('joy');j.hidden=false;j.style.left=e.clientX+'px';j.style.top=e.clientY+'px';$('knob').style.transform='';$('hint').hidden=true}
+  else if(look.id===null){look.id=e.pointerId;look.lx=e.clientX;look.ly=e.clientY}
+  canvas.setPointerCapture(e.pointerId)});
+canvas.addEventListener('pointermove',e=>{
+  if(e.pointerId===joy.id){let dx=e.clientX-joy.ox,dy=e.clientY-joy.oy;const d=Math.hypot(dx,dy),m=55;if(d>m){dx*=m/d;dy*=m/d}joy.x=dx/m;joy.y=dy/m;$('knob').style.transform=`translate(${dx}px,${dy}px)`}
+  else if(e.pointerId===look.id){const dx=e.clientX-look.lx,dy=e.clientY-look.ly;look.lx=e.clientX;look.ly=e.clientY;
+    if(mode==='walk'){camYaw-=dx*0.006;camPitch=clamp(camPitch+dy*0.004,0.08,1.1);camAuto=false;camAutoT=2}
+    else{rideYaw-=dx*0.006;ridePitch=clamp(ridePitch-dy*0.005,-1.2,0.9)}}});
+function endPtr(e){if(e.pointerId===joy.id){joy.id=null;joy.x=joy.y=0;$('joy').hidden=true}if(e.pointerId===look.id)look.id=null}
+canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercancel',endPtr);
+let camAutoT=0;
+
+// ================= modes: walk / ride =================
+let mode='walk',ride=null,rideYaw=0,ridePitch=-0.1,rideView='in';
+let nearRide=null,toastT=0,lastSoon={};
+function toast(t,d=2.2){const el=$('toast');el.textContent=t;el.style.opacity=1;toastT=d}
+$('act').addEventListener('click',()=>{if(nearRide&&nearRide.board){nearRide.board()}});
+$('exitBtn').addEventListener('click',()=>{if(ride)endRide(true)});
+$('viewBtn').addEventListener('click',()=>{rideView=rideView==='in'?'out':'in';$('viewBtn').textContent=rideView==='in'?'そとから みる':'なかから みる'});
+function rideFerris(){
+  // take the gondola nearest to the bottom
+  let best=0,bd=9;for(let i=0;i<FW.n;i++){let a=(i/FW.n*Math.PI*2+FW.ang)%(Math.PI*2);let d=Math.abs(a-Math.PI*1.5);if(d<bd){bd=d;best=i}}
+  ride={kind:'ferris',g:best,start:FW.ang,top:false};mode='ride';rideView='in';rideYaw=0;ridePitch=-0.15;
+  $('act').hidden=true;$('ridebar').hidden=false;$('viewBtn').textContent='そとから みる';$('joy').hidden=true;joy.id=null;
+  boy.g.visible=false;chime();toast('かんらんしゃに のったよ！',2);FW.wSave=FW.w;
+  // our gondola gets a little passenger (the boy) when seen from outside
+  const gd=FW.gs[best];ride.me=makeBoy();scene.remove(ride.me.g);gd.add(ride.me.g);ride.me.g.position.set(0,-1.45,0.7);ride.me.g.scale.setScalar(0.9);ride.me.g.rotation.y=0;
+}
+function endRide(early){
+  if(ride&&ride.me){ride.me.g.parent&&ride.me.g.parent.remove(ride.me.g)}
+  ride=null;mode='walk';$('ridebar').hidden=true;boy.g.visible=true;B.x=FW.px+FW.nx*3;B.z=FW.pz+FW.nz*3;B.head=Math.atan2(FW.nx,FW.nz);camYaw=B.head+Math.PI;windOn(0);
+  toast(early?'おりたよ':'おつかれさま！ たのしかったね',2);chime();musicVol=0.035;
+}
+function updateRide(dt,t){
+  if(ride.kind==='ferris'){
+    const a=((ride.g/FW.n*Math.PI*2+FW.ang)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
+    const h=Math.sin(a);// -1 bottom, 1 top
+    if(!ride.top&&h>0.97){ride.top=true;toast('てっぺん！ たか〜い！',2.4);tone(880,.3,'sine',.06);tone(1175,.4,'sine',.06,0,.2)}
+    windOn(clamp((h+0.3)*0.06,0,0.08));musicVol=0.02;
+    if(look.id===null){const tp=-0.15-Math.max(0,h)*0.5;ridePitch+=(tp-ridePitch)*Math.min(1,dt*0.8)}
+    const done=FW.ang-ride.start>Math.PI*2-0.02;if(done)endRide(false);
+  }
+}
+
+// ================= minimap =================
+const mapC=$('map'),mg=mapC.getContext('2d');
+function drawMap(){const w=mapC.width,h=mapC.height;mg.drawImage(GT,0,0,w,h);const sx=w/GW,sz=h/GD;
+  mg.font=`800 15px ${FONT}`;mg.textAlign='center';
+  for(const r of RIDES){const x=(r.x+GW/2)*sx,y=(r.z+GD/2)*sz;mg.fillStyle=r.open?'#ff3a6a':'#ffffff';mg.strokeStyle='#2a2430';mg.lineWidth=3;mg.beginPath();mg.arc(x,y,r.open?9:6,0,7);mg.fill();mg.stroke()}
+  {const x=(FW.x+GW/2)*sx,y=(FW.z+GD/2)*sz;mg.fillStyle='#2a2430';mg.fillText('かんらんしゃ',x,y-14)}
+  const bx=(B.x+GW/2)*sx,by=(B.z+GD/2)*sz;mg.save();mg.translate(bx,by);mg.rotate(-B.head+Math.PI);mg.fillStyle='#ffd23b';mg.strokeStyle='#2a2430';mg.lineWidth=3;mg.beginPath();mg.moveTo(0,-12);mg.lineTo(9,9);mg.lineTo(-9,9);mg.closePath();mg.fill();mg.stroke();mg.restore()}
+
+// ================= area names =================
+const AREAS=[['メインゲート',480,1210,110],['フラワーコート',620,1140,90],['マジカルラグーン',660,1000,120],['パームウォーク',960,820,120],['ハブプラザ',1110,575,90],['こどもエリア',1300,680,140],['バラの にわ',1100,1120,150],['かんらんしゃ ひろば',520,400,110],['ようせいの もり',1000,490,80],['ちびっこタウン',740,200,120],['のりもの ひろば',1180,400,130],['あそびば',430,770,110],['もくもくコースター',760,545,150]];
+function areaName(){const ix=B.x/K+940,iy=B.z/K+700;let best='ひらひらパーク',bd=1e9;for(const[n,x,y,r]of AREAS){const d=Math.hypot(ix-x,iy-y);if(d<r&&d<bd){bd=d;best=n}}return best}
+
+// ================= movement & collision =================
+function collideBoy(){
+  for(const o of OBST){if(o.e){const c=Math.cos(-o.rot),s=Math.sin(-o.rot);const dx=B.x-o.x,dz=B.z-o.z;const lx=dx*c-dz*s,lz=dx*s+dz*c;const k=Math.hypot(lx/o.a,lz/o.b);if(k<1){const f=1/k;const nx=lx*f,nz=lz*f;const c2=Math.cos(o.rot),s2=Math.sin(o.rot);B.x=o.x+nx*c2-nz*s2;B.z=o.z+nx*s2+nz*c2}}
+    else{const dx=B.x-o.x,dz=B.z-o.z,d=Math.hypot(dx,dz),m=o.r+0.4;if(d<m&&d>0){B.x=o.x+dx/d*m;B.z=o.z+dz/d*m}}}
+  const ix=B.x/K+940,iy=B.z/K+700;if(!inPoly(ix,iy,PARK)){B.x=B.px;B.z=B.pz}
+}
+function updateWalk(dt,t){
+  let mx=joy.x,my=joy.y;if(keys.ArrowLeft||keys.KeyA)mx=-1;if(keys.ArrowRight||keys.KeyD)mx=1;if(keys.ArrowUp||keys.KeyW)my=-1;if(keys.ArrowDown||keys.KeyS)my=1;
+  const m=Math.min(1,Math.hypot(mx,my));
+  B.px=B.x;B.pz=B.z;
+  if(m>0.1){const fx=-Math.sin(camYaw),fz=-Math.cos(camYaw),rx=-fz,rz=fx;// camera forward and right on the ground
+    const dx=fx*(-my)+rx*mx,dz=fz*(-my)+rz*mx;const dl=Math.hypot(dx,dz)||1;const sp=9*m;B.x+=dx/dl*sp*dt;B.z+=dz/dl*sp*dt;
+    const want=Math.atan2(dx,dz);let d=want-B.head;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;B.head+=d*Math.min(1,dt*10);B.v=m;
+    if(Math.floor(t*4)!==Math.floor((t-dt)*4))tone(rand(160,200),.05,'sine',.03)}
+  else B.v=0;
+  collideBoy();
+  boy.g.position.set(B.x,B.v>0?Math.abs(Math.sin(t*12))*0.1:0,B.z);boy.g.rotation.y=B.head;
+  const s=B.v>0?Math.sin(t*12):0;boy.legs.forEach((l,i)=>l.rotation.x=(i?1:-1)*s*0.7);boy.arms.forEach((a,i)=>a.rotation.x=(i?-1:1)*s*0.6);
+  // the camera drifts back behind the boy while walking
+  if(camAutoT>0)camAutoT-=dt;else if(B.v>0){let d=(B.head+Math.PI)-camYaw;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;camYaw+=d*Math.min(1,dt*1.2)}
+  // near a ride?
+  nearRide=null;for(const r of RIDES){if(Math.hypot(B.x-r.x,B.z-r.z)<r.r){nearRide=r;break}}
+  if(nearRide&&nearRide.open){$('act').hidden=false;$('act').textContent=nearRide.name+'に のる！'}else $('act').hidden=true;
+  if(nearRide&&!nearRide.open&&(!lastSoon[nearRide.name]||t-lastSoon[nearRide.name]>25)){lastSoon[nearRide.name]=t;toast(nearRide.name+' … もうすぐ のれるよ！',2.4)}
+  const an=areaName();if($('area').textContent!==an)$('area').textContent=an;
+}
+const _v=new THREE.Vector3();
+function updateCamera(dt,t){
+  if(mode==='walk'){const cx=B.x+Math.sin(camYaw)*camDist*Math.cos(camPitch),cz=B.z+Math.cos(camYaw)*camDist*Math.cos(camPitch),cy=1.4+camDist*Math.sin(camPitch);
+    camera.position.lerp(_v.set(cx,cy,cz),Math.min(1,dt*6));camera.lookAt(B.x,1.6,B.z)}
+  else if(ride&&ride.kind==='ferris'){const gd=FW.gs[ride.g];const wp=gd.getWorldPosition(_v);
+    if(ride.me)ride.me.g.visible=rideView!=='in';
+    if(rideView==='in'){const base=Math.atan2(FW.nx,FW.nz)+rideYaw;const hx=Math.sin(base),hz=Math.cos(base);camera.position.set(wp.x+hx*1.05,wp.y+0.3,wp.z+hz*1.05);const fx=hx*Math.cos(ridePitch),fz=hz*Math.cos(ridePitch),fy=Math.sin(ridePitch);camera.lookAt(camera.position.x+fx,camera.position.y+fy,camera.position.z+fz)}
+    else{const base=Math.atan2(FW.nx,FW.nz)+rideYaw;const d=16;camera.position.set(wp.x+Math.sin(base)*d,wp.y+4+ridePitch*6,wp.z+Math.cos(base)*d);camera.lookAt(wp)}}
+}
+
+// ================= loop =================
+let last=performance.now(),started=false,frames=0,fpsT=0;
+function frame(now){const dt=Math.max(0,Math.min(0.05,(now-last)/1000));last=now;const t=now/1000;
+  for(const f of ANIM)f(dt,t);
+  outTrain.position.set(0,0,0);{const u=(t*0.04)%2,k=u<1?u:2-u;const[ax,az]=W(1840,250),[bx,bz]=W(1250,1400);outTrain.position.set(ax+(bx-ax)*k+3,0,az+(bz-az)*k);outTrain.rotation.y=Math.atan2(bx-ax,bz-az)}
+  updateGuests(dt,t);
+  if(started){if(mode==='walk')updateWalk(dt,t);else if(ride)updateRide(dt,t);music(dt)}
+  updateCamera(dt,t);
+  if(toastT>0){toastT-=dt;if(toastT<=0)$('toast').style.opacity=0}
+  if(Math.floor(t*4)!==Math.floor((t-dt)*4))drawMap();
+  renderer.render(scene,camera);
+  // adaptive quality for slower tablets
+  frames++;fpsT+=dt;if(fpsT>3){const fps=frames/fpsT;if(fps<28&&quality>0.7){quality=Math.max(0.7,quality-0.25);renderer.setPixelRatio(quality);resize()}frames=0;fpsT=0}
+  requestAnimationFrame(frame)}
+function goFull(){const el=document.documentElement,f=el.requestFullscreen||el.webkitRequestFullscreen;if(!f||document.fullscreenElement||document.webkitFullscreenElement)return;try{const r=f.call(el,{navigationUI:'hide'});if(r&&r.catch)r.catch(()=>{})}catch(e){}}
+$('full').onclick=()=>{if(document.fullscreenElement||document.webkitFullscreenElement)(document.exitFullscreen||document.webkitExitFullscreen).call(document);else goFull()};
+$('mute').onclick=()=>{muted=!muted;$('mute').textContent=muted?'おと OFF':'おと ON';windOn(0)};
+$('startBtn').onclick=()=>{audio();goFull();$('title').hidden=true;started=true;chime();toast('ようこそ ひらひらパークへ！',2.5)};
+resize();camYaw=B.head+Math.PI;camera.position.set(B.x+Math.sin(camYaw)*9,5,B.z+Math.cos(camYaw)*9);
+boy.g.position.set(B.x,0,B.z);boy.g.rotation.y=B.head;
+$('loading').hidden=true;requestAnimationFrame(frame);
+})();
+</script>
+<script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));</script>
+</body>
+</html>

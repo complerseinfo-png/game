@@ -40,6 +40,9 @@ a.game:focus-visible{outline:4px solid #2b7bff;outline-offset:3px}
 .elicon{background:#ff9a2a}
 .elicon::before{left:12px;top:10px;width:48px;height:52px;border-radius:6px;background:linear-gradient(90deg,#e8ecef 0 48%,#7a838b 48% 52%,#e8ecef 52%);border:3px solid #2a2430}
 .elicon::after{left:28px;top:-2px;width:16px;height:10px;border-radius:2px;border:0;background:#120f0c;box-shadow:none}
+.parkicon{background:#8fd0ff}
+.parkicon::before{left:12px;top:6px;width:44px;height:44px;border-radius:50%;background:transparent;border:5px dotted #ff5a8a}
+.parkicon::after{left:0;top:50px;width:66px;height:16px;border-radius:0;border:0;background:#8fd06a;box-shadow:none}
 .name{font-size:24px;font-weight:800;margin:0}
 .desc{margin:4px 0 0;font-size:15px;line-height:1.5}
 </style>
@@ -62,6 +65,10 @@ a.game:focus-visible{outline:4px solid #2b7bff;outline-offset:3px}
   <a class="game" href="elevator/">
     <span class="icon elicon" aria-hidden="true"></span>
     <span><p class="name">エレベーター ごっこ</p><p class="desc">ボタンを おして いろんな かいへ！ ドアの むこうに なにが いるかな？</p></span>
+  </a>
+  <a class="game" href="park/">
+    <span class="icon parkicon" aria-hidden="true"></span>
+    <span><p class="name">ひらひらパーク</p><p class="desc">ゆうえんちを あるいて かんらんしゃに のろう！</p></span>
   </a>
 </div>
 <script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
