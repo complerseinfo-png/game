@@ -80,7 +80,7 @@ const N={C4:262,D4:294,E4:330,F4:349,G4:392,A4:440,B4:494,C5:523,D5:587,E5:659,F
 const TUNE=[N.C5,N.E5,N.G5,N.E5,N.F5,N.A5,N.G5,0,N.E5,N.D5,N.C5,N.D5,N.E5,N.C5,N.D5,0,N.C5,N.E5,N.G5,N.E5,N.F5,N.A5,N.G5,0,N.F5,N.E5,N.D5,N.G4,N.C5,0,0,0];
 const BASS=[N.C4,N.G4,N.F4,N.G4];
 let musicT=0,musicI=0,musicVol=0.035;
-function music(dt){if(muted||!ac)return;musicT-=dt;if(musicT<=0){musicT=0.24;const n=TUNE[musicI%TUNE.length];if(n)tone(n,.3,'triangle',musicVol);if(musicI%4===0)tone(BASS[Math.floor(musicI/8)%4]/2,.5,'sine',musicVol*1.4);musicI++}}
+function music(){}
 function chime(){[N.C5,N.E5,N.G5,N.C5*2].forEach((f,i)=>tone(f,.4,'sine',.07,0,i*.12))}
 
 // ================= three basics =================
@@ -709,8 +709,6 @@ function startRide(cfg){
 }
 function rideSfx(cfg,r,dt){r.st=(r.st||0)-dt;if(r.st>0)return;
   switch(cfg.sfx){
-    case'organ':r.st=0.25;{const n=[N.G4,N.C5,N.E5,N.C5,N.D5,N.F5,N.E5,N.C5][Math.floor(r.t*4)%8];tone(n,.3,'square',.035);tone(n/2,.3,'triangle',.03)}break;
-    case'waltz':r.st=0.35;{const n=[N.C5,N.E5,N.G5,N.F5,N.D5,N.B4][Math.floor(r.t/0.35)%6];tone(n,.4,'triangle',.05);if(Math.floor(r.t/0.35)%3===0)tone(N.C4,.4,'sine',.05)}break;
     case'train':r.st=0.35;noise(.06,.06,700,2);noise(.06,.05,500,2,0.15);if(Math.random()<0.04){tone(880,.5,'square',.04);tone(1100,.5,'square',.03);toast('ポッポー！',1)}break;
     case'water':r.st=0.6;noise(.5,.04,800,0.6);break;
     case'plane':r.st=0.5;tone(180,.5,'sawtooth',.02,20);break;
