@@ -87,8 +87,8 @@ function chime(){[N.C5,N.E5,N.G5,N.C5*2].forEach((f,i)=>tone(f,.4,'sine',.07,0,i
 
 // ================= three basics =================
 const canvas=$('c');
-const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
-let quality=Math.min(1.5,window.devicePixelRatio||1);renderer.setPixelRatio(quality);
+const MOBILE=/Android|Silk|Mobile|Tablet|iPad/i.test(navigator.userAgent);const renderer=new THREE.WebGLRenderer({canvas,antialias:!MOBILE,powerPreference:'high-performance'});
+let quality=Math.min(MOBILE?0.9:1.25,window.devicePixelRatio||1);renderer.setPixelRatio(quality);
 const scene=new THREE.Scene();
 const SKY=0x9fd8ff;scene.background=new THREE.Color(SKY);scene.fog=new THREE.Fog(SKY,95,290);
 const camera=new THREE.PerspectiveCamera(60,1,0.05,600);
@@ -421,7 +421,7 @@ const ANIM=[];// update functions
 const FW={};
 {const[x,z]=W(525,372);FW.x=x;FW.z=z;
   const tx=(940-525)*K,tz=(700-372)*K,tl=Math.hypot(tx,tz);FW.nx=tx/tl;FW.nz=tz/tl;// faces the park
-  FW.R=30;FW.H=34;FW.n=32;FW.ang=0;FW.w=Math.PI*2/55;
+  FW.R=30;FW.H=34;FW.n=24;FW.ang=0;FW.w=Math.PI*2/55;
   const g=grp(x,0,z);g.rotation.y=Math.atan2(FW.nx,FW.nz);FW.g=g;// local z = toward the park, wheel spins in local x-y plane
   const white=phong(0xffffff,80);
   for(const s of[-1,1])for(const d of[-1,1])beam(new THREE.Vector3(d*13,0,s*5),new THREE.Vector3(0,FW.H,s*2.2),0.7,white,g);
@@ -431,7 +431,7 @@ const FW={};
   for(const s of[-1.4,1.4]){mesh(new THREE.TorusGeometry(FW.R,0.35,8,72),white,0,0,s,wheel);mesh(new THREE.TorusGeometry(FW.R*0.55,0.25,8,48),white,0,0,s,wheel)}
   for(let i=0;i<FW.n;i++){const a=i/FW.n*Math.PI*2;const sp=boxm(0.22,FW.R,0.22,lam(rainbow[i%7]),Math.cos(a)*FW.R/2,Math.sin(a)*FW.R/2,0,wheel);sp.rotation.z=a-Math.PI/2}
   // lights on the rim
-  FW.bulbs=[];for(let i=0;i<64;i++){const a=i/64*Math.PI*2;FW.bulbs.push(ball(0.28,basic(rainbow[i%7]),Math.cos(a)*(FW.R+0.4),Math.sin(a)*(FW.R+0.4),1.6,wheel))}
+  FW.bulbs=[0,1,2].map(k=>{const bg=new THREE.Group();wheel.add(bg);const bm=basic([0xffe060,0xff8ad8,0x8fd8ff][k]);for(let i=k;i<60;i+=3){const a=i/60*Math.PI*2;ball(0.28,bm,Math.cos(a)*(FW.R+0.4),Math.sin(a)*(FW.R+0.4),1.6,bg)}return bg});
   // gondolas (kept upright)
   FW.gs=[];
   for(let i=0;i<FW.n;i++){const gd=grp(0,0,0,g);const c=rainbow[i%7];const cm=lam(c);
@@ -450,7 +450,7 @@ const FW={};
   RIDES.push({name:'かんらんしゃ',x:px+FW.nx*3,z:pz+FW.nz*3,r:6,open:true,board:()=>rideFerris()});
   ANIM.push((dt,t)=>{FW.ang+=FW.w*dt;FW.wheel.rotation.z=FW.ang;
     for(let i=0;i<FW.n;i++){const a=i/FW.n*Math.PI*2+FW.ang;FW.gs[i].position.set(Math.cos(a)*FW.R,FW.H+Math.sin(a)*FW.R-2.6,0)}
-    const k=Math.floor(t*4);for(let i=0;i<FW.bulbs.length;i++)FW.bulbs[i].visible=((i+k)%3)!==0});
+    const k=Math.floor(t*4);for(let i=0;i<3;i++)FW.bulbs[i].visible=((i+k)%3)!==0});
 }
 // ---------- coasters (shared) ----------
 const _cx=new THREE.Vector3(),_cy=new THREE.Vector3(),_cm=new THREE.Matrix4();
@@ -543,7 +543,7 @@ function coaster(pts,opt){
   const[bx,bz]=W(1225,830);boxm(5,4,4,lam(0xd84a3a),bx,2,bz);const r=cone(3.8,2,lam(0xffffff),bx,5,bz,null,4);r.rotation.y=Math.PI/4;blockW(bx,bz,3)}
 // peekaboo kids town with a little ferris wheel
 {const[x,z]=W(760,175);const g=grp(x,0,z);const w=grp(0,6,0,g);const mcars=[];for(let i=0;i<8;i++){const a=i/8*Math.PI*2;boxm(0.15,5,0.15,lam(0xffd23b),Math.cos(a)*2.5,Math.sin(a)*2.5,0,w).rotation.z=a+Math.PI/2;mcars.push(boxm(0.9,0.9,0.9,lam(pick([0xff5a5a,0x6ab8ff,0x8ad06a])),Math.cos(a)*5,Math.sin(a)*5,0,w))}cyl(0.3,0.3,6,lam(0xffffff),0,3,0,g);
-  ANIM.push((dt,t)=>{w.rotation.z=t*0.4;w.children.forEach((c,i)=>{if(c.geometry.parameters.width===0.9)c.rotation.z=-t*0.4})});blockW(x,z,3);
+  ANIM.push((dt,t)=>{w.rotation.z=t*0.4;w.children.forEach((c,i)=>{if(c.geometry.parameters&&c.geometry.parameters.width===0.9)c.rotation.z=-t*0.4})});blockW(x,z,3);
   for(let i=0;i<4;i++){const[hx,hz]=W(680+i*28,240+(i%2)*30);boxm(3,2.5,3,lam(pick([0xffe0a0,0xc8e8ff,0xffc8d8])),hx,1.25,hz);cone(2.6,1.6,lam(pick([0xff5a5a,0x3a7ae8])),hx,3.3,hz,null,4).rotation.y=Math.PI/4;blockW(hx,hz,2)}
   RIDES.push({name:'ちびっこ かんらんしゃ',x,z,r:7,open:true,board:()=>startRide({name:'ちびっこ かんらんしゃ',seat:()=>mcars[0],eye:new THREE.Vector3(0,0.5,0),fwd:new THREE.Vector3(0,0,1),me:new THREE.Vector3(0,-0.4,0),meS:0.45,dur:22,out:9})});floatSign('ちびっこタウン',x,13,z,'#ff9a2a',8)}
 // river ride boats
@@ -606,7 +606,7 @@ const HH={};
   ev(0.86,(o,k)=>{o.g.forEach((p,i)=>{p.g.position.y=0.5+Math.sin(k*4+i)*0.3;p.arms[0].rotation.z=-1.5+Math.sin(k*10+i)*0.5})},o=>{o.g=[];for(let i=0;i<3;i++){const p=animal(AN.ghost.d);p.g.traverse(n=>{if(n.material&&n.material.emissive)n.material.emissive.setHex(0x555566)});p.g.position.set(10.5-i*1.2,0.5,13+i*1.5);p.g.rotation.y=-Math.PI/2;p.g.scale.setScalar(0.8);I.add(p.g);o.g.push(p)}o.say='またきてね〜！';o.snd='bye'});
   // dim candles
   for(let i=0;i<10;i++){const c=grp(i<5?-15:15,0,-18+i%5*9,I);cyl(0.1,0.1,1.2,lam(0xf0e8d0),0,0.6,0,c,6);ball(0.12,glow(0xffb040),0,1.3,0,c)}
-  PARENT=scene;
+  PARENT=scene;I.visible=false;
   RIDES.push({name:'おばけやしき',x:x-8.5,z,r:4.5,open:true,board:()=>startRide(hauntRide())});
 }
 function hauntSnd(k){switch(k){case'ghost':tone(400,1.2,'sine',.08,-200);tone(410,1.2,'triangle',.05,-180,.1);break;case'low':tone(110,1.5,'sine',.08,-20);break;
@@ -615,13 +615,13 @@ function hauntSnd(k){switch(k){case'ghost':tone(400,1.2,'sine',.08,-200);tone(41
   case'bye':[N.C5,N.E5,N.G5,N.C5*2].forEach((f,i)=>tone(f,.3,'sine',.06,0,i*.15));break}}
 let savedLight=null;
 function hauntRide(){return{name:'おばけやしき',seat:()=>HH.cart,eye:new THREE.Vector3(0,1.55,-0.2),fwd:new THREE.Vector3(0,0,1),me:new THREE.Vector3(0,0.4,-0.2),meS:0.6,out:6,
-  onStart(r){r.u=0;HH.ev.forEach(e=>{e.done=false;e.k=0});savedLight=[hemi.intensity,sun.intensity];hemi.intensity=0.22;sun.intensity=0;HH.lamp.intensity=1.4;scene.fog.color.setHex(0x000000);scene.background.setHex(0x000000);
+  onStart(r){HH.I.visible=true;r.u=0;HH.ev.forEach(e=>{e.done=false;e.k=0});savedLight=[hemi.intensity,sun.intensity];hemi.intensity=0.22;sun.intensity=0;HH.lamp.intensity=1.4;scene.fog.color.setHex(0x000000);scene.background.setHex(0x000000);
     noise(1.2,.08,300,2,0,'bandpass',150);toast('ギィィィ… おばけやしきに はいるよ…',2.2);windOn(0)},
   update(dt,r){r.u+=1.6*dt/HH.L;HH.place(r.u);HH.lamp.intensity=1.3+Math.sin(r.t*13)*0.1+(Math.random()<0.01?-0.8:0);
     for(const e of HH.ev){if(r.u>e.u&&!e.done){e.done=true;e.k=0.0001;toast(e.say,1.6);hauntSnd(e.snd);shake=0.25}if(e.k>0){e.k+=dt;e.f(e,e.k)}}
     if(r.u<0.95&&Math.random()<dt*0.05){hemi.intensity=1.2;setTimeout(()=>{if(ride)hemi.intensity=0.22},90);noise(1.5,.12,200,0.7,0.1,'lowpass',60)}},
   done(r){return r.u>=1},
-  onEnd(){if(savedLight){hemi.intensity=savedLight[0];sun.intensity=savedLight[1]}HH.lamp.intensity=0;scene.fog.color.setHex(SKY);scene.background.setHex(SKY);toast('こわかった〜！ でも たのしかったね',2)}}}
+  onEnd(){HH.I.visible=false;if(savedLight){hemi.intensity=savedLight[0];sun.intensity=savedLight[1]}HH.lamp.intensity=0;scene.fog.color.setHex(SKY);scene.background.setHex(SKY);toast('こわかった〜！ でも たのしかったね',2)}}}
 
 // ================= more attractions =================
 const steer={l:false,r:false};
@@ -651,7 +651,7 @@ const GK={};
   const placeOn=(g,s,off=0)=>{const u=((s%GK.L)+GK.L)%GK.L/GK.L,p=GK.curve.getPointAt(u),t=GK.curve.getTangentAt(u);g.position.set(p.x-t.z*off,0,p.z+t.x*off);g.rotation.y=Math.atan2(t.x,t.z)};
   GK.reset=()=>{const p=GK.curve.getPointAt(0.012),t=GK.curve.getTangentAt(0.012);GK.x=p.x+t.z*1.0;GK.z=p.z-t.x*1.0;GK.h=Math.atan2(t.x,t.z);GK.v=0;GK.s=0;GK.lap=0;GK.prevU=0;GK.npc.forEach((n,i)=>{n.s=-(i+1)*3})};
   GK.reset();placeOn(GK.me,0,-1);GK.me.position.set(GK.x,0,GK.z);GK.me.rotation.y=GK.h;
-  ANIM.push(dt=>{if(!(ride&&ride.cfg.kart)){GK.npc.forEach(n=>{n.s+=n.v*0.7*dt;placeOn(n.g,n.s,0.8)})}});
+  ANIM.push(dt=>{if(!(ride&&ride.cfg&&ride.cfg.kart)){GK.npc.forEach(n=>{n.s+=n.v*0.7*dt;placeOn(n.g,n.s,0.8)})}});
   RIDES.push({name:'ゴーカート',x:cx+8.5,z:cz-2,r:4.5,open:true,board:()=>startRide(kartRide())});floatSign('ゴーカート',cx,7,cz,'#e8402a',7);
   OBST.push({e:1,x:cx,z:cz,a:9,b:11,rot:0});
 }
@@ -733,7 +733,7 @@ const PD={};
   const disc=grp(0,-14.5,0,arm);PD.disc=disc;cyl(3.2,3.2,0.6,lam(0xe8402a),0,0,0,disc,24);
   PD.seats=[];for(let i=0;i<12;i++){const a=i/12*Math.PI*2;const s=grp(Math.cos(a)*2.7,0.3,Math.sin(a)*2.7,disc);s.rotation.y=Math.PI/2-a;boxm(0.8,0.9,0.15,lam(0xffffff),0,0.45,-0.3,s);boxm(0.8,0.15,0.6,lam(0xffffff),0,0.05,0,s);if(i)ball(0.28,lam(0xffd9b8),0,0.9,0,s);PD.seats.push(s)}
   PD.amp=0.5;PD.ph=0;
-  ANIM.push((dt,t)=>{PD.ph+=dt*1.25;const target=(ride&&ride.cfg.pend)?ride.cfg.ampNow:0.6;PD.amp+=(target-PD.amp)*Math.min(1,dt*0.4);PD.arm.rotation.z=Math.sin(PD.ph)*PD.amp;PD.disc.rotation.y+=dt*0.8});
+  ANIM.push((dt,t)=>{PD.ph+=dt*1.25;const target=(ride&&ride.cfg&&ride.cfg.pend)?ride.cfg.ampNow:0.6;PD.amp+=(target-PD.amp)*Math.min(1,dt*0.4);PD.arm.rotation.z=Math.sin(PD.ph)*PD.amp;PD.disc.rotation.y+=dt*0.8});
   blockW(x,z,6);RIDES.push({name:'ぶらんぶらん ディスク',x:x-6,z:z+5,r:4.5,open:true,board:()=>startRide(pendRide())});floatSign('ぶらんぶらん ディスク',x,24,z,'#3a7ae8',10);
 }
 function pendRide(){const cfg={name:'ぶらんぶらん ディスク',pend:1,ampNow:0.4,seat:()=>PD.seats[0],eye:new THREE.Vector3(0,1.1,0.1),fwd:new THREE.Vector3(0,-0.25,1),me:new THREE.Vector3(0,0.15,0),meS:0.6,dur:34,out:16,
@@ -795,7 +795,7 @@ for(const r of RIDES){const type=ICON_OF[r.name]||'coaster';{const sp=findSpot(r
   const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,fog:false}));sp.scale.set(2.6,2.6,1);sp.position.set(r.x,4,r.z);scene.add(sp);
   PADS.push({sp,r});r.r=3.2}
 ANIM.push(()=>{for(const s of SIGNS){const d=Math.hypot(s.position.x-B.x,s.position.z-B.z);s.visible=mode!=='walk'||d<75}});
-ANIM.push((dt,t)=>{for(const p of PADS){const d=Math.hypot(B.x-p.r.x,B.z-p.r.z);p.sp.position.y=4+Math.sin(t*2.5+p.r.x)*0.3;const s=d<5?3.4:2.6;p.sp.scale.set(s,s,1)}});
+ANIM.push((dt,t)=>{for(const p of PADS){const d=Math.hypot(B.x-p.r.x,B.z-p.r.z);p.sp.position.y=4+Math.sin(t*2.5+p.r.x)*0.3;const s=d<5?3.4:2.6;p.sp.scale.set(s,s,1);p.sp.visible=mode==='walk'}});
 
 // ================= the boy =================
 function makeBoy(){const g=new THREE.Group();const root=grp(0,0,0,g);const skin=lam(0xffd9b8);const P={g,legs:[],arms:[]};
@@ -817,7 +817,7 @@ const B={x:0,z:0,head:0,v:0};
 
 const GUESTS=[];
 {const kinds=['rabbit','bear','panda','pig','penguin','monkey','fox','koala','tanuki','sheep','duck','dog','capy','kangaroo','mouse','hamster'];
-  for(let i=0;i<16;i++){const k=kinds[i%kinds.length];const p=animal(AN[k].d);scene.add(p.g);const path=pick(PATHS);const pw=path.p.map(([ix,iy])=>W(ix,iy));
+  for(let i=0;i<9;i++){const k=kinds[(i*2)%kinds.length];const p=animal(AN[k].d);scene.add(p.g);const path=pick(PATHS);const pw=path.p.map(([ix,iy])=>W(ix,iy));
     const G={p,pw,seg:Math.floor(rand(0,pw.length-1)),u:rand(0,1),dir:Math.random()<.5?1:-1,off:rand(-1.2,1.2),sp:rand(1.2,2),bob:rand(0,6)};GUESTS.push(G)}}
 function updateGuests(dt,t){for(const G of GUESTS){const a=G.pw[G.seg],b=G.pw[G.seg+1];const L=Math.hypot(b[0]-a[0],b[1]-a[1])||1;G.u+=G.dir*G.sp*dt/L;
   if(G.u>1){if(G.seg<G.pw.length-2){G.seg++;G.u=0}else{G.u=1;G.dir=-1}}if(G.u<0){if(G.seg>0){G.seg--;G.u=1}else{G.u=0;G.dir=1}}
@@ -1007,6 +1007,43 @@ const instCache={};function instByUuid(u){if(instCache[u])return instCache[u];sc
 function restoreFade(keep,keepI){for(const[ob,orig]of faded)if(!keep.has(ob)){ob.material.dispose();ob.material=orig;faded.delete(ob)}
   for(const[key,v]of hiddenInst)if(!keepI.has(key)){v.ob.setMatrixAt(v.id,v.m);v.ob.instanceMatrix.needsUpdate=true;hiddenInst.delete(key)}}
 
+// ================= merge everything that never moves (far fewer draw calls) =================
+function staticMerge(){
+  scene.updateMatrixWorld(true);const snap=new Map(),loc=new Map();scene.traverse(o=>{if(o.isMesh){snap.set(o,o.matrixWorld.clone());loc.set(o,[o.matrix.clone(),o.visible])}});
+  const dyn=new Set(),moves=new Set();
+  for(let k=0;k<16;k++){const tt=k*0.47+0.13;for(const f of ANIM){try{f(0.47,tt)}catch(e){}}try{updateGuests(0.47,tt)}catch(e){}scene.updateMatrixWorld(true);for(const[o,m]of snap)if(!dyn.has(o)&&!o.matrixWorld.equals(m))dyn.add(o);for(const[o,[lm,vis]]of loc){o.updateMatrix();if(!o.matrix.equals(lm)||o.visible!==vis)moves.add(o)}}
+  const keep=new Set();for(const r of[boy.g,HH.I,marker])if(r)r.traverse(o=>keep.add(o));
+  const groups=new Map();const CELL=45;
+  scene.traverse(o=>{if(!o.isMesh||o.isInstancedMesh||dyn.has(o)||keep.has(o)||o.userData.noFade)return;const m=o.material;
+    if(Array.isArray(m)||m.map||m.transparent||!(m.isMeshLambertMaterial||m.isMeshPhongMaterial||m.isMeshBasicMaterial))return;
+    if(!o.geometry.attributes.normal)return;
+    const p=_v.setFromMatrixPosition(o.matrixWorld);const key=m.type+m.color.getHexString()+(m.flatShading?'f':'')+m.side+(m.shininess||0)+':'+Math.floor(p.x/CELL)+','+Math.floor(p.z/CELL);
+    if(!groups.has(key))groups.set(key,{m,list:[]});groups.get(key).list.push(o)});
+  let merged=0,removed=0;const nm=new THREE.Matrix3();
+  for(const{m,list}of groups.values()){if(list.length<2)continue;let nv=0,ni=0;for(const o of list){const g=o.geometry;nv+=g.attributes.position.count;ni+=g.index?g.index.count:g.attributes.position.count}
+    const pos=new Float32Array(nv*3),nor=new Float32Array(nv*3),idx=nv>65000?new Uint32Array(ni):new Uint16Array(ni);let vo=0,io=0;
+    for(const o of list){const g=o.geometry,P=g.attributes.position,Nn=g.attributes.normal;nm.getNormalMatrix(o.matrixWorld);
+      for(let i=0;i<P.count;i++){_v.fromBufferAttribute(P,i).applyMatrix4(o.matrixWorld);pos[(vo+i)*3]=_v.x;pos[(vo+i)*3+1]=_v.y;pos[(vo+i)*3+2]=_v.z;_v.fromBufferAttribute(Nn,i).applyMatrix3(nm).normalize();nor[(vo+i)*3]=_v.x;nor[(vo+i)*3+1]=_v.y;nor[(vo+i)*3+2]=_v.z}
+      if(g.index){const I=g.index.array;for(let i=0;i<I.length;i++)idx[io+i]=I[i]+vo;io+=I.length}else{for(let i=0;i<P.count;i++)idx[io+i]=vo+i;io+=P.count}
+      vo+=P.count;o.parent.remove(o);removed++}
+    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.BufferAttribute(nor,3));geo.setIndex(new THREE.BufferAttribute(idx,1));geo.computeBoundingSphere();
+    scene.add(new THREE.Mesh(geo,m));merged++}
+  // moving groups: merge the parts that never move inside their group
+  const parents=new Set();scene.traverse(o=>{if(o.isMesh&&o.parent&&o.parent!==scene&&!moves.has(o)&&!keep.has(o))parents.add(o.parent)});
+  let gm=0,gr=0;
+  for(const par of parents){const by=new Map();for(const o of par.children){if(!o.isMesh||o.isInstancedMesh||moves.has(o)||keep.has(o)||o.children.length)continue;const m=o.material;
+      if(Array.isArray(m)||m.map||!o.geometry.attributes.normal||!(m.isMeshLambertMaterial||m.isMeshPhongMaterial||m.isMeshBasicMaterial))continue;
+      const key=m.type+m.color.getHexString()+(m.flatShading?'f':'')+m.side+(m.transparent?'t'+m.opacity:'')+(m.shininess||0);if(!by.has(key))by.set(key,{m,list:[]});by.get(key).list.push(o)}
+    for(const{m,list}of by.values()){if(list.length<2)continue;let nv=0,ni=0;for(const o of list){const g=o.geometry;nv+=g.attributes.position.count;ni+=g.index?g.index.count:g.attributes.position.count}
+      const pos=new Float32Array(nv*3),nor=new Float32Array(nv*3),idx=nv>65000?new Uint32Array(ni):new Uint16Array(ni);let vo=0,io=0;
+      for(const o of list){const g=o.geometry,P=g.attributes.position,Nn=g.attributes.normal;o.updateMatrix();nm.getNormalMatrix(o.matrix);
+        for(let i=0;i<P.count;i++){_v.fromBufferAttribute(P,i).applyMatrix4(o.matrix);pos[(vo+i)*3]=_v.x;pos[(vo+i)*3+1]=_v.y;pos[(vo+i)*3+2]=_v.z;_v.fromBufferAttribute(Nn,i).applyMatrix3(nm).normalize();nor[(vo+i)*3]=_v.x;nor[(vo+i)*3+1]=_v.y;nor[(vo+i)*3+2]=_v.z}
+        if(g.index){const I=g.index.array;for(let i=0;i<I.length;i++)idx[io+i]=I[i]+vo;io+=I.length}else{for(let i=0;i<P.count;i++)idx[io+i]=vo+i;io+=P.count}
+        vo+=P.count;par.remove(o);gr++}
+      const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.BufferAttribute(nor,3));geo.setIndex(new THREE.BufferAttribute(idx,1));geo.computeBoundingSphere();
+      const mm=new THREE.Mesh(geo,m);par.add(mm);gm++}}
+  return[merged,removed,dyn.size,gm,gr]}
+
 // ================= loop =================
 let last=performance.now(),started=false,frames=0,fpsT=0;
 function frame(now){const dt=Math.max(0,Math.min(0.05,(now-last)/1000));last=now;const t=now/1000;
@@ -1019,7 +1056,7 @@ function frame(now){const dt=Math.max(0,Math.min(0.05,(now-last)/1000));last=now
   if(Math.floor(t*4)!==Math.floor((t-dt)*4))drawMap();
   renderer.render(scene,camera);
   // adaptive quality for slower tablets
-  frames++;fpsT+=dt;if(fpsT>3){const fps=frames/fpsT;if(fps<28&&quality>0.7){quality=Math.max(0.7,quality-0.25);renderer.setPixelRatio(quality);resize()}frames=0;fpsT=0}
+  frames++;fpsT+=dt;if(fpsT>3){const fps=frames/fpsT;if(fps<40&&quality>0.55){quality=Math.max(0.55,quality-0.15);renderer.setPixelRatio(quality);resize()}frames=0;fpsT=0}
   requestAnimationFrame(frame)}
 function goFull(){const el=document.documentElement,f=el.requestFullscreen||el.webkitRequestFullscreen;if(!f||document.fullscreenElement||document.webkitFullscreenElement)return;try{const r=f.call(el,{navigationUI:'hide'});if(r&&r.catch)r.catch(()=>{})}catch(e){}}
 $('full').onclick=()=>{if(document.fullscreenElement||document.webkitFullscreenElement)(document.exitFullscreen||document.webkitExitFullscreen).call(document);else goFull()};
@@ -1027,7 +1064,7 @@ $('mute').onclick=()=>{muted=!muted;$('mute').textContent=muted?'おと OFF':'�
 $('startBtn').onclick=()=>{audio();goFull();$('title').hidden=true;started=true;chime();toast('ようこそ ひらひらパークへ！',2.5)};
 resize();camYaw=B.head+Math.PI;camera.position.set(B.x+Math.sin(camYaw)*9,5,B.z+Math.cos(camYaw)*9);
 boy.g.position.set(B.x,0,B.z);boy.g.rotation.y=B.head;
-$('loading').hidden=true;requestAnimationFrame(frame);
+window.__merge=staticMerge();$('loading').hidden=true;requestAnimationFrame(frame);
 })();
 </script>
 <script>if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('../sw.js').catch(()=>{}));</script>

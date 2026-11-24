@@ -76,7 +76,7 @@ let swoosh=null;
 function swooshOn(v){if(!audio())return;if(!swoosh){const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),c=b.getChannelData(0);let l=0;for(let i=0;i<n;i++){l=l*0.95+(Math.random()*2-1)*0.05;c[i]=l*5}const s=ac.createBufferSource();s.buffer=b;s.loop=true;const f=ac.createBiquadFilter();f.type='bandpass';f.frequency.value=900;f.Q.value=0.5;swoosh=ac.createGain();swoosh.gain.value=0;s.connect(f).connect(swoosh).connect(master);s.start()}swoosh.gain.setTargetAtTime(muted?0:v,ac.currentTime,0.15)}
 function chime(){[523,659,784,1047].forEach((f,i)=>tone(f,.35,'triangle',.07,0,i*.1))}
 // ---------- three ----------
-const canvas=$('c');const renderer=new THREE.WebGLRenderer({canvas,antialias:true});let quality=Math.min(1.5,devicePixelRatio||1);renderer.setPixelRatio(quality);
+const canvas=$('c');const MOBILE=/Android|Silk|Mobile|Tablet|iPad/i.test(navigator.userAgent);const renderer=new THREE.WebGLRenderer({canvas,antialias:!MOBILE,powerPreference:'high-performance'});let quality=Math.min(MOBILE?0.9:1.25,devicePixelRatio||1);renderer.setPixelRatio(quality);
 const scene=new THREE.Scene();const SKY=0x9fd8ff;scene.background=new THREE.Color(SKY);scene.fog=new THREE.Fog(SKY,80,220);
 const camera=new THREE.PerspectiveCamera(60,1,0.05,500);
 function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.fov=camera.aspect<1?75:60;camera.updateProjectionMatrix()}addEventListener('resize',resize);
@@ -92,6 +92,11 @@ function beam(a,b,r,mat,p){const d=new THREE.Vector3().subVectors(b,a);const L=d
 function signTex(text,bg){const c=document.createElement('canvas');c.width=512;c.height=128;const g=c.getContext('2d');g.fillStyle=bg;g.beginPath();g.roundRect?g.roundRect(4,4,504,120,40):g.rect(4,4,504,120);g.fill();g.fillStyle='#fff';g.font=`800 ${text.length>8?52:64}px ${FONT}`;g.textAlign='center';g.textBaseline='middle';g.fillText(text,256,68);return new THREE.CanvasTexture(c)}
 function floatSign(text,x,y,z,bg,w=7){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:signTex(text,bg),fog:false}));s.scale.set(w,w/4,1);s.position.set(x,y,z);scene.add(s);return s}
 
+// ---------- batching ----------
+const BATCH={};const _bm=new THREE.Matrix4(),_bq=new THREE.Quaternion(),_bs=new THREE.Vector3(),_bp=new THREE.Vector3(),_bu=new THREE.Vector3(0,1,0);
+function bcyl(key,r,len,color,x,y,z,dir){(BATCH[key]=BATCH[key]||{r,color,list:[]}).list.push([x,y,z,len,dir?dir.clone():null])}
+function flushBatch(){for(const k in BATCH){const b=BATCH[k];const im=new THREE.InstancedMesh(new THREE.CylinderGeometry(b.r,b.r,1,6),lam(b.color),b.list.length);
+  b.list.forEach(([x,y,z,len,dir],i)=>{if(dir)_bq.setFromUnitVectors(_bu,dir.clone().normalize());else _bq.identity();_bm.compose(_bp.set(x,y,z),_bq,_bs.set(1,len,1));im.setMatrixAt(i,_bm)});scene.add(im)}}
 // ---------- ground ----------
 const FW=90,FD=70;
 {const c=document.createElement('canvas');c.width=1024;c.height=800;const g=c.getContext('2d');g.fillStyle='#8fd06a';g.fillRect(0,0,1024,800);for(let i=0;i<6000;i++){g.fillStyle=Math.random()<.5?'rgba(255,255,255,.08)':'rgba(30,90,20,.1)';g.fillRect(Math.random()*1024,Math.random()*800,3,7)}
@@ -99,7 +104,7 @@ const FW=90,FD=70;
   const t=new THREE.CanvasTexture(c);const m=mesh(new THREE.PlaneGeometry(FW*2,FD*2),new THREE.MeshLambertMaterial({map:t}));m.rotation.x=-Math.PI/2;
   const o=mesh(new THREE.PlaneGeometry(800,800),lam(0x7cbf58),0,-0.05,0);o.rotation.x=-Math.PI/2}
 for(const[x,z,r]of[[-150,-120,70],[60,-170,80],[170,40,60],[-170,90,60],[30,170,60]]){const h=ball(r,flat(0x6fb24a),x,-r*0.55,z);h.scale.y*=0.6}
-{const fm=lam(0xffffff);for(const[a,b,c2,d]of[[-FW,-FD,FW,-FD],[FW,-FD,FW,FD],[FW,FD,-FW,FD],[-FW,FD,-FW,-FD]]){const L=Math.hypot(c2-a,d-b);for(let k=0;k<L;k+=3)cyl(0.1,0.1,1.4,fm,a+(c2-a)*k/L,0.7,b+(d-b)*k/L,null,5);const r=boxm(L,0.15,0.1,fm,(a+c2)/2,1.2,(b+d)/2);r.rotation.y=-Math.atan2(d-b,c2-a)}}
+{const fm=lam(0xffffff);for(const[a,b,c2,d]of[[-FW,-FD,FW,-FD],[FW,-FD,FW,FD],[FW,FD,-FW,FD],[-FW,FD,-FW,-FD]]){const L=Math.hypot(c2-a,d-b);for(let k=0;k<L;k+=3)bcyl('fence',0.1,1.4,0xffffff,a+(c2-a)*k/L,0.7,b+(d-b)*k/L);const r=boxm(L,0.15,0.1,fm,(a+c2)/2,1.2,(b+d)/2);r.rotation.y=-Math.atan2(d-b,c2-a)}}
 {const ts=[];for(let i=0;i<70;i++){const a=rand(0,6.28),x=Math.cos(a)*rand(70,86),z=Math.sin(a)*rand(52,66);ts.push([x,z])}
  const tr=new THREE.InstancedMesh(new THREE.CylinderGeometry(0.35,0.5,3,6),lam(0x8a5a3a),ts.length),cr=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(2.4,0),flat(0x3f9a45),ts.length);const m4=new THREE.Matrix4();
  ts.forEach(([x,z],i)=>{m4.makeTranslation(x,1.5,z);tr.setMatrixAt(i,m4);m4.makeTranslation(x,4.2,z);cr.setMatrixAt(i,m4)});scene.add(tr);scene.add(cr)}
@@ -113,7 +118,7 @@ function makeSlide(o){
   const g=grp(o.x,0,o.z);g.rotation.y=o.rot||0;g.updateMatrixWorld();
   const pts=o.pts.map(p=>new THREE.Vector3(...p).applyMatrix4(g.matrixWorld));
   const curve=new THREE.CatmullRomCurve3(pts);const L=curve.getLength();
-  const N=Math.max(40,Math.ceil(L*3)),M=o.tube?20:14;const pos=[],col=[],idx=[];const cc=new THREE.Color();
+  const N=Math.max(30,Math.ceil(L*2)),M=o.tube?14:10;const pos=[],col=[],idx=[];const cc=new THREE.Color();
   const frames=[];let prevSide=null;
   for(let i=0;i<=N;i++){const u=i/N,p=curve.getPointAt(u),t=curve.getTangentAt(u);let side=new THREE.Vector3().crossVectors(UP,t);if(side.lengthSq()<1e-4)side.copy(prevSide);side.normalize();prevSide=side;const up=new THREE.Vector3().crossVectors(t,side).normalize();frames.push({p,t,side,up});
     for(let j=0;j<=M;j++){let x,yy;if(o.tube){const a=-Math.PI/2+(j/M)*Math.PI*2;x=Math.cos(a)*o.w/2;yy=(Math.sin(a)+1)*o.w/2}else{x=(j/M-0.5)*o.w;yy=o.wall*Math.pow(Math.abs(x)/(o.w/2),4)}
@@ -122,16 +127,16 @@ function makeSlide(o){
       if(i<N&&j<M){const a=i*(M+1)+j;idx.push(a,a+M+1,a+1,a+1,a+M+1,a+M+2)}}}
   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));geo.setIndex(idx);geo.computeVertexNormals();
   const bed=new THREE.Mesh(geo,new THREE.MeshPhongMaterial({vertexColors:true,side:THREE.DoubleSide,shininess:90,transparent:!!o.tube,opacity:o.tube?0.55:1,depthWrite:!o.tube}));scene.add(bed);
-  if(!o.tube)for(const s of[-1,1]){const rp=frames.map(f=>f.p.clone().addScaledVector(f.side,s*o.w/2).addScaledVector(f.up,o.wall+0.08));mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rp),N,0.1,5),lam(0xffffff))}
+  if(!o.tube)for(const s of[-1,1]){const rp=frames.map(f=>f.p.clone().addScaledVector(f.side,s*o.w/2).addScaledVector(f.up,o.wall+0.08));mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rp),Math.ceil(N/2),0.1,4),lam(0xffffff))}
   // supports
-  for(let s=1.5;s<L;s+=3){const f=frames[Math.round(s/L*N)];if(f.p.y<0.9)continue;cyl(0.14,0.18,f.p.y-0.05,lam(0xcfd5da),f.p.x,(f.p.y-0.05)/2,f.p.z,null,6)}
+  for(let s=1.5;s<L;s+=3){const f=frames[Math.round(s/L*N)];if(f.p.y<0.9)continue;bcyl('sup',0.16,f.p.y-0.05,0xcfd5da,f.p.x,(f.p.y-0.05)/2,f.p.z)}
   // top deck + ladder behind it
   const f0=frames[0];const back=new THREE.Vector3(f0.t.x,0,f0.t.z).normalize();const H=f0.p.y;
   const deck=f0.p.clone().addScaledVector(back,-1.1);const dg=grp(deck.x,0,deck.z);dg.rotation.y=Math.atan2(back.x,back.z);
   boxm(o.w+0.8,0.25,2.2,lam(0xf2f2f2),0,H-0.15,0,dg);for(const s of[-1,1]){boxm(0.1,1.1,2.2,lam(o.color),s*(o.w/2+0.4),H+0.4,0,dg);cyl(0.12,0.12,H,lam(0xcfd5da),s*(o.w/2+0.3),H/2,-1,dg,6);cyl(0.12,0.12,H,lam(0xcfd5da),s*(o.w/2+0.3),H/2,1,dg,6)}
   boxm(o.w+0.8,1.1,0.1,lam(o.color),0,H+0.4,1.1,dg).visible=false;
   // ladder (stairs when tall)
-  const lad=grp(0,0,-1.15,dg);for(const s of[-0.5,0.5])cyl(0.06,0.06,H+1.2,lam(o.ladder||0xffd23b),s,(H+1.2)/2,0,lad,6);for(let y=0.35;y<H;y+=0.4)cyl(0.04,0.04,1,lam(0xffffff),0,y,0,lad,5).rotation.z=Math.PI/2;
+  const lad=grp(0,0,-1.15,dg);for(const s of[-0.5,0.5])cyl(0.06,0.06,H+1.2,lam(o.ladder||0xffd23b),s,(H+1.2)/2,0,lad,6);dg.updateMatrixWorld(true);for(let y=0.35;y<H;y+=0.4){const w=new THREE.Vector3(0,y,0).applyMatrix4(lad.matrixWorld);const d=new THREE.Vector3(1,0,0).transformDirection(lad.matrixWorld);bcyl('rung',0.04,1,0xffffff,w.x,w.y,w.z,d)}
   const ladderBase=new THREE.Vector3(0,0,-1.6).applyMatrix4(dg.matrixWorld||(dg.updateMatrixWorld(),dg.matrixWorld));dg.updateMatrixWorld();ladderBase.copy(new THREE.Vector3(0,0,-1.7)).applyMatrix4(dg.matrixWorld);
   const ladderTop=new THREE.Vector3(0,H,-1.15).applyMatrix4(dg.matrixWorld);const seat=f0.p.clone();
   // landing sand pit at the end
@@ -153,6 +158,7 @@ makeSlide({name:'ひろーい すべりだい',color:0xffffff,w:12,wall:0.8,rain
 {const a=[];const h=7,len=22;for(let i=0;i<=22;i++){const t=i/22;a.push([Math.sin(t*Math.PI*2)*4,0.6+(h-0.6)*(1-t),t*len])}makeSlide({name:'トンネル すべりだい',color:0x5ad8e8,w:2.2,wall:0,tube:1,pts:a,x:10,z:-40,rot:0.2,bumpy:0.4,instab:1.2})}
 {const a=[];const h=15,len=34;for(let i=0;i<=16;i++){const t=i/16;const y=t<0.35?h-(h-3)*Math.pow(t/0.35,1.3)*0.9:Math.max(0.35,(h-(h-3)*0.9)*(1-(t-0.35)/0.65));a.push([0,y,t*len])}makeSlide({name:'メガ すべりだい',color:0xe8402a,w:2,wall:0.6,pts:a,x:62,z:-8,rot:-2.2,bumpy:0.6,instab:1.6,ladder:0xffffff})}
 
+flushBatch();
 // ---------- the boy (with joints for poses) ----------
 function makeBoy(){const g=new THREE.Group();scene.add(g);const pose=grp(0,0,0,g);const root=grp(0,0,0,pose);const skin=lam(0xffd9b8);const P={g,pose,root,legs:[],arms:[]};
   const sh=mesh(new THREE.CircleGeometry(0.45,16),new THREE.MeshBasicMaterial({color:0,transparent:true,opacity:0.2,depthWrite:false}),0,0.02,0,g);sh.rotation.x=-Math.PI/2;P.shadow=sh;
@@ -294,9 +300,9 @@ let last=performance.now(),frames=0,fpsT=0;
 function frame(now){const dt=Math.max(0,Math.min(0.05,(now-last)/1000));last=now;const t=now/1000;
   if(started)update(dt,t);else{camera.position.set(Math.sin(t*0.1)*60,30,Math.cos(t*0.1)*50);camera.lookAt(0,4,0)}
   for(const s of SLIDES){const d=Math.hypot(s.sign.position.x-B.x,s.sign.position.z-B.z);s.sign.visible=(state==='walk'||!started)&&d<70&&d>6}
-  if(Math.floor(t*4)!==Math.floor((t-dt)*4))drawMap();
+  if(Math.floor(t*2)!==Math.floor((t-dt)*2))drawMap();
   renderer.render(scene,camera);
-  frames++;fpsT+=dt;if(fpsT>3){const fps=frames/fpsT;if(fps<28&&quality>0.7){quality=Math.max(0.7,quality-0.25);renderer.setPixelRatio(quality);resize()}frames=0;fpsT=0}
+  frames++;fpsT+=dt;if(fpsT>3){const fps=frames/fpsT;if(fps<40&&quality>0.55){quality=Math.max(0.55,quality-0.15);renderer.setPixelRatio(quality);resize()}frames=0;fpsT=0}
   requestAnimationFrame(frame)}
 function goFull(){const el=document.documentElement,f=el.requestFullscreen||el.webkitRequestFullscreen;if(!f||document.fullscreenElement||document.webkitFullscreenElement)return;try{const r=f.call(el,{navigationUI:'hide'});if(r&&r.catch)r.catch(()=>{})}catch(e){}}
 $('full').onclick=()=>{if(document.fullscreenElement||document.webkitFullscreenElement)(document.exitFullscreen||document.webkitExitFullscreen).call(document);else goFull()};
