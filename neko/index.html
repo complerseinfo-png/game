@@ -45,7 +45,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
   pointer-events:none;opacity:0;transition:opacity .15s;box-shadow:0 0 0 3px rgba(58,38,24,.35)}
 .overlay{position:fixed;inset:0;display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-left,0px));background:rgba(58,38,24,.3);overflow:auto}
 .card{background:var(--paper);border:4px solid var(--ink);border-radius:28px;box-shadow:0 8px 0 var(--ink);
-  padding:24px 22px;max-width:580px;width:100%;text-align:center;display:grid;gap:12px}
+  padding:24px 22px;max-width:660px;width:100%;text-align:center;display:grid;gap:12px}
 .card h1{margin:0;font-size:clamp(28px,8vw,48px);line-height:1.1;font-weight:800;color:var(--ball);
   -webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:0 4px 0 var(--ink);text-wrap:balance}
 .card p{margin:0;font-size:16px;line-height:1.6;font-weight:500}
@@ -85,8 +85,8 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
 @keyframes hop{0%,100%{transform:none}50%{transform:translateY(-6px)}}
 .ltitle{margin:0;font-size:clamp(30px,9vw,44px);font-weight:800;color:var(--ball);-webkit-text-stroke:2px var(--ink);paint-order:stroke fill;text-shadow:0 4px 0 var(--ink)}
 @media (prefers-reduced-motion:reduce){.lball,.lcat,.ltext i{animation:none}.lball{left:60%}.lcat{left:20%}}
-.stages{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
-@media (max-width:640px){.stages{grid-template-columns:repeat(3,1fr)}}
+.stages{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+@media (max-width:700px){.stages{grid-template-columns:repeat(4,1fr)}}
 .stg{font:inherit;display:grid;justify-items:center;gap:4px;padding:8px 4px;border:3px solid var(--ink);border-radius:16px;background:#fff;
   color:var(--ink);cursor:pointer;box-shadow:0 4px 0 var(--ink);min-width:0}
 .stg b{font-size:clamp(10px,2.2vw,14px);white-space:nowrap;letter-spacing:-.02em}
@@ -102,6 +102,8 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
 .th3{background:linear-gradient(#d9eef4 0 55%,#cfe3ea 55%)}
 .th3::after{content:"";position:absolute;right:8%;bottom:18%;width:55%;height:34%;background:#fff;border:2px solid #9cc;border-radius:6px;box-shadow:inset 0 10px 0 #7fd0ff}
 .th2::after{content:"";position:absolute;left:10%;bottom:25%;width:60%;height:30%;background:#fff;border-top:6px solid #f3a5b5;border-radius:4px}
+.th6{background:linear-gradient(#f3faf8 0 55%,#d6efe6 55%)}
+.th6::after{content:"";position:absolute;left:35%;top:12%;width:30%;height:40%;background:linear-gradient(#ff4f5e,#ff4f5e) center/34% 100% no-repeat,linear-gradient(#ff4f5e,#ff4f5e) center/100% 34% no-repeat}
 .th5{background:linear-gradient(#9fd8ff 0 50%,#8fd06a 50%)}
 .th5::after{content:"";position:absolute;left:52%;bottom:30%;width:30%;height:55%;border-radius:50% 50% 10% 10%;background:linear-gradient(#4fa64a 0 60%,#8a5a3a 60% 100%)}
 .th4{background:linear-gradient(#fff1c9 0 55%,#ffb0ba 55% 70%,#a8d6ff 70%)}
@@ -141,6 +143,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:
       <button class="stg" data-i="3"><span class="thumb th3"></span><b>おふろ</b><small id="rec3"></small></button>
       <button class="stg" data-i="4"><span class="thumb th4"></span><b>こどもべや</b><small id="rec4"></small></button>
       <button class="stg" data-i="5"><span class="thumb th5"></span><b>こうえん</b><small id="rec5"></small></button>
+      <button class="stg" data-i="6"><span class="thumb th6"></span><b>びょういん</b><small id="rec6"></small></button>
     </div>
     <div class="modes">
       <button class="mode" data-lives="3">やさしい <span style="color:#ff4f4f">♥♥♥</span></button>
@@ -251,6 +254,8 @@ function prop(kind,x,z,y=0){
   else if(kind==='pail'){r=0.45;roll=false;lift=0.25;mesh(new THREE.CylinderGeometry(0.42,0.32,0.5,16,1,true),new THREE.MeshLambertMaterial({color:pick([0xff7aa8,0x4fb3e8,0x8ad16b]),side:THREE.DoubleSide}),0,0,0,g);mesh(new THREE.CircleGeometry(0.32,16),lam(0x666666),0,-0.24,0,g).rotation.x=-Math.PI/2}
   else if(kind==='soap'){r=0.3;roll=false;lift=0.09;const m=mesh(new THREE.BoxGeometry(0.5,0.18,0.32),new THREE.MeshPhongMaterial({color:pick([0xffc4d8,0xfff3b0,0xc9f0ff]),shininess:120}),0,0,0,g);m.geometry.translate(0,0,0)}
   else if(kind==='pball'){r=0.2;mesh(new THREE.SphereGeometry(r,10,8),lam(pick(PB_COLORS)),0,0,0,g,false)}
+  else if(kind==='bandage'){r=0.3;mesh(new THREE.SphereGeometry(r,12,9),lam(0xfafafa),0,0,0,g).scale.set(1,1,0.75);const t=mesh(new THREE.TorusGeometry(r*0.98,0.03,5,18),lam(0xff9aa8),0,0,0,g);t.rotation.y=Math.PI/2}
+  else if(kind==='pill'){r=0.22;roll=false;lift=0.1;const a=mesh(new THREE.CylinderGeometry(0.1,0.1,0.22,10),lam(0xff6a6a),0,0,-0.11,g);a.rotation.x=Math.PI/2;const b=mesh(new THREE.CylinderGeometry(0.1,0.1,0.22,10),lam(0xffffff),0,0,0.11,g);b.rotation.x=Math.PI/2;for(const z of[-0.22,0.22])mesh(new THREE.SphereGeometry(0.1,8,6),lam(z<0?0xff6a6a:0xffffff),0,0,z,g)}
   else if(kind==='block'){r=0.3;roll=false;lift=0.25;mesh(new THREE.BoxGeometry(0.5,0.5,0.5),lam(pick([0xe9785a,0x4f9fb8,0xf2c14e,0x6fa07f])),0,0,0,g)}
   const p={kind,x,z,y,vx:0,vz:0,vy:0,r,rest:0.35,ground:true,step:0.12,roll,lift:roll?r:lift,g,rampCd:0};
   props.push(p);g.position.set(x,y+p.lift,z);return p;
@@ -389,27 +394,27 @@ function ramp(x,z,dx,dz,o={}){
   a.rotation.x=Math.PI/2+0.3;a.position.set(0,0.36,0.1);g.add(a);
 }
 // cardboard box lying open on one side: hide inside and the cats lose sight of you
-function cardboard(x,z,open){
-  const S=2.8,h=2.0,t=0.15,g=group();
+function cardboard(x,z,open,O={}){
+  const S=2.8,h=O.h||2.0,t=0.15,g=group();
   const sides={n:[x,z-S/2,S,t],s:[x,z+S/2,S,t],w:[x-S/2,z,t,S],e:[x+S/2,z,t,S]};
   for(const k in sides){
     if(k===open)continue;
     const[a,b,w,d]=sides[k];box(a,b,w,d,h);
-    mesh(new THREE.BoxGeometry(w,h,d),lam(0xc89a5e),a,h/2,b,g);
+    mesh(new THREE.BoxGeometry(w,h,d),lam(O.wall||0xc89a5e),a,h/2,b,g);
   }
   box(x,z,S,S,h,{solid:false,platform:true});
-  mesh(new THREE.BoxGeometry(S+0.1,0.12,S+0.1),lam(0xd4a86a),x,h,z,g);
-  mesh(new THREE.BoxGeometry(open==='n'||open==='s'?0.5:S+0.12,0.14,open==='n'||open==='s'?S+0.12:0.5),lam(0xe8d3a8),x,h+0.01,z,g);
+  mesh(new THREE.BoxGeometry(S+0.1,0.12,S+0.1),lam(O.top||0xd4a86a),x,h,z,g);
+  mesh(new THREE.BoxGeometry(open==='n'||open==='s'?0.5:S+0.12,0.14,open==='n'||open==='s'?S+0.12:0.5),lam(O.tape||0xe8d3a8),x,h+0.01,z,g);
   // flaps hanging open
   const [ox,oz]={n:[0,-1],s:[0,1],w:[-1,0],e:[1,0]}[open];
   for(const sgn of[-1,1]){
-    const f=mesh(new THREE.BoxGeometry(ox?0.06:S/2,h*0.9,ox?S/2:0.06),lam(0xb8884e),
+    const f=mesh(new THREE.BoxGeometry(ox?0.06:S/2,h*0.9,ox?S/2:0.06),lam(O.flap||0xb8884e),
       x+ox*(S/2+0.45)+(ox?0:sgn*(S/2+0.2)),h*0.45,z+oz*(S/2+0.45)+(oz?0:0)+(ox?sgn*(S/2+0.2):0),g);
     f.rotation.y=(ox?sgn*0.5:sgn*-0.5);
   }
   fadeWhenUnder(g,x,z,S/2,S/2,h);
   hideBoxes.push({x,z,hx:S/2-0.2,hz:S/2-0.2});
-  label('ダンボール',x,h+1.4,z,'#8a5a3a');
+  label(O.name||'ダンボール',x,h+1.4,z,O.name?'#2b7bff':'#8a5a3a');
 }
 function trampoline(x,z){
   TRAMP={x,z,r:1.5,h:0.6};
@@ -1059,6 +1064,150 @@ function updateKid(dt){
   }
 }
 
+// ----- stage 7: animal hospital (stretchers, scale, vet call, carriers) -----
+function hospTex(){return canvasTex(256,256,(g,w)=>{
+  const s=64;for(let i=0;i<4;i++)for(let j=0;j<4;j++){g.fillStyle=(i+j)%2?'#c4e6da':'#e2f2ec';g.fillRect(i*s,j*s,s,s)}
+  g.strokeStyle='rgba(110,160,145,.45)';g.lineWidth=2;for(let i=0;i<=4;i++){g.beginPath();g.moveTo(i*s,0);g.lineTo(i*s,w);g.moveTo(0,i*s);g.lineTo(w,i*s);g.stroke()}
+},9,6.5)}
+function wallSign(text,x,y,bg='#3fa9f5'){
+  const t=canvasTex(512,128,(g,w,h)=>{g.fillStyle=bg;g.beginPath();g.roundRect?g.roundRect(4,4,w-8,h-8,28):g.rect(4,4,w-8,h-8);g.fill();g.fillStyle='#fff';g.font='bold 64px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(text,w/2,h/2+4)});
+  t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping;t.repeat.set(1,1);
+  mesh(new THREE.PlaneGeometry(4,1),new THREE.MeshBasicMaterial({map:t,transparent:true}),x,y,-D+0.05,null,false);
+}
+// rolling stretcher / wheelchair: the ball can shove it into cats
+function cart(kind,x,z,head=0){
+  const r=kind==='bed'?1.25:0.85;
+  const c={kind,x,z,y:0,vx:0,vz:0,vy:0,r,rest:0.35,ground:true,step:0.2,head,g:new THREE.Group(),wheels:[]};
+  stage.add(c.g);const metal=new THREE.MeshPhongMaterial({color:0xc9d0d6,shininess:90});
+  if(kind==='bed'){
+    mesh(new THREE.BoxGeometry(1.3,0.3,3.0),lam(0xffffff),0,1.25,0,c.g);
+    mesh(new THREE.BoxGeometry(1.32,0.12,3.02),lam(0x7fd0c0),0,1.08,0,c.g);
+    mesh(new THREE.BoxGeometry(1.1,0.25,0.7),lam(0xe9f5ff),0,1.5,-1.05,c.g); // pillow
+    for(const[a,b]of[[0.5,1.3],[-0.5,1.3],[0.5,-1.3],[-0.5,-1.3]]){mesh(new THREE.CylinderGeometry(0.05,0.05,0.9,6),metal,a,0.6,b,c.g);const w=mesh(new THREE.SphereGeometry(0.14,8,6),lam(0x333333),a,0.14,b,c.g);c.wheels.push(w)}
+    for(const s of[-1,1])mesh(new THREE.BoxGeometry(0.06,0.06,2.8),metal,s*0.68,1.55,0,c.g);
+  }else{
+    mesh(new THREE.BoxGeometry(1.0,0.15,0.9),lam(0x3f7fe0),0,0.95,0,c.g);
+    mesh(new THREE.BoxGeometry(1.0,1.0,0.12),lam(0x3f7fe0),0,1.45,-0.45,c.g);
+    for(const s of[-1,1]){const w=mesh(new THREE.TorusGeometry(0.55,0.07,6,18),lam(0x333333),s*0.58,0.6,-0.05,c.g);w.rotation.y=Math.PI/2;c.wheels.push(w);
+      mesh(new THREE.CylinderGeometry(0.11,0.11,0.06,8),lam(0x333333),s*0.4,0.11,0.5,c.g).rotation.z=Math.PI/2}
+    for(const s of[-1,1])mesh(new THREE.CylinderGeometry(0.04,0.04,0.5,6),metal,s*0.45,2.0,-0.5,c.g);
+  }
+  KID.carts.push(c);return c;
+}
+function buildHospital(){
+  room(hospTex(),0xf3faf8);
+  // mint stripe along the walls
+  {const m=lam(0x9fe0cf);mesh(new THREE.BoxGeometry(W*2,0.5,0.05),m,0,1.6,-D+0.03,null,false);
+   mesh(new THREE.BoxGeometry(0.05,0.5,D*2),m,-W+0.03,1.6,0,null,false);mesh(new THREE.BoxGeometry(0.05,0.5,D*2),m,W-0.03,1.6,0,null,false)}
+  door('L',7);
+  kidInit();KID.carts=[];
+  // exam room door on the back wall
+  mesh(new THREE.BoxGeometry(4,6.5,0.15),lam(0xbfe6ff),0,3.25,-D+0.08,null,false);
+  mesh(new THREE.BoxGeometry(0.1,6.5,0.18),lam(0x8ab0c8),0,3.25,-D+0.1,null,false);
+  wallSign('しんさつしつ',0,7.4);
+  // red cross sign + x-ray light box with a cat skeleton
+  {const t=canvasTex(256,256,(g,w)=>{g.fillStyle='#1d2630';g.fillRect(0,0,w,w);g.strokeStyle='#dff4ff';g.lineWidth=7;g.lineCap='round';
+     g.beginPath();g.arc(70,90,30,0,7);g.stroke();g.beginPath();g.moveTo(52,64);g.lineTo(46,38);g.lineTo(66,58);g.moveTo(88,64);g.lineTo(94,38);g.lineTo(74,58);g.stroke();
+     g.beginPath();g.moveTo(100,100);g.lineTo(200,120);g.stroke();for(let i=0;i<7;i++){g.beginPath();g.moveTo(110+i*13,92+i*3);g.lineTo(115+i*13,145+i*2);g.stroke()}
+     g.beginPath();g.moveTo(200,120);g.quadraticCurveTo(240,150,225,60);g.stroke();
+     for(const x of[115,135,180,195]){g.beginPath();g.moveTo(x,140);g.lineTo(x-4,215);g.stroke()}});
+   t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping;t.repeat.set(1,1);
+   mesh(new THREE.BoxGeometry(4.6,4.6,0.2),lam(0xdddddd),-7,5,-D+0.1,null,false);
+   mesh(new THREE.PlaneGeometry(4.2,4.2),new THREE.MeshBasicMaterial({map:t}),-7,5,-D+0.22,null,false)}
+  {const t=canvasTex(128,128,(g,w)=>{g.fillStyle='#fff';g.fillRect(0,0,w,w);g.fillStyle='#ff4f5e';g.fillRect(48,16,32,96);g.fillRect(16,48,96,32)});t.wrapS=t.wrapT=THREE.ClampToEdgeWrapping;t.repeat.set(1,1);
+   mesh(new THREE.PlaneGeometry(2.4,2.4),new THREE.MeshBasicMaterial({map:t}),7,6.2,-D+0.05,null,false)}
+  // exam table (climb the steps or jump with the ramp)
+  solidBox(8,-10,5,3,2.2,0xffffff,{platform:true});
+  mesh(new THREE.BoxGeometry(4.6,0.15,2.6),lam(0x7fd0c0),8,2.27,-10,null,false);
+  [[4.9,1.65],[4.3,1.1],[3.7,0.55]].forEach(([x,h],i)=>solidBox(x,-10,0.6,2,h,[0x9fe0cf,0x7fd0ff,0xffd23b][i],{platform:true}));
+  ramp(8,-5.2,0,-1,{vy:11.5,sp:6});
+  label('しんさつだい',8,4.3,-10,'#1f9a8a');
+  // reception counter
+  solidBox(-12,-8,7,2,2.2,0xf2d9b0,{platform:true});
+  mesh(new THREE.BoxGeometry(7.1,0.15,2.1),lam(0xffffff),-12,2.25,-8,null,false);
+  [[-8.2,1.65],[-7.6,1.1],[-7.0,0.55]].forEach(([x,h],i)=>solidBox(x,-8,0.6,2,h,[0xff9a8a,0xffd23b,0x9fe0cf][i],{platform:true}));
+  label('うけつけ',-12,4.4,-8,'#e07000');
+  // waiting room benches (roll underneath)
+  for(const z of[1.5,5]){table(-8,z,6,1.4,1.3,0x7fb0e8,0x666666);mesh(new THREE.BoxGeometry(6,1,0.15),lam(0x7fb0e8),-8,2.0,z+0.65)}
+  label('まちあいしつ',-8,3.6,3.2,'#2b7bff');
+  // scale: shows the weight of whatever is on it
+  {const sc={x:12,z:0,r:1.3,last:''};KID.scale=sc;
+   circ(sc.x,sc.z,sc.r,0.2,{platform:true});
+   mesh(new THREE.CylinderGeometry(sc.r,sc.r+0.1,0.2,24),lam(0xffffff),sc.x,0.1,sc.z);
+   mesh(new THREE.CylinderGeometry(sc.r-0.15,sc.r-0.15,0.03,24),lam(0x9fe0cf),sc.x,0.21,sc.z,null,false);
+   mesh(new THREE.BoxGeometry(0.15,2.2,0.15),lam(0xc9d0d6),sc.x,1.1,sc.z-sc.r);
+   const cv=document.createElement('canvas');cv.width=320;cv.height=128;sc.cv=cv;sc.tex=new THREE.CanvasTexture(cv);
+   sc.spr=new THREE.Sprite(new THREE.SpriteMaterial({map:sc.tex,depthTest:false}));sc.spr.scale.set(3,1.2,1);sc.spr.position.set(sc.x,2.7,sc.z-sc.r);sc.spr.renderOrder=10;stage.add(sc.spr);
+   scaleShow('0.0 kg');label('たいじゅうけい',sc.x,4.9,sc.z-sc.r,'#7a4fd0')}
+  // vet call button: everybody hates shots
+  {const V={bx:-3,bz:-4.5,br:0.8,cd:0};KID.vet=V;
+   circ(V.bx,V.bz,V.br,0.15,{platform:true});
+   mesh(new THREE.CylinderGeometry(V.br+0.1,V.br+0.15,0.12,24),lam(0xdddddd),V.bx,0.06,V.bz);
+   V.btn=mesh(new THREE.CylinderGeometry(V.br-0.1,V.br-0.1,0.15,24),lam(0xff4f5e),V.bx,0.15,V.bz);
+   mesh(new THREE.BoxGeometry(0.9,0.03,0.25),new THREE.MeshBasicMaterial({color:0xffffff}),V.bx,0.24,V.bz,null,false);
+   mesh(new THREE.BoxGeometry(0.25,0.03,0.9),new THREE.MeshBasicMaterial({color:0xffffff}),V.bx,0.24,V.bz,null,false);
+   label('せんせいを よぶ',V.bx,1.8,V.bz,'#ff4f5e')}
+  // stretchers and a wheelchair
+  cart('bed',3,3,Math.PI/2);cart('bed',-14.5,9.5,0);cart('chair',13.5,7,-Math.PI/2);
+  // IV stands and a water cooler
+  for(const[x,z]of[[13,-11],[-2.5,-11.5]]){circ(x,z,0.3,4);mesh(new THREE.CylinderGeometry(0.05,0.05,4,6),lam(0xc9d0d6),x,2,z);mesh(new THREE.BoxGeometry(0.4,0.6,0.15),new THREE.MeshLambertMaterial({color:0xcff0ff,transparent:true,opacity:0.8}),x+0.3,3.6,z,null,false);mesh(new THREE.CylinderGeometry(0.5,0.5,0.1,10),lam(0x888888),x,0.05,z)}
+  circ(16.5,-11.5,0.7,3.2);mesh(new THREE.BoxGeometry(1.2,2.4,1.2),lam(0xffffff),16.5,1.2,-11.5);mesh(new THREE.CylinderGeometry(0.5,0.5,1.1,14),new THREE.MeshLambertMaterial({color:0x7fc8ff,transparent:true,opacity:0.8}),16.5,2.95,-11.5);
+  plant(16.6,11.4);plant(-16.6,-11.4);
+  // pet carriers to hide in
+  cardboard(15,-5,'w',{wall:0x4fb3e8,top:0xf7f7f7,tape:0x777777,flap:0xaab4bc,name:'キャリー',h:1.9});
+  cardboard(5,9.5,'w',{wall:0xff8aa8,top:0xf7f7f7,tape:0x777777,flap:0xaab4bc,name:'キャリー',h:1.9});
+  // props
+  prop('bandage',-11,-8,2.2);prop('pill',-13,-8.3,2.2);prop('pill',-12.4,-7.7,2.2);prop('bottle',-14.5,-8,2.2);prop('bottle',-9.6,-8.4,2.2);
+  prop('bandage',7,-10,2.2);prop('pill',9.5,-9.6,2.2);prop('bandage',-4,7);prop('bandage',6,-2);prop('pill',-1,2);prop('pill',2,-1.5);
+  prop('plush',-6,1.5,1.3);prop('book',-9.5,5,1.3);prop('cup',-10.5,1.5,1.3);prop('tennis',10,5);prop('yarn',-15,-3);prop('slipper',0,11);prop('slipper',0.8,11.6);
+}
+function scaleShow(txt){
+  const sc=KID.scale,g=sc.cv.getContext('2d');g.clearRect(0,0,320,128);
+  g.fillStyle='#2a3a3a';g.beginPath();g.roundRect?g.roundRect(6,6,308,116,22):g.rect(6,6,308,116);g.fill();
+  g.fillStyle='#9fffcf';g.font='bold 64px monospace';g.textAlign='center';g.textBaseline='middle';g.fillText(txt,160,68);sc.tex.needsUpdate=true;
+}
+const CAT_KG={black:'4.5',long:'6.2',cap:'3.8'};
+function updateHospital(dt){
+  // carts
+  for(const c of KID.carts){
+    if(c.ground){const f=Math.pow(0.5,dt);c.vx*=f;c.vz*=f}
+    c.x+=c.vx*dt;c.z+=c.vz*dt;
+    collide(c,(sp)=>{if(sp>3)tone(140,.1,'square',.05,-40)});vertical(c,dt);
+    const sp=Math.hypot(c.vx,c.vz);
+    // ball shoves it
+    {const dx=c.x-ball.x,dz=c.z-ball.z,d=Math.hypot(dx,dz);
+     if(d<c.r+BALL_R&&ball.y<1.3&&d>0){const nx=dx/d,nz=dz/d;ball.x=c.x-nx*(c.r+BALL_R);ball.z=c.z-nz*(c.r+BALL_R);
+       const vn=(ball.vx-c.vx)*nx+(ball.vz-c.vz)*nz;
+       if(vn>0){c.vx+=nx*vn*1.5;c.vz+=nz*vn*1.5;ball.vx-=nx*vn*0.8;ball.vz-=nz*vn*0.8;if(vn>2){tone(220,.08,'triangle',.05);if(vn>4)toast(c.kind==='bed'?'ストレッチャー ガラガラ〜！':'くるまいす ゴロゴロ〜！',0.9)}}}}
+    // runs cats over
+    for(const k of cats){const dx=k.x-c.x,dz=k.z-c.z,d=Math.hypot(dx,dz);
+      if(d<c.r+k.r&&Math.abs(k.y-c.y)<1.2&&d>0){const nx=dx/d,nz=dz/d,toward=c.vx*nx+c.vz*nz;
+        if(toward>3&&k.state!=='stun'){stunCat(k,10,nx,nz,'ガラガラ ドーン！');c.vx*=0.4;c.vz*=0.4}
+        else{k.x=c.x+nx*(c.r+k.r);k.z=c.z+nz*(c.r+k.r);c.vx-=nx*0.4;c.vz-=nz*0.4}}}
+    for(const p of props){const dx=p.x-c.x,dz=p.z-c.z,d=Math.hypot(dx,dz);
+      if(d<c.r+p.r&&p.y<1&&d>0){const nx=dx/d,nz=dz/d;p.x=c.x+nx*(c.r+p.r+0.02);p.z=c.z+nz*(c.r+p.r+0.02);if(sp>1){p.vx=nx*sp*1.2;p.vz=nz*sp*1.2;p.vy=2;p.ground=false}}}
+  }
+  for(let i=0;i<KID.carts.length;i++)for(let j=i+1;j<KID.carts.length;j++){const a=KID.carts[i],b=KID.carts[j],dx=b.x-a.x,dz=b.z-a.z,d=Math.hypot(dx,dz),m=a.r+b.r;
+    if(d<m&&d>0){const nx=dx/d,nz=dz/d,pp=(m-d)/2;a.x-=nx*pp;a.z-=nz*pp;b.x+=nx*pp;b.z+=nz*pp;const rv=(a.vx-b.vx)*nx+(a.vz-b.vz)*nz;if(rv>0){a.vx-=rv*nx;a.vz-=rv*nz;b.vx+=rv*nx;b.vz+=rv*nz;if(rv>2)tone(160,.1,'square',.05)}}}
+  // scale
+  {const sc=KID.scale;let txt='0.0 kg',who=null;
+   if(Math.hypot(ball.x-sc.x,ball.z-sc.z)<sc.r&&ball.y<0.5){txt='0.3 kg';who='ball'}
+   for(const c of cats)if(Math.hypot(c.x-sc.x,c.z-sc.z)<sc.r&&c.y<0.6){txt=CAT_KG[c.kind]+' kg';who=c}
+   if(txt!==sc.last){sc.last=txt;scaleShow(txt);if(who){tone(1500,.07,'square',.04);tone(1500,.07,'square',.04,0,.12);if(who==='ball')toast('ボール 0.3キロ！ かるい！',1.1);else{toast(txt.replace(' kg','キロ')+'！ ちょっと ふとった？',1.1);who.state!=='stun'&&meow(who.voice*0.8,0.4,0.08)}}}}
+  // vet call
+  {const V=KID.vet;V.cd-=dt;V.btn.position.y=V.cd>9?0.07:0.15;
+   if(V.cd<=0&&ball.y<0.5&&Math.hypot(ball.x-V.bx,ball.z-V.bz)<V.br){V.cd=12;toast('「ちゅうしゃの じかん ですよ〜」',1.8);
+     tone(784,.35,'sine',.07);tone(622,.5,'sine',.07,0,.35);
+     for(const c of cats){if(c.state==='stun')continue;const dx=c.x,dz=c.z+D,dd=Math.hypot(dx,dz)||1;
+       c.state='flee';c.t=4;c.ring.visible=false;c.fx=dx/dd;c.fz=dz/dd;setTimeout(()=>hiss(0.08,0.5),200+Math.random()*400)}}}
+}
+function animHospital(dt){
+  for(const c of KID.carts){const sp=Math.hypot(c.vx,c.vz);
+    if(sp>0.5){let want=Math.atan2(c.vx,c.vz);if(c.kind==='bed'){let d=want-c.head;while(d>Math.PI/2)d-=Math.PI;while(d<-Math.PI/2)d+=Math.PI;want=c.head+d}
+      let d=want-c.head;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;c.head+=d*Math.min(1,dt*3)}
+    c.g.position.set(c.x,c.y,c.z);c.g.rotation.y=c.head;for(const w of c.wheels)w.rotation.x+=sp*dt*2}
+}
+
 const STAGES=[
   {name:'リビング',build:buildLiving,ball:[0,7],cats:[[-15,-3],[14,-2],[3,-9.5]],grip:1},
   {name:'キッチン',build:buildKitchen,ball:[1,6.5],cats:[[-14,-6],[12,-5],[-1,-8.5]],grip:0.5},
@@ -1066,6 +1215,7 @@ const STAGES=[
   {name:'おふろ',build:buildBath,ball:[-2,8],cats:[[-14,-1],[14,2],[0,-3]],grip:0.85},
   {name:'こどもべや',build:buildKids,ball:[1,9.5],cats:[[-14,-1],[14,6],[2,-6]],grip:1},
   {name:'こうえん',build:buildPark,ball:[0,9],cats:[[-14,-1.5],[15,2],[3,-10]],grip:1,sky:0x9fd8ff},
+  {name:'びょういん',build:buildHospital,ball:[0,9],cats:[[-14,-1],[14,3],[1,-6.5]],grip:0.9},
 ];
 let loadedStage=-1;
 function loadStage(i){
@@ -1626,6 +1776,7 @@ function update(dt){
     SHOWER.btn.position.y=SHOWER.on>0?0.07:0.15}
   updateDrops(dt);
   if(KID)updateKid(dt);
+  if(KID&&KID.carts)updateHospital(dt);
 
   // cats
   const bsp=Math.hypot(ball.vx,ball.vz);
@@ -2005,7 +2156,7 @@ function sync(dt){
     }
   }
   if(TV.on>0&&now-TV.lastDraw>0.08){TV.lastDraw=now;drawTV(now)}
-  if(KID)animKid(dt,now);trampSquash*=Math.pow(0.004,dt);if(TRAMP){trampMat.position.y=TRAMP.h-0.03-trampSquash*0.6;trampMat.scale.set(1,1+trampSquash*4,1)}
+  if(KID)animKid(dt,now);if(KID&&KID.carts)animHospital(dt);trampSquash*=Math.pow(0.004,dt);if(TRAMP){trampMat.position.y=TRAMP.h-0.03-trampSquash*0.6;trampMat.scale.set(1,1+trampSquash*4,1)}
   updateBursts(dt);
   for(const p of props){
     p.g.position.set(p.x,p.y+p.lift,p.z);
