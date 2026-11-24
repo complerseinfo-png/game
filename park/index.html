@@ -53,10 +53,10 @@ html,body{margin:0;height:100%;overflow:hidden;background:#8fd0ff;font-family:va
   <button id="act" hidden>のる！</button>
   <div id="ridebar" hidden><button class="rb" id="viewBtn">そとから みる</button><button class="rb" id="exitBtn">おりる</button></div>
   <div id="joy" hidden><div id="knob"></div></div>
-  <div id="hint">いきたい ところを タッチ！</div>
+  <div id="hint">スワイプした ほうへ はしるよ！ タッチで とまる</div>
   <div id="rot"><button class="rb" id="rotL" aria-label="ひだりに まわす">⟲</button><button class="rb" id="rotR" aria-label="みぎに まわす">⟳</button></div>
 </div>
-<div class="ov" id="title"><div class="card"><h1>ひらひらパーク</h1><p>ゆうえんちを あるいて のりものに のろう！</p><p>いきたい ところを タッチすると あるくよ</p><p>ぜんぶで 16この のりものに のれるよ！</p><button class="big" id="startBtn">あそぶ！</button></div></div>
+<div class="ov" id="title"><div class="card"><h1>ひらひらパーク</h1><p>ゆうえんちを あるいて のりものに のろう！</p><p>スワイプした ほうへ はしるよ！ タッチで とまる</p><p>ぜんぶで 16この のりものに のれるよ！</p><button class="big" id="startBtn">あそぶ！</button></div></div>
 <div id="loading">よみこみちゅう…</div>
 <script>
 (()=>{
@@ -657,17 +657,19 @@ let camYaw=0,camPitch=0.35,camDist=9,camAuto=true;
 addEventListener('keydown',e=>{keys[e.code]=true});addEventListener('keyup',e=>{keys[e.code]=false});
 const go={id:null,target:null,stuck:0};const _ray=new THREE.Raycaster(),_gp=new THREE.Plane(new THREE.Vector3(0,1,0),0),_hit=new THREE.Vector3();
 const marker=mesh(new THREE.RingGeometry(0.5,0.8,24),new THREE.MeshBasicMaterial({color:0xffd23b,transparent:true,opacity:0.9,depthWrite:false}),0,0.06,0);marker.rotation.x=-Math.PI/2;marker.visible=false;
+function swipeRun(dx,dy){const fx=-Math.sin(camYaw),fz=-Math.cos(camYaw),rx=-fz,rz=fx;let wx=rx*dx+fx*(-dy),wz=rz*dx+fz*(-dy);const l=Math.hypot(wx,wz)||1;wx/=l;wz/=l;
+  go.target={x:B.x+wx*20,z:B.z+wz*20};go.stuck=0;marker.position.set(go.target.x,0.06,go.target.z);marker.visible=true;$('hint').hidden=true;go.swiped=true}
 function aimAt(e){_ray.setFromCamera({x:e.clientX/innerWidth*2-1,y:-(e.clientY/innerHeight)*2+1},camera);if(_ray.ray.intersectPlane(_gp,_hit)){const d=Math.hypot(_hit.x-B.x,_hit.z-B.z);if(d>60)return;go.target={x:_hit.x,z:_hit.z};go.stuck=0;marker.position.set(_hit.x,0.06,_hit.z);marker.visible=true;$('hint').hidden=true}}
 canvas.addEventListener('pointerdown',e=>{audio();
-  if(mode==='walk'){if(go.id===null){go.id=e.pointerId;aimAt(e)}}
+  if(mode==='walk'){if(go.id===null){go.id=e.pointerId;go.sx=e.clientX;go.sy=e.clientY;go.swiped=false}}
   else if(look.id===null){look.id=e.pointerId;look.lx=e.clientX;look.ly=e.clientY}
   canvas.setPointerCapture(e.pointerId)});
 canvas.addEventListener('pointermove',e=>{
-  if(e.pointerId===go.id&&mode==='walk'){aimAt(e)}
+  if(e.pointerId===go.id&&mode==='walk'){const dx=e.clientX-go.sx,dy=e.clientY-go.sy;if(Math.hypot(dx,dy)>30)swipeRun(dx,dy)}
   else if(e.pointerId===look.id){const dx=e.clientX-look.lx,dy=e.clientY-look.ly;look.lx=e.clientX;look.ly=e.clientY;
     if(mode==='walk'){camYaw-=dx*0.006;camPitch=clamp(camPitch+dy*0.004,0.08,1.1);camAuto=false;camAutoT=2}
     else{rideYaw-=dx*0.006;ridePitch=clamp(ridePitch-dy*0.005,-1.2,0.9)}}});
-function endPtr(e){if(e.pointerId===go.id)go.id=null;if(e.pointerId===look.id)look.id=null}
+function endPtr(e){if(e.pointerId===go.id){go.id=null;if(!go.swiped&&mode==='walk'){go.target=null;marker.visible=false}}if(e.pointerId===look.id)look.id=null}
 canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercancel',endPtr);
 let camAutoT=0,rotDir=0;
 for(const[id,d]of[['rotL',1],['rotR',-1]]){const b=$(id);b.addEventListener('pointerdown',e=>{e.preventDefault();rotDir=d});for(const ev of['pointerup','pointerleave','pointercancel'])b.addEventListener(ev,()=>{rotDir=0})}
@@ -763,7 +765,7 @@ function updateWalk(dt,t){
   let m=Math.min(1,Math.hypot(mx,my));
   B.px=B.x;B.pz=B.z;let dx,dz;
   if(m>0.1){go.target=null;marker.visible=false;const fx=-Math.sin(camYaw),fz=-Math.cos(camYaw),rx=-fz,rz=fx;dx=fx*(-my)+rx*mx;dz=fz*(-my)+rz*mx}
-  else if(go.target){dx=go.target.x-B.x;dz=go.target.z-B.z;const d=Math.hypot(dx,dz);if(d<0.5){go.target=null;marker.visible=false;m=0}else m=Math.min(1,d/1.5+0.25)}
+  else if(go.target){dx=go.target.x-B.x;dz=go.target.z-B.z;const d=Math.hypot(dx,dz);if(d<0.5){go.target=null;marker.visible=false;m=0}else m=Math.min(1.15,d/1.5+0.25)}
   marker.scale.setScalar(1+Math.sin(t*6)*0.12);
   if(m>0.1){const dl=Math.hypot(dx,dz)||1;const sp=9*m;B.x+=dx/dl*sp*dt;B.z+=dz/dl*sp*dt;
     const want=Math.atan2(dx,dz);let d=want-B.head;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;B.head+=d*Math.min(1,dt*10);B.v=m;
