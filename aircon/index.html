@@ -155,7 +155,8 @@ let roomT=30,flap=0,vaneAng=0.3,sideAng=0;
 // ---------- sound ----------
 let ac=null,muted=false,hum=null,humG=null,master=null;
 function OUT(){if(!master){master=ac.createGain();master.gain.value=0.5;master.connect(ac.destination)}return master} // everything plays at half volume
-function audio(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume()}catch(e){}return ac}
+function audio(){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended'&&!document.hidden)ac.resume()}catch(e){}return ac}
+document.addEventListener('visibilitychange',()=>{try{if(document.hidden){if(ac&&ac.state==='running')ac.suspend();if(window.speechSynthesis)speechSynthesis.cancel()}else if(ac&&!muted)ac.resume()}catch(e){}});// silence when the tab or app is in the background
 function beep(f=brand.beep,d=0.08,delay=0,vol=0.06){if(muted||!audio())return;const t=ac.currentTime+delay,o=ac.createOscillator(),g=ac.createGain();o.type='square';o.frequency.value=f;g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(OUT());o.start(t);o.stop(t+d+.02)}
 function startHum(){if(hum||muted||!audio())return;const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);let last=0;for(let i=0;i<n;i++){last=last*0.97+(Math.random()*2-1)*0.03;d[i]=last*6}
   hum=ac.createBufferSource();hum.buffer=b;hum.loop=true;const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=700;humG=ac.createGain();humG.gain.value=0;hum.connect(f).connect(humG).connect(OUT());hum.start()}
