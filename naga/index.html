@@ -367,7 +367,7 @@ function blockW(x,z,r){OBST.push({x,z,r})}
 {
   const pts=[];for(let i=0;i<7000&&pts.length<480;i++){const x=rand(0,1880),y=rand(0,1400);if(!isGrass(x,y))continue;
     let ok=true;for(const q of pts)if(Math.abs(q[0]-x)<22&&Math.abs(q[1]-y)<22){ok=false;break}if(!ok)continue;
-    const inside=inPoly(x,y,PARK);if(inside){if(Math.random()<0.5)continue;let far=true;for(const[ox,oy]of[[35,0],[-35,0],[0,35],[0,-35],[25,25],[-25,-25],[25,-25],[-25,25]])if(!isGrass(x+ox,y+oy)){far=false;break}if(!far)continue}pts.push([x,y,inside])}
+    const inside=inPoly(x,y,PARK);if(inside){if(Math.random()<0.88)continue;let far=true;for(const[ox,oy]of[[60,0],[-60,0],[0,60],[0,-60],[45,45],[-45,-45],[45,-45],[-45,45]])if(!isGrass(x+ox,y+oy)){far=false;break}if(!far)continue}pts.push([x,y,inside])}
   const trunkG=new THREE.CylinderGeometry(0.35,0.5,3,6),crownG=new THREE.IcosahedronGeometry(2.4,0);
   const tr=new THREE.InstancedMesh(trunkG,lam(0x8a5a3a),pts.length),cr=new THREE.InstancedMesh(crownG,flat(0x3f9a45),pts.length);
   const m4=new THREE.Matrix4(),q=new THREE.Quaternion(),sc=new THREE.Vector3(),col=new THREE.Color();
@@ -379,7 +379,7 @@ function blockW(x,z,r){OBST.push({x,z,r})}
 // palm trees along the palm walk
 function palm(x,z,s=1){const g=grp(x,0,z);const tk=cyl(0.25*s,0.4*s,5*s,flat(0x9a7a4a),0.15*s,2.5*s,0,g,7);tk.rotation.z=-0.05;for(let i=0;i<7;i++){const l=ball(1.8*s,flat(0x3fae4a),Math.cos(i*0.9)*1.3*s,5*s,Math.sin(i*0.9)*1.3*s,g,1,0.12,0.35);l.rotation.y=-i*0.9;l.rotation.z=0.35}blockW(x,z,0.6)}
 // palm trees here and there
-for(const[ix,iy]of[[610,440],[610,505],[560,430],[520,500],[440,470],[380,450],[330,430],[260,380],[450,380],[520,400],[650,420],[660,520],[350,600],[300,470],[600,620],[500,620]]){const[x,z]=W(ix*1.607,iy*1.693);palm(x,z,1)}
+for(const[ix,iy]of[[620,420],[620,520],[350,620],[600,640]]){const[x,z]=W(ix*1.607,iy*1.693);palm(x,z,1)}
 // ================= main gate =================
 {const[x,z]=W(1053,796);const g=grp(x,0,z);g.rotation.y=Math.PI/2;
   for(const s of[-1,1]){cyl(1.2,1.4,10,lam(0xffffff),s*10,5,0,g,12);cone(1.9,3,lam(0xe84a4a),s*10,11.5,0,g,12)}

@@ -372,7 +372,7 @@ function blockW(x,z,r){OBST.push({x,z,r})}
 {
   const pts=[];for(let i=0;i<7000&&pts.length<480;i++){const x=rand(0,1880),y=rand(0,1400);if(!isGrass(x,y))continue;
     let ok=true;for(const q of pts)if(Math.abs(q[0]-x)<22&&Math.abs(q[1]-y)<22){ok=false;break}if(!ok)continue;
-    const inside=inPoly(x,y,PARK);if(inside){if(Math.random()<0.5)continue;let far=true;for(const[ox,oy]of[[35,0],[-35,0],[0,35],[0,-35],[25,25],[-25,-25],[25,-25],[-25,25]])if(!isGrass(x+ox,y+oy)){far=false;break}if(!far)continue}pts.push([x,y,inside])}
+    const inside=inPoly(x,y,PARK);if(inside){if(Math.random()<0.88)continue;let far=true;for(const[ox,oy]of[[60,0],[-60,0],[0,60],[0,-60],[45,45],[-45,-45],[45,-45],[-45,45]])if(!isGrass(x+ox,y+oy)){far=false;break}if(!far)continue}pts.push([x,y,inside])}
   const trunkG=new THREE.CylinderGeometry(0.35,0.5,3,6),crownG=new THREE.IcosahedronGeometry(2.4,0);
   const tr=new THREE.InstancedMesh(trunkG,lam(0x8a5a3a),pts.length),cr=new THREE.InstancedMesh(crownG,flat(0x3f9a45),pts.length);
   const m4=new THREE.Matrix4(),q=new THREE.Quaternion(),sc=new THREE.Vector3(),col=new THREE.Color();
