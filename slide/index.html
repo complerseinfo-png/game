@@ -185,8 +185,8 @@ let rotDir=0;for(const[id,d]of[['rotL',1],['rotR',-1]]){const b=$(id);b.addEvent
 // swipe to run, tap to stop
 let camYaw=0,camAutoT=0;const go={id:null,target:null,stuck:0};
 const marker=mesh(new THREE.RingGeometry(0.5,0.8,24),new THREE.MeshBasicMaterial({color:0xffd23b,transparent:true,opacity:0.9,depthWrite:false}),0,0.06,0);marker.rotation.x=-Math.PI/2;marker.visible=false;
-function swipeRun(dx,dy){const fx=-Math.sin(camYaw),fz=-Math.cos(camYaw),rx=-fz,rz=fx;let wx=rx*dx+fx*(-dy),wz=rz*dx+fz*(-dy);const l=Math.hypot(wx,wz)||1;go.target={x:clamp(B.x+wx/l*20,-FW+1,FW-1),z:clamp(B.z+wz/l*20,-FD+1,FD-1)};go.stuck=0;marker.position.set(go.target.x,0.06,go.target.z);marker.visible=true;go.swiped=true;$('hint').hidden=true}
-canvas.addEventListener('pointerdown',e=>{audio();if(state==='walk'&&go.id===null){go.id=e.pointerId;go.sx=e.clientX;go.sy=e.clientY;go.swiped=false}canvas.setPointerCapture(e.pointerId)});
+function swipeRun(dx,dy){if(go.lock)return;const fx=-Math.sin(camYaw),fz=-Math.cos(camYaw),rx=-fz,rz=fx;let wx=rx*dx+fx*(-dy),wz=rz*dx+fz*(-dy);const l=Math.hypot(wx,wz)||1;go.target={x:clamp(B.x+wx/l*20,-FW+1,FW-1),z:clamp(B.z+wz/l*20,-FD+1,FD-1)};go.stuck=0;marker.position.set(go.target.x,0.06,go.target.z);marker.visible=true;go.swiped=true;$('hint').hidden=true}
+canvas.addEventListener('pointerdown',e=>{audio();if(state==='walk'&&go.id===null){go.id=e.pointerId;go.sx=e.clientX;go.sy=e.clientY;go.swiped=false;go.lock=false}canvas.setPointerCapture(e.pointerId)});
 canvas.addEventListener('pointermove',e=>{if(e.pointerId===go.id&&state==='walk'){const dx=e.clientX-go.sx,dy=e.clientY-go.sy;if(Math.hypot(dx,dy)>30)swipeRun(dx,dy)}});
 function endPtr(e){if(e.pointerId===go.id){go.id=null;if(!go.swiped&&state==='walk'){go.target=null;marker.visible=false}}}
 canvas.addEventListener('pointerup',endPtr);canvas.addEventListener('pointercancel',endPtr);
@@ -231,7 +231,7 @@ function update(dt,t){
     boy.g.position.set(B.x,B.v>0?Math.abs(Math.sin(t*12))*0.1:0,B.z);boy.g.rotation.set(0,B.h,0);const s=B.v>0?Math.sin(t*12):0;boy.legs.forEach((l,i)=>l.rotation.x=(i?1:-1)*s*0.7);boy.arms.forEach((a,i)=>a.rotation.x=(i?-1:1)*s*0.6);
     marker.scale.setScalar(1+Math.sin(t*6)*0.12);
     if(rotDir){camYaw+=rotDir*dt*1.8;camAutoT=2.5}if(camAutoT>0)camAutoT-=dt;else if(B.v>0){let d=(B.h+Math.PI)-camYaw;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;camYaw+=d*Math.min(1,dt*1.2)}
-    const ns=nearSlide();if(ns&&ns!==lastPad&&go.target){go.target={x:ns.ladderBase.x,z:ns.ladderBase.z};go.stuck=0;marker.visible=false;tone(1046,.12,'sine',.06);tone(1568,.15,'sine',.05,0,.08)}lastPad=ns;if(ns&&!go.target&&B.v===0){P.padT=(P.padT||0)+dt;if(P.padT>0.35){P.padT=0;startClimb(ns);return}}else P.padT=0;$('act').hidden=!ns;if(ns)$('act').textContent=ns.name+'に のぼる！';$('rot').hidden=false;
+    const ns=nearSlide();if(ns&&ns!==lastPad&&go.target){go.target={x:ns.ladderBase.x,z:ns.ladderBase.z};go.stuck=0;go.lock=true;marker.visible=false;tone(1046,.12,'sine',.06);tone(1568,.15,'sine',.05,0,.08)}lastPad=ns;if(ns&&!go.target&&B.v===0){P.padT=(P.padT||0)+dt;if(P.padT>0.35){P.padT=0;startClimb(ns);return}}else P.padT=0;$('act').hidden=!ns;if(ns)$('act').textContent=ns.name+'に のぼる！';$('rot').hidden=false;
   }
   else if(state==='climb'){const S=cur;P.climbT+=dt;const spd=S.H>8?2.6:1.8;const k=clamp(P.climbT*spd/(S.H+1),0,1);
     const a=S.ladderBase,b=S.ladderTop;const y=k*S.H;const hx=a.x+(b.x-a.x)*Math.min(1,k*4),hz=a.z+(b.z-a.z)*Math.min(1,k*4);

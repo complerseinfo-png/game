@@ -825,11 +825,11 @@ let camYaw=0,camPitch=0.35,camDist=9,camAuto=true;
 addEventListener('keydown',e=>{keys[e.code]=true});addEventListener('keyup',e=>{keys[e.code]=false});
 const go={id:null,target:null,stuck:0};const _ray=new THREE.Raycaster(),_gp=new THREE.Plane(new THREE.Vector3(0,1,0),0),_hit=new THREE.Vector3();
 const marker=mesh(new THREE.RingGeometry(0.5,0.8,24),new THREE.MeshBasicMaterial({color:0xffd23b,transparent:true,opacity:0.9,depthWrite:false}),0,0.06,0);marker.rotation.x=-Math.PI/2;marker.visible=false;
-function swipeRun(dx,dy){const fx=-Math.sin(camYaw),fz=-Math.cos(camYaw),rx=-fz,rz=fx;let wx=rx*dx+fx*(-dy),wz=rz*dx+fz*(-dy);const l=Math.hypot(wx,wz)||1;wx/=l;wz/=l;
+function swipeRun(dx,dy){if(go.lock)return;const fx=-Math.sin(camYaw),fz=-Math.cos(camYaw),rx=-fz,rz=fx;let wx=rx*dx+fx*(-dy),wz=rz*dx+fz*(-dy);const l=Math.hypot(wx,wz)||1;wx/=l;wz/=l;
   go.target={x:B.x+wx*20,z:B.z+wz*20};go.stuck=0;marker.position.set(go.target.x,0.06,go.target.z);marker.visible=true;$('hint').hidden=true;go.swiped=true}
 function aimAt(e){_ray.setFromCamera({x:e.clientX/innerWidth*2-1,y:-(e.clientY/innerHeight)*2+1},camera);if(_ray.ray.intersectPlane(_gp,_hit)){const d=Math.hypot(_hit.x-B.x,_hit.z-B.z);if(d>60)return;go.target={x:_hit.x,z:_hit.z};go.stuck=0;marker.position.set(_hit.x,0.06,_hit.z);marker.visible=true;$('hint').hidden=true}}
 canvas.addEventListener('pointerdown',e=>{audio();
-  if(mode==='walk'){if(go.id===null){go.id=e.pointerId;go.sx=e.clientX;go.sy=e.clientY;go.swiped=false}}
+  if(mode==='walk'){if(go.id===null){go.id=e.pointerId;go.sx=e.clientX;go.sy=e.clientY;go.swiped=false;go.lock=false}}
   else if(look.id===null){look.id=e.pointerId;look.lx=e.clientX;look.ly=e.clientY}
   canvas.setPointerCapture(e.pointerId)});
 canvas.addEventListener('pointermove',e=>{
@@ -975,7 +975,7 @@ function updateWalk(dt,t){
   if(camAutoT>0)camAutoT-=dt;else if(B.v>0){let d=(B.head+Math.PI)-camYaw;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)d+=Math.PI*2;camYaw+=d*Math.min(1,dt*1.2)}
   // near a ride?
   nearRide=null;{let bd=1e9;for(const r of RIDES){const d=Math.hypot(B.x-r.x,B.z-r.z);if(d<r.r&&d/r.r<bd){bd=d/r.r;nearRide=r}}}
-  if(nearRide&&nearRide!==lastPad&&go.target){go.target={x:nearRide.x,z:nearRide.z};go.stuck=0;marker.visible=false;tone(1046,.12,'sine',.06);tone(1568,.15,'sine',.05,0,.08)}lastPad=nearRide;
+  if(nearRide&&nearRide!==lastPad&&go.target){go.target={x:nearRide.x,z:nearRide.z};go.stuck=0;go.lock=true;marker.visible=false;tone(1046,.12,'sine',.06);tone(1568,.15,'sine',.05,0,.08)}lastPad=nearRide;
   $('rot').hidden=false;if(nearRide&&nearRide.open){$('act').hidden=false;$('act').textContent=nearRide.name+'に のる！'}else $('act').hidden=true;
   if(nearRide&&!nearRide.open&&(!lastSoon[nearRide.name]||t-lastSoon[nearRide.name]>25)){lastSoon[nearRide.name]=t;toast(nearRide.name+' … もうすぐ のれるよ！',2.4)}
   const an=areaName();if($('area').textContent!==an)$('area').textContent=an;
@@ -1023,7 +1023,7 @@ function staticMerge(){
   scene.updateMatrixWorld(true);const snap=new Map(),loc=new Map();scene.traverse(o=>{if(o.isMesh){snap.set(o,o.matrixWorld.clone());loc.set(o,[o.matrix.clone(),o.visible])}});
   const dyn=new Set(),moves=new Set();
   for(let k=0;k<16;k++){const tt=k*0.47+0.13;for(const f of ANIM){try{f(0.47,tt)}catch(e){}}try{updateGuests(0.47,tt)}catch(e){}scene.updateMatrixWorld(true);for(const[o,m]of snap)if(!dyn.has(o)&&!o.matrixWorld.equals(m))dyn.add(o);for(const[o,[lm,vis]]of loc){o.updateMatrix();if(!o.matrix.equals(lm)||o.visible!==vis)moves.add(o)}}
-  const keep=new Set();for(const r of[boy.g,HH.I,marker])if(r)r.traverse(o=>keep.add(o));
+  const keep=new Set();for(const r of[boy.g,HH.I,marker,GK.me,BC.me,HH.cart])if(r)r.traverse(o=>keep.add(o));
   const groups=new Map();const CELL=45;
   scene.traverse(o=>{if(!o.isMesh||o.isInstancedMesh||dyn.has(o)||keep.has(o)||o.userData.noFade)return;const m=o.material;
     if(Array.isArray(m)||m.map||m.transparent||!(m.isMeshLambertMaterial||m.isMeshPhongMaterial||m.isMeshBasicMaterial))return;
