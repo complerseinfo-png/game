@@ -90,10 +90,10 @@ function chime(){[N.C5,N.E5,N.G5,N.C5*2].forEach((f,i)=>tone(f,.4,'sine',.07,0,i
 // ================= three basics =================
 const canvas=$('c');
 const MOBILE=/Android|Silk|Mobile|Tablet|iPad/i.test(navigator.userAgent);const renderer=new THREE.WebGLRenderer({canvas,antialias:!MOBILE,powerPreference:'high-performance'});
-let quality=Math.min(MOBILE?0.9:1.25,window.devicePixelRatio||1);renderer.setPixelRatio(quality);
+let quality=Math.min(MOBILE?0.8:1.25,window.devicePixelRatio||1);renderer.setPixelRatio(quality);
 const scene=new THREE.Scene();
-const SKY=0x9fd8ff;scene.background=new THREE.Color(SKY);scene.fog=new THREE.Fog(SKY,95,290);
-const camera=new THREE.PerspectiveCamera(60,1,0.05,600);
+const SKY=0x9fd8ff;scene.background=new THREE.Color(SKY);scene.fog=new THREE.Fog(SKY,45,120);
+const camera=new THREE.PerspectiveCamera(60,1,0.05,100);
 function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.fov=camera.aspect<1?75:60;camera.updateProjectionMatrix()}
 addEventListener('resize',resize);
 const hemi=new THREE.HemisphereLight(0xffffff,0x6a8a4a,0.72);scene.add(hemi);
@@ -785,8 +785,8 @@ for(const r of RIDES){const type=ICON_OF[r.name]||'coaster';{const sp=findSpot(r
   for(let i=0;i<12;i++){const a=i/12*Math.PI*2;ball(0.12,basic(0xffffff),r.x+Math.cos(a)*2.6,0.2,r.z+Math.sin(a)*2.6)}
   const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,fog:false}));sp.scale.set(2.6,2.6,1);sp.position.set(r.x,4,r.z);scene.add(sp);
   PADS.push({sp,r});r.r=3.2}
-ANIM.push(()=>{for(const s of SIGNS){const d=Math.hypot(s.position.x-B.x,s.position.z-B.z);s.visible=mode!=='walk'||d<75}});
-ANIM.push((dt,t)=>{for(const p of PADS){const d=Math.hypot(B.x-p.r.x,B.z-p.r.z);p.sp.position.y=4+Math.sin(t*2.5+p.r.x)*0.3;const s=d<5?3.4:2.6;p.sp.scale.set(s,s,1);p.sp.visible=mode==='walk'}});
+ANIM.push(()=>{for(const s of SIGNS){const d=Math.hypot(s.position.x-B.x,s.position.z-B.z);s.visible=mode==='walk'?d<60:d<160}});
+ANIM.push((dt,t)=>{for(const p of PADS){const d=Math.hypot(B.x-p.r.x,B.z-p.r.z);p.sp.position.y=4+Math.sin(t*2.5+p.r.x)*0.3;const s=d<5?3.4:2.6;p.sp.scale.set(s,s,1);p.sp.visible=mode==='walk'&&d<70}});
 
 // ================= the boy =================
 function makeBoy(){const g=new THREE.Group();const root=grp(0,0,0,g);const skin=lam(0xffd9b8);const P={g,legs:[],arms:[]};
@@ -814,6 +814,7 @@ function updateGuests(dt,t){for(const G of GUESTS){const a=G.pw[G.seg],b=G.pw[G.
   if(G.u>1){if(G.seg<G.pw.length-2){G.seg++;G.u=0}else{G.u=1;G.dir=-1}}if(G.u<0){if(G.seg>0){G.seg--;G.u=1}else{G.u=0;G.dir=1}}
   const a2=G.pw[G.seg],b2=G.pw[G.seg+1];let dx=b2[0]-a2[0],dz=b2[1]-a2[1];const l=Math.hypot(dx,dz)||1;dx/=l;dz/=l;
   const x=a2[0]+(b2[0]-a2[0])*G.u-dz*G.off,z=a2[1]+(b2[1]-a2[1])*G.u+dx*G.off;
+  {const vis=Math.hypot(x-camera.position.x,z-camera.position.z)<55;G.p.g.visible=vis;if(!vis)continue}
   G.p.g.position.set(x,Math.abs(Math.sin(t*8+G.bob))*0.06,z);G.p.g.rotation.y=Math.atan2(dx*G.dir,dz*G.dir);
   const s=Math.sin(t*8+G.bob);G.p.legs.forEach((q,i)=>q.rotation.x=(i?1:-1)*s*0.5);G.p.arms.forEach((q,i)=>q.rotation.x=(i?-1:1)*s*0.4);
   // step aside for the boy
@@ -913,7 +914,7 @@ function updateRide(dt,t){
 
 // ================= minimap =================
 const mapC=$('map'),mg=mapC.getContext('2d');
-function drawMap(){const w=mapC.width,h=mapC.height;mg.drawImage(GT,0,0,w,h);const sx=w/GW,sz=h/GD;
+let mapBase=null;function drawMap(){const w=mapC.width,h=mapC.height;if(!mapBase){mapBase=document.createElement('canvas');mapBase.width=w;mapBase.height=h;mapBase.getContext('2d').drawImage(GT,0,0,w,h)}mg.drawImage(mapBase,0,0);const sx=w/GW,sz=h/GD;
   mg.font=`800 15px ${FONT}`;mg.textAlign='center';
   for(const r of RIDES){const x=(r.x+GW/2)*sx,y=(r.z+GD/2)*sz;mg.fillStyle=r.open?'#ff3a6a':'#ffffff';mg.strokeStyle='#2a2430';mg.lineWidth=3;mg.beginPath();mg.arc(x,y,r.open?9:6,0,7);mg.fill();mg.stroke()}
   {const x=(FW.x+GW/2)*sx,y=(FW.z+GD/2)*sz;mg.fillStyle='#2a2430';mg.fillText('かんらんしゃ',x,y-14)}
@@ -1062,6 +1063,8 @@ function frame(now){const dt=Math.max(0,Math.min(0.05,(now-last)/1000));last=now
   outTrain.position.set(0,0,0);{const u=(t*0.04)%2,k=u<1?u:2-u;const[ax,az]=W(1848,339),[bx,bz]=W(1045,339);outTrain.position.set(ax+(bx-ax)*k+3,0,az+(bz-az)*k);outTrain.rotation.y=Math.atan2(bx-ax,bz-az)}
   updateGuests(dt,t);
   if(started){if(mode==='walk')updateWalk(dt,t);else if(ride)updateRide(dt,t)}
+  {// draw only what is near while walking; see far only from the rides
+   const far=mode==='ride'?300:100;if(camera.far!==far){camera.far=far;camera.updateProjectionMatrix();scene.fog.near=far*0.36;scene.fog.far=far*0.96}}
   updateCamera(dt,t);updateFade();
   if(toastT>0){toastT-=dt;if(toastT<=0)$('toast').style.opacity=0}
   if(Math.floor(t*4)!==Math.floor((t-dt)*4))drawMap();
