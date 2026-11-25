@@ -75,8 +75,8 @@ const FONT='"M PLUS Rounded 1c","Hiragino Maru Gothic ProN",sans-serif';
 let ac=null,master=null,muted=false;
 function audio(){if(!ac){try{ac=new(window.AudioContext||window.webkitAudioContext)();master=ac.createGain();master.gain.value=0.5;master.connect(ac.destination)}catch(e){return null}}if(ac.state==='suspended')ac.resume();return ac}
 function tone(f,d,type='sine',vol=.08,slide=0,delay=0){if(muted||!audio())return;const t=ac.currentTime+delay,o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,f+slide),t+d);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(master);o.start(t);o.stop(t+d+.05)}
-function noise(d,vol=.1,f=1000,q=1,delay=0,type='bandpass',fEnd=0){if(muted||!audio())return;const t=ac.currentTime+delay,n=Math.floor(ac.sampleRate*d),b=ac.createBuffer(1,n,ac.sampleRate),c=b.getChannelData(0);for(let i=0;i<n;i++)c[i]=Math.random()*2-1;
-  const s=ac.createBufferSource();s.buffer=b;const fl=ac.createBiquadFilter();fl.type=type;fl.frequency.setValueAtTime(f,t);if(fEnd)fl.frequency.exponentialRampToValueAtTime(fEnd,t+d);fl.Q.value=q;const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(fl).connect(g).connect(master);s.start(t)}
+function noise(d,vol=.1,f=1000,q=1,delay=0,type='bandpass',fEnd=0){if(muted||!audio())return;const t=ac.currentTime+delay;if(!noise.buf){const n=ac.sampleRate*3;noise.buf=ac.createBuffer(1,n,ac.sampleRate);const c=noise.buf.getChannelData(0);for(let i=0;i<n;i++)c[i]=Math.random()*2-1}const b=noise.buf;
+  const s=ac.createBufferSource();s.buffer=b;const fl=ac.createBiquadFilter();fl.type=type;fl.frequency.setValueAtTime(f,t);if(fEnd)fl.frequency.exponentialRampToValueAtTime(fEnd,t+d);fl.Q.value=q;const g=ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(fl).connect(g).connect(master);s.start(t,Math.random()*Math.max(0,3-d-0.05),Math.min(d+0.05,3))}
 let wind=null;
 function windOn(v){if(!audio())return;if(!wind){const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),c=b.getChannelData(0);let l=0;for(let i=0;i<n;i++){l=l*0.97+(Math.random()*2-1)*0.03;c[i]=l*6}const s=ac.createBufferSource();s.buffer=b;s.loop=true;const f=ac.createBiquadFilter();f.type='bandpass';f.frequency.value=500;f.Q.value=0.6;wind=ac.createGain();wind.gain.value=0;s.connect(f).connect(wind).connect(master);s.start()}wind.gain.setTargetAtTime(muted?0:v,ac.currentTime,0.4)}
 // cheerful park music (simple loop)
@@ -811,7 +811,9 @@ function makeBoy(){const g=new THREE.Group();const root=grp(0,0,0,g);const skin=
   for(const s of[-1,1]){ball(0.05,lam(0x2a2226),s*0.13,0,0.34,head,1,1.2,0.6);ball(0.06,lam(0xffa0b4),s*0.22,-0.1,0.3,head,1,0.6,0.4);ball(0.08,skin,s*0.38,0,0,head)}
   const m=mesh(new THREE.TorusGeometry(0.07,0.015,4,10,Math.PI),lam(0x8a2a2a),0,-0.12,0.35,head);m.rotation.z=Math.PI;
   scene.add(g);return P}
-const boy=makeBoy();boy.g.traverse(n=>n.userData.noFade=1);
+const boy=makeBoy();
+// one shared rider model for every ride (making a new one each time piled up memory)
+let _rider=null;function riderBoy(){if(!_rider){_rider=makeBoy();scene.remove(_rider.g)}const r=_rider;if(r.g.parent)r.g.parent.remove(r.g);r.g.visible=true;r.g.position.set(0,0,0);r.g.rotation.set(0,0,0);r.g.scale.setScalar(1);r.legs.forEach(l=>l.rotation.set(0,0,0));r.arms.forEach((a,i)=>a.rotation.set(0,0,(i?1:-1)*0.15));return r}boy.g.traverse(n=>n.userData.noFade=1);
 const B={x:0,z:0,head:0,v:0};
 {const[x,z]=W(520,1185);B.x=x;B.z=z;B.head=Math.atan2(0.79,-0.61)}
 
@@ -869,7 +871,7 @@ function rideFerris(){
   $('act').hidden=true;$('ridebar').hidden=false;$('rot').hidden=true;go.target=null;marker.visible=false;$('viewBtn').textContent='そとから みる';
   boy.g.visible=false;chime();toast('かんらんしゃに のったよ！',2);FW.wSave=FW.w;
   // our gondola gets a little passenger (the boy) when seen from outside
-  const gd=FW.gs[best];ride.me=makeBoy();scene.remove(ride.me.g);gd.add(ride.me.g);ride.me.g.position.set(0,-1.45,0.7);ride.me.g.scale.setScalar(0.9);ride.me.g.rotation.y=0;
+  const gd=FW.gs[best];ride.me=riderBoy();gd.add(ride.me.g);ride.me.g.position.set(0,-1.45,0.7);ride.me.g.scale.setScalar(0.9);ride.me.g.rotation.y=0;
 }
 const _q=new THREE.Quaternion(),_q2=new THREE.Quaternion(),_q3=new THREE.Quaternion(),_e=new THREE.Euler(),_p=new THREE.Vector3();
 function coasterRide(C,name){return{name,seat:()=>C.cars[0],eye:new THREE.Vector3(0,1.55,0.3),fwd:new THREE.Vector3(0,0,1),me:new THREE.Vector3(0,0.2,0.3),meS:0.55,coaster:C,out:12,
@@ -885,7 +887,7 @@ function startRide(cfg){
   ride={kind:'gen',cfg,t:0,entry:nearRide};mode='ride';rideView=cfg.startView||'in';$('steer').hidden=!cfg.steer;rideYaw=0;ridePitch=0;
   $('act').hidden=true;$('ridebar').hidden=false;$('rot').hidden=true;go.target=null;marker.visible=false;$('viewBtn').textContent=rideView==='in'?'そとから みる':'なかから みる';
   boy.g.visible=false;chime();toast(cfg.name+'に のったよ！',2);
-  const seat=cfg.seat();ride.seat=seat;ride.me=makeBoy();scene.remove(ride.me.g);seat.add(ride.me.g);ride.me.g.position.copy(cfg.me);ride.me.g.scale.setScalar(cfg.meS||0.6);ride.me.g.rotation.y=Math.atan2(cfg.fwd.x,cfg.fwd.z);
+  const seat=cfg.seat();ride.seat=seat;ride.me=riderBoy();seat.add(ride.me.g);ride.me.g.position.copy(cfg.me);ride.me.g.scale.setScalar(cfg.meS||0.6);ride.me.g.rotation.y=Math.atan2(cfg.fwd.x,cfg.fwd.z);
   ride.me.legs.forEach(l=>l.rotation.x=-1.3);
   if(cfg.onStart)cfg.onStart(ride);if(cfg.lap)ride.lastS=cfg.lap.s,ride.dist=0;if(cfg.raft)ride.lastU=cfg.raft.u0;
   musicVol=0.015;
