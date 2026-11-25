@@ -77,8 +77,8 @@ function swooshOn(v){if(!audio())return;if(!swoosh){const n=ac.sampleRate*2,b=ac
 function chime(){[523,659,784,1047].forEach((f,i)=>tone(f,.35,'triangle',.07,0,i*.1))}
 // ---------- three ----------
 const canvas=$('c');const MOBILE=/Android|Silk|Mobile|Tablet|iPad/i.test(navigator.userAgent);const renderer=new THREE.WebGLRenderer({canvas,antialias:!MOBILE,powerPreference:'high-performance'});let quality=Math.min(MOBILE?0.9:1.25,devicePixelRatio||1);renderer.setPixelRatio(quality);
-const scene=new THREE.Scene();const SKY=0x9fd8ff;scene.background=new THREE.Color(SKY);scene.fog=new THREE.Fog(SKY,80,220);
-const camera=new THREE.PerspectiveCamera(60,1,0.05,500);
+const scene=new THREE.Scene();const SKY=0x9fd8ff;scene.background=new THREE.Color(SKY);scene.fog=new THREE.Fog(SKY,60,170);
+const camera=new THREE.PerspectiveCamera(60,1,0.05,180);
 function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.fov=camera.aspect<1?75:60;camera.updateProjectionMatrix()}addEventListener('resize',resize);
 scene.add(new THREE.HemisphereLight(0xffffff,0x6a8a4a,0.78));const sun=new THREE.DirectionalLight(0xfff4e0,0.5);sun.position.set(-30,60,30);scene.add(sun);
 const lam=c=>new THREE.MeshLambertMaterial({color:c});const flat=c=>new THREE.MeshPhongMaterial({color:c,flatShading:true,shininess:5});const basic=c=>new THREE.MeshBasicMaterial({color:c});
